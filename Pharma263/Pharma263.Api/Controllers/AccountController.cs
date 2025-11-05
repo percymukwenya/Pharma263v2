@@ -24,6 +24,7 @@ namespace Pharma263.Api.Controllers
         }
 
         [HttpPost("login")]
+        [AllowAnonymous]
         public async Task<ActionResult<ApiResponse<AuthResponse>>> Login([FromBody] AuthRequest request)
         {
             var result = await _authService.Login(request);
