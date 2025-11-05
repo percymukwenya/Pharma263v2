@@ -1,0 +1,126 @@
+﻿@model List<InventoryAgingViewModel>
+@{
+    ViewData["Title"] = "Inventory Aging Analysis";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Inventory Aging Analysis</h2>
+        <a href="@Url.Action("Index", "Report")" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Reports
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Parameters Card -->
+        <div class="col-md-3">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Report Parameters</h5>
+                    <form id="reportForm">
+                        <div class="mb-3">
+                            <label for="asOfDate" class="form-label">As of Date</label>
+                            <input type="date" class="form-control" id="asOfDate" name="asOfDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="agingPeriod" class="form-label">Aging Period</label>
+                            <select class="form-control" id="agingPeriod" name="agingPeriod">
+                                <option value="30">30 Days</option>
+                                <option value="60">60 Days</option>
+                                <option value="90">90 Days</option>
+                                <option value="180">180 Days</option>
+                            </select>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="button" onclick="generateReport('preview')" class="btn btn-primary">
+                                <i class="fas fa-search me-2"></i>Generate Report
+                            </button>
+                            <button type="button" onclick="generateReport('pdf')" class="btn btn-secondary">
+                                <i class="fas fa-file-pdf me-2"></i>Export PDF
+                            </button>
+                            <button type="button" onclick="generateReport('csv')" class="btn btn-secondary">
+                                <i class="fas fa-file-csv me-2"></i>Export CSV
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Container -->
+        <div class="col-md-9">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div id="reportResults">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Product Code</th>
+                                        <th>Product Name</th>
+                                        <th>Current Stock</th>
+                                        <th>Unit Cost</th>
+                                        <th>Total Value</th>
+                                        <th>Days in Stock</th>
+                                        <th>Aging Bucket</th>
+                                        <th>Last Purchase</th>
+                                        <th>Last Sale</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reportData">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function generateReport(format) {
+            const asOfDate = document.getElementById('asOfDate').value;
+            const agingPeriod = document.getElementById('agingPeriod').value;
+
+            if (!asOfDate) {
+                alert('Please select the as of date');
+                return;
+            }
+
+            if (format === 'preview') {
+                $.post('@Url.Action("InventoryAging")',
+                    { asOfDate, agingPeriod },
+                    function (data) {
+                        displayReport(data);
+                    });
+            } else if (format === 'pdf') {
+                window.location.href = `@Url.Action("DownloadInventoryAgingPDF")?asOfDate=${asOfDate}&agingPeriod=${agingPeriod}`;
+            } else if (format === 'csv') {
+                window.location.href = `@Url.Action("DownloadInventoryAgingCSV")?asOfDate=${asOfDate}&agingPeriod=${agingPeriod}`;
+            }
+        }
+
+        function displayReport(data) {
+            const tbody = document.getElementById('reportData');
+            tbody.innerHTML = '';
+
+            data.forEach(item => {
+                tbody.innerHTML += `
+                        <tr>
+                            <td>${item.productCode}</td>
+                            <td>${item.productName}</td>
+                            <td>${item.currentStock}</td>
+                            <td>$${item.unitCost.toLocaleString()}</td>
+                            <td>$${item.totalValue.toLocaleString()}</td>
+                            <td>${item.daysInInventory}</td>
+                            <td>${item.agingBucket}</td>
+                            <td>${new Date(item.lastPurchaseDate).toLocaleDateString()}</td>
+                            <td>${new Date(item.lastSaleDate).toLocaleDateString()}</td>
+                        </tr>
+                    `;
+            });
+        }
+    </script>
+}

@@ -1,0 +1,303 @@
+﻿@{
+    ViewBag.Title = "Add Stock";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style type="text/css">
+    .stock-item {
+        margin-bottom: 15px;
+        padding: 20px;
+        border: 1px solid #e0e0e0;
+        border-radius: 5px;
+        background-color: #f9f9f9;
+        position: relative;
+    }
+
+    .stock-item:hover {
+        background-color: #f5f5f5;
+        border-color: #d0d0d0;
+    }
+
+    .stock-item .form-row {
+        margin-bottom: 15px;
+    }
+
+    .stock-item .form-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .remove-item-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        font-size: 18px;
+        line-height: 1;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .remove-item-btn:hover {
+        background: #c82333;
+    }
+
+    .stock-item-header {
+        font-weight: bold;
+        color: #495057;
+        margin-bottom: 15px;
+        padding-bottom: 5px;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .add-item-section {
+        text-align: center;
+        padding: 20px;
+        background-color: #f8f9fa;
+        border: 2px dashed #dee2e6;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+
+    .btn-add-item {
+        background-color: #28a745;
+        border-color: #28a745;
+        padding: 10px 20px;
+        font-size: 16px;
+    }
+
+    .btn-add-item:hover {
+        background-color: #218838;
+        border-color: #1e7e34;
+    }
+</style>
+
+<div class="wraper container-fluid">
+    <div class="page-title">
+        <h3 class="title">Add Stock Items</h3>
+        <a href="@Url.Action("Index", "Stock")" class="btn btn-default pull-right">
+            <i class="fa fa-arrow-left"></i> Back to Stock
+        </a>
+        <div class="clearfix"></div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-10 col-md-offset-1">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">
+                        <i class="fa fa-cubes"></i> Batch Stock Entry
+                    </h3>
+                </div>
+                <div class="panel-body">
+                    <div class="alert alert-info">
+                        <i class="fa fa-info-circle"></i>
+                        <strong>Instructions:</strong> Add multiple stock items in a single batch. Each item requires medicine details, batch information, pricing, and quantity.
+                    </div>
+
+                    <form id="addBatchStockForm">
+                        @Html.AntiForgeryToken()
+
+                        <div id="stockItems">
+                            <!-- Dynamic stock items will be added here -->
+                        </div>
+
+                        <div class="add-item-section">
+                            <button type="button" id="addRowBtn" class="btn btn-add-item">
+                                <i class="fa fa-plus"></i> Add Another Stock Item
+                            </button>
+                        </div>
+
+                        <div class="panel panel-success">
+                            <div class="panel-heading">
+                                <h4 class="panel-title">Submit Batch</h4>
+                            </div>
+                            <div class="panel-body text-center">
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="fa fa-save"></i> Add All Stock Items
+                                </button>
+                                <button type="button" class="btn btn-default btn-lg" onclick="location.reload()">
+                                    <i class="fa fa-refresh"></i> Reset Form
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Wait for the DOM to be fully loaded
+    document.addEventListener('DOMContentLoaded', function () {
+        const stockItems = document.getElementById('stockItems');
+        const addRowBtn = document.getElementById('addRowBtn');
+        const form = document.getElementById('addBatchStockForm');
+
+        function createStockItemRow(isRemovable = true) {
+            const div = document.createElement('div');
+            div.className = 'stock-item';
+            const itemCount = stockItems.children.length + 1;
+            div.innerHTML = `
+                <div class="stock-item-header">
+                    <i class="fa fa-cube"></i> Stock Item #${itemCount}
+                </div>
+                ${isRemovable ? '<button type="button" class="remove-item-btn removeRowBtn" title="Remove this item"><i class="fa fa-times"></i></button>' : ''}
+                
+                <div class="row form-row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="control-label">Medicine Name</label>
+                            <input type="text" name="MedicineName" class="form-control" placeholder="Enter medicine name" required />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label class="control-label">Batch Number</label>
+                            <input type="text" name="BatchNo" class="form-control" placeholder="Batch No" required />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label class="control-label">Expiry Date</label>
+                            <input type="date" name="ExpiryDate" class="form-control" required />
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row form-row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label class="control-label">Buying Price ($)</label>
+                            <input type="number" name="BuyingPrice" class="form-control" placeholder="0.00" step="0.01" min="0" required />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label class="control-label">Selling Price ($)</label>
+                            <input type="number" name="SellingPrice" class="form-control" placeholder="0.00" step="0.01" min="0" required />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label class="control-label">Total Quantity</label>
+                            <input type="number" name="TotalQuantity" class="form-control" placeholder="0" min="1" required />
+                        </div>
+                    </div>
+                </div>
+            `;
+            return div;
+        }
+
+        // Ensure the first row is always present
+        if (stockItems.children.length === 0) {
+            stockItems.appendChild(createStockItemRow(false));
+        }
+
+        // Add new row
+        addRowBtn.addEventListener('click', function () {
+            stockItems.appendChild(createStockItemRow());
+            updateRemoveButtons();
+        });
+
+        // Remove row
+        stockItems.addEventListener('click', function (e) {
+            if (e.target.classList.contains('removeRowBtn')) {
+                if (stockItems.children.length > 1) {
+                    e.target.closest('.stock-item').remove();
+                    updateRemoveButtons();
+                } else {
+                    alert("You can't remove the last row.");
+                }
+            }
+        });
+
+        // Update remove buttons visibility and item numbers
+        function updateRemoveButtons() {
+            const removeButtons = stockItems.querySelectorAll('.removeRowBtn');
+            const stockItemElements = stockItems.querySelectorAll('.stock-item');
+            
+            removeButtons.forEach((button) => {
+                button.style.display = stockItems.children.length > 1 ? 'flex' : 'none';
+            });
+            
+            // Update item numbers
+            stockItemElements.forEach((item, index) => {
+                const header = item.querySelector('.stock-item-header');
+                if (header) {
+                    header.innerHTML = `<i class="fa fa-cube"></i> Stock Item #${index + 1}`;
+                }
+            });
+        }
+
+        // Form submission
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const stockItemsList = [];
+            const stockItemElements = document.querySelectorAll('.stock-item');
+
+            stockItemElements.forEach(item => {
+                const expiryDateInput = item.querySelector('[name="ExpiryDate"]');
+                const expiryDate = new Date(expiryDateInput.value);
+                stockItemsList.push({
+                    MedicineName: item.querySelector('[name="MedicineName"]').value,
+                    BatchNo: item.querySelector('[name="BatchNo"]').value,
+                    ExpiryDate: expiryDate.toISOString().split('T')[0], // Format as YYYY-MM-DD
+                    BuyingPrice: parseFloat(item.querySelector('[name="BuyingPrice"]').value),
+                    SellingPrice: parseFloat(item.querySelector('[name="SellingPrice"]').value),
+                    TotalQuantity: parseInt(item.querySelector('[name="TotalQuantity"]').value)
+                });
+            });
+
+            const payload = { stockItems: stockItemsList };
+            console.log('Payload being sent:', payload);
+
+            // Send data to the server
+            fetch('/Stock/AddStock', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('input[name="__RequestVerificationToken"]').value
+                },
+                body: JSON.stringify(payload)
+            })
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    if (!response.ok) {
+                        return response.text().then(text => {
+                            throw new Error(`Server responded with ${response.status}: ${text}`);
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Response data:', data);
+                    if (data.success) {
+                        alert('Stock items added successfully!');
+                        form.reset();
+                        while (stockItems.children.length > 1) {
+                            stockItems.removeChild(stockItems.lastChild);
+                        }
+                        updateRemoveButtons();
+                    } else {
+                        throw new Error(data.message || 'Unknown error occurred');
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                    alert('An error occurred while adding stock items. Please check the console for more details.');
+                });
+        });
+
+        // Initial update of remove buttons
+        updateRemoveButtons();
+    });
+</script>

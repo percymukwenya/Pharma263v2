@@ -1,0 +1,89 @@
+﻿@{
+    ViewBag.Title = "Import Stock from Excel";
+}
+<div class="wraper container-fluid">
+    <div class="page-title">
+        <h3 class="title">Import Stock from Excel</h3>
+    </div>
+    <div class="col-lg-6 col-md-offset-3">
+        <div class="panel-heading">
+            <h3 class="panel-title">Upload Excel File</h3>
+        </div>
+        <div class="panel-body">
+            @using (Html.BeginForm("ImportStockFromExcel", "Stock", FormMethod.Post, new { enctype = "multipart/form-data", id = "uploadForm" }))
+            {
+                <div class="form-group">
+                    <label for="excelFile">Select Excel File:</label>
+                    <input type="file" id="excelFile" name="file" class="form-control" required accept=".xlsx, .xls" />
+                </div>
+                <button type="submit" class="btn btn-primary">Upload and Import</button>
+            }
+            <div id="progressArea" style="display: none;">
+                <div class="progress">
+                    <div class="progress-bar" role="progressbar" style="width: 0%;">0%</div>
+                </div>
+            </div>
+            <div id="resultArea" style="display: none; margin-top: 20px;">
+                <h4>Import Results:</h4>
+                <p>Total Rows: <span id="totalRows"></span></p>
+                <p>Successful Imports: <span id="successfulImports"></span></p>
+                <p>Failed Imports: <span id="failedImports"></span></p>
+                <div id="errors"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#uploadForm').submit(function (e) {
+                e.preventDefault();
+                var formData = new FormData(this);
+
+                $.ajax({
+                    url: $(this).attr('action'),
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    xhr: function () {
+                        var xhr = new window.XMLHttpRequest();
+                        xhr.upload.addEventListener("progress", function (evt) {
+                            if (evt.lengthComputable) {
+                                var percentComplete = evt.loaded / evt.total;
+                                $('.progress-bar').width(percentComplete * 100 + '%');
+                                $('.progress-bar').text(Math.round(percentComplete * 100) + '%');
+                            }
+                        }, false);
+                        return xhr;
+                    },
+                    beforeSend: function () {
+                        $('#progressArea').show();
+                    },
+                    success: function (response) {
+                        $('#resultArea').show();
+                        $('#totalRows').text(response.data.totalRows);
+                        $('#successfulImports').text(response.data.successfulImports);
+                        $('#failedImports').text(response.data.failedImports);
+
+                        if (response.data.errors && response.data.errors.length > 0) {
+                            var errorHtml = '<ul>';
+                            response.data.errors.forEach(function (error) {
+                                errorHtml += '<li>' + error + '</li>';
+                            });
+                            errorHtml += '</ul>';
+                            $('#errors').html(errorHtml);
+                        }
+                    },
+                    error: function () {
+                        alert('An error occurred while processing your request.');
+                    },
+                    complete: function () {
+                        $('#progressArea').hide();
+                    }
+                });
+            });
+        });
+    </script>
+}

@@ -1,0 +1,350 @@
+﻿@model Pharma263.MVC.DTOs.Auth.LoginDto
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Pharma263 - Secure pharmacy management system login">
+    <meta name="author" content="Pharma263">
+    <link rel="shortcut icon" href="~/Content/adminFront/assets/img/icon.png">
+    <title>Login - Pharma263 Pharmacy Management System</title>
+    
+    <!-- Google Fonts -->
+    <link href='https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap' rel='stylesheet' type='text/css'>
+    
+    <!-- Font Awesome 5 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Custom login styles -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .login-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            border: 1px solid #e1e5e9;
+            overflow: hidden;
+            max-width: 400px;
+            width: 100%;
+            animation: slideUp 0.6s ease-out;
+        }
+        
+        @@keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .login-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .login-header .logo {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .login-header .logo-img {
+            height: 80px;
+            width: auto;
+            border-radius: 8px;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        }
+        
+        .login-body {
+            padding: 2rem;
+        }
+        
+        .form-floating {
+            margin-bottom: 1rem;
+        }
+        
+        .form-floating .form-control {
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            padding: 1rem 0.75rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-floating .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
+        }
+        
+        .btn-login {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-login:disabled {
+            opacity: 0.7;
+            transform: none;
+        }
+        
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            background: none;
+            color: #6c757d;
+            cursor: pointer;
+            padding: 4px;
+            z-index: 5;
+        }
+        
+        .loading-spinner {
+            display: none;
+            margin-right: 0.5rem;
+        }
+        
+        .alert {
+            border-radius: 8px;
+            border: none;
+            margin-bottom: 1rem;
+        }
+        
+        .text-danger {
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+        
+        .forgot-password-link {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .forgot-password-link:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+        
+        .login-footer {
+            text-align: center;
+            padding: 1rem 2rem 2rem;
+            color: #6c757d;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-container">
+        <!-- Header -->
+        <div class="login-header">
+            <div class="logo">
+                <img src="/images/pharma263Logo.jpg" alt="Pharma263 Logo" class="logo-img" />
+                Pharma263
+            </div>
+        </div>
+
+        <!-- Body -->
+        <div class="login-body">
+            @using (Html.BeginForm("Login", "Auth", FormMethod.Post, new { @id = "loginForm", @class = "needs-validation", @novalidate = "novalidate" }))
+            {
+                @Html.AntiForgeryToken()
+                
+                <!-- Error Messages -->
+                @if (TempData["error"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2" aria-hidden="true"></i>
+                        @TempData["error"].ToString()
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+                
+                @if (TempData["FFMsg"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2" aria-hidden="true"></i>
+                        @TempData["FFMsg"].ToString()
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+
+                <!-- Username Field -->
+                <div class="form-floating">
+                    @Html.TextBoxFor(m => m.UserName, new { 
+                        @class = "form-control", 
+                        @id = "username", 
+                        @placeholder = "Username or Email",
+                        @required = "required",
+                        @autocomplete = "username",
+                        @aria_describedby = "usernameHelp"
+                    })
+                    <label for="username">
+                        <i class="fas fa-user me-2" aria-hidden="true"></i>Username or Email
+                    </label>
+                    @Html.ValidationMessageFor(x => x.UserName, "", new { @class = "text-danger" })
+                </div>
+
+                <!-- Password Field -->
+                <div class="form-floating position-relative">
+                    @Html.PasswordFor(m => m.Password, new { 
+                        @class = "form-control", 
+                        @id = "password", 
+                        @placeholder = "Password",
+                        @required = "required",
+                        @autocomplete = "current-password",
+                        @aria_describedby = "passwordHelp"
+                    })
+                    <label for="password">
+                        <i class="fas fa-lock me-2" aria-hidden="true"></i>Password
+                    </label>
+                    <button type="button" class="password-toggle" onclick="togglePassword()" aria-label="Toggle password visibility">
+                        <i class="fas fa-eye" id="passwordToggleIcon" aria-hidden="true"></i>
+                    </button>
+                    @Html.ValidationMessageFor(x => x.Password, "", new { @class = "text-danger" })
+                </div>
+
+                <!-- Remember Me & Forgot Password -->
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="rememberMe" name="rememberMe">
+                        <label class="form-check-label" for="rememberMe">
+                            Remember me
+                        </label>
+                    </div>
+                    <a href="@Url.Action("ForgotPassword", "Auth")" class="forgot-password-link">
+                        Forgot password?
+                    </a>
+                </div>
+
+                <!-- Login Button -->
+                <div class="d-grid">
+                    <button class="btn btn-login text-white" type="submit" id="loginButton">
+                        <span class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
+                        </span>
+                        <i class="fas fa-sign-in-alt me-2" aria-hidden="true"></i>
+                        Sign In
+                    </button>
+                </div>
+            }
+        </div>
+
+        <!-- Footer -->
+        <div class="login-footer">
+            <p class="mb-0">
+                &copy; @DateTime.Now.Year Pharma263. All rights reserved.
+            </p>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JavaScript -->
+    <script>
+        function togglePassword() {
+            const passwordField = document.getElementById('password');
+            const toggleIcon = document.getElementById('passwordToggleIcon');
+            
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                toggleIcon.classList.remove('fa-eye');
+                toggleIcon.classList.add('fa-eye-slash');
+            } else {
+                passwordField.type = 'password';
+                toggleIcon.classList.remove('fa-eye-slash');
+                toggleIcon.classList.add('fa-eye');
+            }
+        }
+
+        // Form submission handling
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            const loginButton = document.getElementById('loginButton');
+            const spinner = loginButton.querySelector('.loading-spinner');
+            
+            // Show loading state
+            loginButton.disabled = true;
+            spinner.style.display = 'inline-block';
+            loginButton.innerHTML = spinner.outerHTML + ' Signing In...';
+        });
+
+        // Auto-hide alerts after 5 seconds
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                if (alert.querySelector('.btn-close')) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }
+            });
+        }, 5000);
+
+        // Enhanced form validation
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('loginForm');
+            const inputs = form.querySelectorAll('input[required]');
+            
+            inputs.forEach(function(input) {
+                input.addEventListener('blur', function() {
+                    if (!this.value.trim()) {
+                        this.classList.add('is-invalid');
+                    } else {
+                        this.classList.remove('is-invalid');
+                        this.classList.add('is-valid');
+                    }
+                });
+                
+                input.addEventListener('input', function() {
+                    if (this.classList.contains('is-invalid') && this.value.trim()) {
+                        this.classList.remove('is-invalid');
+                        this.classList.add('is-valid');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

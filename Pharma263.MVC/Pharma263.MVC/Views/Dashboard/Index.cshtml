@@ -1,0 +1,521 @@
+﻿@model Pharma263.MVC.Models.DashboardViewModel
+@{
+    ViewBag.Title = "Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!-- Enhanced Dashboard Styles -->
+<style>
+    .dashboard-container {
+        padding: 1.5rem 0;
+        margin-top: 20px; /* Add space below top navigation */
+    }
+    
+    .dashboard-header {
+        background: #3a4a87;
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(58, 74, 135, 0.15);
+    }
+    
+    .metric-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        border: 1px solid #e1e5e9;
+        transition: all 0.3s ease;
+        margin-bottom: 1.5rem;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .metric-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--card-color, #667eea);
+    }
+    
+    .metric-card.success { --card-color: #28a745; }
+    .metric-card.danger { --card-color: #dc3545; }
+    .metric-card.info { --card-color: #17a2b8; }
+    .metric-card.warning { --card-color: #ffc107; }
+    .metric-card.primary { --card-color: #3a4a87; }
+    
+    .metric-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        color: white;
+        background: var(--card-color, #3a4a87);
+        margin-bottom: 0.75rem;
+    }
+    
+    .metric-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+        line-height: 1;
+    }
+    
+    .metric-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+    
+    .metric-trend {
+        font-size: 0.8rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 20px;
+        font-weight: 500;
+    }
+    
+    .trend-up {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    
+    .trend-down {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    
+    .trend-stable {
+        background-color: #e2e3e5;
+        color: #383d41;
+    }
+    
+    .low-stock-section {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        border: 1px solid #e1e5e9;
+        overflow: hidden;
+    }
+    
+    .section-header {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-bottom: 1px solid #e1e5e9;
+        margin: 0;
+    }
+    
+    .section-title {
+        color: #2c3e50;
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .table-container {
+        padding: 0;
+    }
+    
+    .enhanced-table {
+        margin: 0;
+        font-size: 0.9rem;
+    }
+    
+    .enhanced-table th {
+        background: #f8f9fa;
+        border-top: none;
+        font-weight: 600;
+        color: #495057;
+        padding: 1rem 1.5rem;
+    }
+    
+    .enhanced-table td {
+        padding: 1rem 1.5rem;
+        vertical-align: middle;
+        border-color: #e1e5e9;
+    }
+    
+    .enhanced-table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .quantity-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .quantity-low {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    
+    .quantity-critical {
+        background-color: #f5c6cb;
+        color: #721c24;
+    }
+    
+    .currency {
+        font-weight: 500;
+        color: #28a745;
+    }
+    
+    .loading-state {
+        display: none;
+        text-align: center;
+        padding: 2rem;
+        color: #6c757d;
+    }
+</style>
+
+<div class="dashboard-container">
+    <!-- Minimal Header -->
+    <div class="dashboard-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Dashboard Overview</h4>
+            <small class="opacity-75">Updated: <span id="lastUpdated">@DateTime.Now.ToString("HH:mm")</span></small>
+        </div>
+    </div>
+    <!-- Metrics Grid -->
+    <div class="row g-4 mb-4">
+        <!-- Sales Metrics -->
+        <div class="col-lg-3 col-md-6">
+            <div class="metric-card success">
+                <div class="metric-icon">
+                    <i class="fas fa-cash-register" aria-hidden="true"></i>
+                </div>
+                <div class="metric-value">@Model.Sales</div>
+                <div class="metric-label">Total Sales</div>
+                @{
+                    var salesTrendClass = Model.SalesTrend == "up" ? "trend-up" : Model.SalesTrend == "down" ? "trend-down" : "trend-stable";
+                    var salesIcon = Model.SalesTrend == "up" ? "fa-arrow-up" : Model.SalesTrend == "down" ? "fa-arrow-down" : "fa-minus";
+                    var salesText = Model.SalesPercentageChange.HasValue ? $"{(Model.SalesPercentageChange > 0 ? "+" : "")}{Model.SalesPercentageChange:F1}%" : "No change";
+                }
+                <div class="metric-trend @salesTrendClass">
+                    <i class="fas @salesIcon" aria-hidden="true"></i> @salesText
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="metric-card success">
+                <div class="metric-icon">
+                    <i class="fas fa-dollar-sign" aria-hidden="true"></i>
+                </div>
+                <div class="metric-value">$@Model.TotalSales.ToString("N0")</div>
+                <div class="metric-label">Sales Revenue</div>
+                @{
+                    var salesRevenueTrendClass = Model.SalesTrend == "up" ? "trend-up" : Model.SalesTrend == "down" ? "trend-down" : "trend-stable";
+                    var salesRevenueIcon = Model.SalesTrend == "up" ? "fa-arrow-up" : Model.SalesTrend == "down" ? "fa-arrow-down" : "fa-minus";
+                    var salesRevenueText = Model.SalesPercentageChange.HasValue ? $"{(Model.SalesPercentageChange > 0 ? "+" : "")}{Model.SalesPercentageChange:F1}%" : "No change";
+                }
+                <div class="metric-trend @salesRevenueTrendClass">
+                    <i class="fas @salesRevenueIcon" aria-hidden="true"></i> @salesRevenueText
+                </div>
+            </div>
+        </div>
+
+        <!-- Purchase Metrics -->
+        <div class="col-lg-3 col-md-6">
+            <div class="metric-card info">
+                <div class="metric-icon">
+                    <i class="fas fa-shopping-cart" aria-hidden="true"></i>
+                </div>
+                <div class="metric-value">@Model.Purchases</div>
+                <div class="metric-label">Total Purchases</div>
+                @{
+                    var purchasesTrendClass = Model.PurchasesTrend == "up" ? "trend-up" : Model.PurchasesTrend == "down" ? "trend-down" : "trend-stable";
+                    var purchasesIcon = Model.PurchasesTrend == "up" ? "fa-arrow-up" : Model.PurchasesTrend == "down" ? "fa-arrow-down" : "fa-minus";
+                    var purchasesText = Model.PurchasesPercentageChange.HasValue ? $"{(Model.PurchasesPercentageChange > 0 ? "+" : "")}{Model.PurchasesPercentageChange:F1}%" : "No change";
+                }
+                <div class="metric-trend @purchasesTrendClass">
+                    <i class="fas @purchasesIcon" aria-hidden="true"></i> @purchasesText
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="metric-card info">
+                <div class="metric-icon">
+                    <i class="fas fa-receipt" aria-hidden="true"></i>
+                </div>
+                <div class="metric-value">$@Model.TotalPurchases.ToString("N0")</div>
+                <div class="metric-label">Purchase Amount</div>
+                @{
+                    var purchaseAmountTrendClass = Model.PurchasesTrend == "up" ? "trend-up" : Model.PurchasesTrend == "down" ? "trend-down" : "trend-stable";
+                    var purchaseAmountIcon = Model.PurchasesTrend == "up" ? "fa-arrow-up" : Model.PurchasesTrend == "down" ? "fa-arrow-down" : "fa-minus";
+                    var purchaseAmountText = Model.PurchasesPercentageChange.HasValue ? $"{(Model.PurchasesPercentageChange > 0 ? "+" : "")}{Model.PurchasesPercentageChange:F1}%" : "No change";
+                }
+                <div class="metric-trend @purchaseAmountTrendClass">
+                    <i class="fas @purchaseAmountIcon" aria-hidden="true"></i> @purchaseAmountText
+                </div>
+            </div>
+        </div>
+
+        <!-- Inventory Metrics -->
+        <div class="col-lg-3 col-md-6">
+            <div class="metric-card primary">
+                <div class="metric-icon">
+                    <i class="fas fa-pills" aria-hidden="true"></i>
+                </div>
+                <div class="metric-value">@Model.Medicines</div>
+                <div class="metric-label">Medicine Types</div>
+                @{
+                    var medicinesTrendClass = Model.MedicinesTrend == "up" ? "trend-up" : Model.MedicinesTrend == "down" ? "trend-down" : "trend-stable";
+                    var medicinesIcon = Model.MedicinesTrend == "up" ? "fa-arrow-up" : Model.MedicinesTrend == "down" ? "fa-arrow-down" : "fa-minus";
+                    var medicinesText = Model.MedicinesPercentageChange.HasValue ? $"{(Model.MedicinesPercentageChange > 0 ? "+" : "")}{Model.MedicinesPercentageChange:F1}%" : "No change";
+                }
+                <div class="metric-trend @medicinesTrendClass">
+                    <i class="fas @medicinesIcon" aria-hidden="true"></i> @medicinesText
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="metric-card primary">
+                <div class="metric-icon">
+                    <i class="fas fa-boxes" aria-hidden="true"></i>
+                </div>
+                <div class="metric-value">@Model.Stocks.ToString("N0")</div>
+                <div class="metric-label">Stock Quantity</div>
+                @{
+                    var stockTrendClass = Model.StockTrend == "up" ? "trend-up" : Model.StockTrend == "down" ? "trend-down" : "trend-stable";
+                    var stockIcon = Model.StockTrend == "up" ? "fa-arrow-up" : Model.StockTrend == "down" ? "fa-arrow-down" : "fa-minus";
+                    var stockText = Model.StockPercentageChange.HasValue ? $"{(Model.StockPercentageChange > 0 ? "+" : "")}{Model.StockPercentageChange:F1}%" : "No change";
+                }
+                <div class="metric-trend @stockTrendClass">
+                    <i class="fas @stockIcon" aria-hidden="true"></i> @stockText
+                </div>
+            </div>
+        </div>
+
+        <!-- Relationship Metrics -->
+        <div class="col-lg-3 col-md-6">
+            <div class="metric-card warning">
+                <div class="metric-icon">
+                    <i class="fas fa-users" aria-hidden="true"></i>
+                </div>
+                <div class="metric-value">@Model.Customers</div>
+                <div class="metric-label">Customers</div>
+                @{
+                    var customersTrendClass = Model.CustomersTrend == "up" ? "trend-up" : Model.CustomersTrend == "down" ? "trend-down" : "trend-stable";
+                    var customersIcon = Model.CustomersTrend == "up" ? "fa-arrow-up" : Model.CustomersTrend == "down" ? "fa-arrow-down" : "fa-minus";
+                    var customersText = Model.CustomersPercentageChange.HasValue ? $"{(Model.CustomersPercentageChange > 0 ? "+" : "")}{Model.CustomersPercentageChange:F1}%" : "No change";
+                }
+                <div class="metric-trend @customersTrendClass">
+                    <i class="fas @customersIcon" aria-hidden="true"></i> @customersText
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="metric-card warning">
+                <div class="metric-icon">
+                    <i class="fas fa-truck" aria-hidden="true"></i>
+                </div>
+                <div class="metric-value">@Model.Suppliers</div>
+                <div class="metric-label">Suppliers</div>
+                @{
+                    var suppliersTrendClass = Model.SuppliersTrend == "up" ? "trend-up" : Model.SuppliersTrend == "down" ? "trend-down" : "trend-stable";
+                    var suppliersIcon = Model.SuppliersTrend == "up" ? "fa-arrow-up" : Model.SuppliersTrend == "down" ? "fa-arrow-down" : "fa-minus";
+                    var suppliersText = Model.SuppliersPercentageChange.HasValue ? $"{(Model.SuppliersPercentageChange > 0 ? "+" : "")}{Model.SuppliersPercentageChange:F1}%" : "No change";
+                }
+                <div class="metric-trend @suppliersTrendClass">
+                    <i class="fas @suppliersIcon" aria-hidden="true"></i> @suppliersText
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Low Stock Alert Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="low-stock-section">
+                <div class="section-header">
+                    <h3 class="section-title">
+                        <i class="fas fa-exclamation-triangle text-danger" aria-hidden="true"></i>
+                        Low Stock Alert
+                        @if (Model.LowStocks != null && Model.LowStocks.Count > 0)
+                        {
+                            <span class="badge bg-danger ms-2">@Model.LowStocks.Count items</span>
+                        }
+                    </h3>
+                </div>
+                
+                <div class="table-container">
+                    @if (Model.LowStocks != null && Model.LowStocks.Count > 0)
+                    {
+                        <table class="table enhanced-table" id="lowStockTable">
+                            <thead>
+                                <tr>
+                                    <th>
+                                        <i class="fas fa-pills me-2" aria-hidden="true"></i>Medicine Name
+                                    </th>
+                                    <th>
+                                        <i class="fas fa-barcode me-2" aria-hidden="true"></i>Batch No
+                                    </th>
+                                    <th>
+                                        <i class="fas fa-layer-group me-2" aria-hidden="true"></i>Quantity
+                                    </th>
+                                    <th>
+                                        <i class="fas fa-tag me-2" aria-hidden="true"></i>Selling Price
+                                    </th>
+                                    <th>
+                                        <i class="fas fa-receipt me-2" aria-hidden="true"></i>Buying Price
+                                    </th>
+                                    <th>
+                                        <i class="fas fa-chart-line me-2" aria-hidden="true"></i>Margin
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.LowStocks)
+                                {
+                                    var marginPercent = item.SellingPrice > 0 ? ((item.SellingPrice - item.BuyingPrice) / item.SellingPrice * 100) : 0;
+                                    var quantityClass = item.TotalQuantity <= 5 ? "quantity-critical" : "quantity-low";
+                                    
+                                    <tr>
+                                        <td>
+                                            <strong>@item.MedicineName</strong>
+                                        </td>
+                                        <td>
+                                            <code>@item.BatchNo</code>
+                                        </td>
+                                        <td>
+                                            <span class="quantity-badge @quantityClass">
+                                                @item.TotalQuantity units
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="currency">$@item.SellingPrice.ToString("F2")</span>
+                                        </td>
+                                        <td>
+                                            <span class="currency">$@item.BuyingPrice.ToString("F2")</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">@marginPercent.ToString("F1")%</span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-check-circle text-success fa-3x mb-3" aria-hidden="true"></i>
+                            <h5 class="text-muted">All stock levels are healthy!</h5>
+                            <p class="text-muted mb-0">No items currently require immediate restocking.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-state" id="loadingState">
+        <div class="spinner-border text-primary mb-3" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p>Loading dashboard data...</p>
+    </div>
+</div>
+
+<!-- Enhanced JavaScript -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize enhanced DataTable for low stock
+        if (document.getElementById('lowStockTable')) {
+            $('#lowStockTable').DataTable({
+                "responsive": true,
+                "pageLength": 10,
+                "order": [[2, "asc"]], // Sort by quantity (lowest first)
+                "columnDefs": [
+                    { "orderable": false, "targets": [5] } // Disable sorting on margin column
+                ],
+                "language": {
+                    "search": "Search medicines:",
+                    "lengthMenu": "Show _MENU_ medicines per page",
+                    "info": "Showing _START_ to _END_ of _TOTAL_ low stock items",
+                    "emptyTable": "No low stock items found"
+                },
+                "dom": '<"row"<"col-sm-6"l><"col-sm-6"f>>' +
+                       '<"row"<"col-sm-12"tr>>' +
+                       '<"row"<"col-sm-5"i><"col-sm-7"p>>'
+            });
+        }
+
+        // Update timestamp
+        function updateTimestamp() {
+            const now = new Date();
+            const formatted = now.toLocaleDateString('en-US', {
+                month: 'short',
+                day: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            document.getElementById('lastUpdated').textContent = formatted;
+        }
+
+        // Auto-refresh timestamp every minute
+        setInterval(updateTimestamp, 60000);
+
+        // Add click handlers for metric cards (future enhancement)
+        document.querySelectorAll('.metric-card').forEach(card => {
+            card.addEventListener('click', function() {
+                // Future: Navigate to detailed view
+                console.log('Metric card clicked:', this.querySelector('.metric-label').textContent);
+            });
+        });
+
+        // Enhanced metric card animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry, index) => {
+                if (entry.isIntersecting) {
+                    setTimeout(() => {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }, index * 100);
+                }
+            });
+        });
+
+        // Initialize cards with initial state
+        document.querySelectorAll('.metric-card').forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'all 0.6s ease';
+            observer.observe(card);
+        });
+
+        // Auto-refresh dashboard data every 15 minutes
+        setInterval(async function() {
+            try {
+                console.log('Auto-refreshing dashboard data...');
+                // In future enhancement, we'll reload specific data sections
+                updateTimestamp();
+            } catch (error) {
+                console.error('Error refreshing dashboard:', error);
+            }
+        }, 900000); // 15 minutes
+    });
+</script>

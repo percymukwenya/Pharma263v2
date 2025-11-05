@@ -1,0 +1,165 @@
+﻿@model Pharma263.Integration.Api.Models.Request.UpdateSupplierRequest
+@{
+    ViewBag.Title = "Update Supplier";
+}
+
+<div class="wraper container-fluid">
+    <div class="page-title">
+        <h3 class="title">Supplier </h3>
+    </div>
+    <div class="row">
+        <div class="col-lg-10 col-md-offset-1">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Update Supplier</h3>
+                </div>
+                <div class="panel-body">
+                    @using (Html.BeginForm("EditSupplier", "Supplier", FormMethod.Post, new { @class = "ajax-form", data_ajax = "true", data_validate = "true", data_ajax_options = "{\"showSuccess\": true, \"redirect\": \"/Supplier/Index\"}" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(x=>x.Id)
+                        <div class="form-group">
+                            @Html.LabelFor(x => x.Name)
+                            @Html.TextBoxFor(x => x.Name, null, new { @class = "form-control", @placeholder = "Enter Supplier Name", @required = "required" })
+                            @Html.ValidationMessageFor(x => x.Name, "", new { @class = "text-danger" })
+                        </div>
+
+                        <div class="row">
+                            <div class="col-lg-6 col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(x => x.Email)
+                                    @Html.TextBoxFor(x => x.Email, null, new { @class = "form-control", @placeholder = "Enter Email", @type = "email" })
+                                    @Html.ValidationMessageFor(x => x.Email, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(x => x.Phone)
+                                    @Html.TextBoxFor(x => x.Phone, null, new { @class = "form-control", @placeholder = "Enter Phone Number", @required = "required", data_rule_phone = "true" })
+                                    @Html.ValidationMessageFor(x => x.Phone, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(x => x.Address)
+                            @Html.TextAreaFor(x => x.Address, new { @class = "form-control", @rows = "3", @placeholder = "Address" })
+                            @Html.ValidationMessageFor(x => x.Address, "", new { @class = "text-danger" })
+                        </div>
+                        <div class="form-group">
+                            @Html.LabelFor(x => x.Notes)
+                            @Html.TextAreaFor(x => x.Notes, new { @class = "form-control", @rows = "3", @placeholder = "Notes" })
+                            @Html.ValidationMessageFor(x => x.Notes, "", new { @class = "text-danger" })
+                        </div>
+
+                        <div class="row">
+                            <div class="col-lg-4 col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(x => x.MCAZLicence)
+                                    @Html.TextBoxFor(x => x.MCAZLicence,  new { @class = "form-control", @placeholder = "MCAZ Licence", data_rule_mcaz = "true" })
+                                    @Html.ValidationMessageFor(x => x.MCAZLicence, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-lg-4 col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(x => x.BusinessPartnerNumber)
+                                    @Html.TextBoxFor(x => x.BusinessPartnerNumber,  new { @class = "form-control", @placeholder = "Business Partner Number" })
+                                    @Html.ValidationMessageFor(x => x.BusinessPartnerNumber, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-lg-4 col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(x => x.VATNumber)
+                                    @Html.TextBoxFor(x => x.VATNumber,  new { @class = "form-control", @placeholder = "VAT Number", data_rule_vat = "true" })
+                                    @Html.ValidationMessageFor(x => x.VATNumber, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-purple btn-lg">
+                                Update Supplier
+                            </button>
+                            <a href="@Url.Action("Index", "Supplier")" class="btn btn-default btn-lg">
+                                Cancel
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section scripts {
+    <script type="text/javascript">
+        $(document).ready(function() {
+            // Enable real-time validation
+            if (window.Pharma263) {
+                window.Pharma263.enableRealtimeValidation($('.ajax-form'));
+            }
+
+            // Auto-format supplier name to title case
+            $('#Name').on('blur', function() {
+                const value = $(this).val();
+                if (value) {
+                    $(this).val(value.toLowerCase().replace(/\b\w/g, l => l.toUpperCase()));
+                }
+            });
+
+            // Validate business partner number format
+            $('#BusinessPartnerNumber').on('blur', function() {
+                const value = $(this).val().toUpperCase();
+                $(this).val(value);
+            });
+
+            // Validate and format license numbers
+            $('#MCAZLicence').on('blur', function() {
+                const value = $(this).val().toUpperCase();
+                $(this).val(value);
+                
+                if (value && window.Pharma263Utils) {
+                    if (!window.Pharma263Utils.validateLicense(value, 'MCAZ')) {
+                        if (window.Pharma263) {
+                            window.Pharma263.showToast('Please check MCAZ license format', 'warning');
+                        }
+                    }
+                }
+            });
+
+            // Validate VAT number
+            $('#VATNumber').on('blur', function() {
+                const value = $(this).val().toUpperCase();
+                $(this).val(value);
+                
+                if (value && window.Pharma263Utils) {
+                    if (!window.Pharma263Utils.validateLicense(value, 'VAT')) {
+                        if (window.Pharma263) {
+                            window.Pharma263.showToast('Please check VAT number format', 'warning');
+                        }
+                    }
+                }
+            });
+
+            // Auto-format addresses
+            $('#Address').on('blur', function() {
+                const value = $(this).val();
+                if (value) {
+                    // Capitalize first letter of each line
+                    const formatted = value.split('\n').map(line => 
+                        line.charAt(0).toUpperCase() + line.slice(1)
+                    ).join('\n');
+                    $(this).val(formatted);
+                }
+            });
+
+            // Success callback for form submission
+            $(document).on('ajaxSuccess', '.ajax-form', function(event, xhr, settings) {
+                if (settings.url.includes('EditSupplier')) {
+                    console.log('Supplier updated successfully');
+                }
+            });
+        });
+    </script>
+}

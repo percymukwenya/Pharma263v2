@@ -1,0 +1,18 @@
+﻿using System;
+using System.ComponentModel.DataAnnotations;
+
+namespace Pharma263.Integration.Api.Models.Request
+{
+    public class UpdateStockRequest
+    {
+        public int Id { get; set; }
+        public int MedicineId { get; set; }
+        public string MedicineName { get; set; }
+        public DateTimeOffset ExpiryDate { get; set; }
+        public string BatchNo { get; set; }
+        public double BuyingPrice { get; set; }
+        public double SellingPrice { get; set; }
+
+        public int TotalQuantity { get; set; }
+    }
+}

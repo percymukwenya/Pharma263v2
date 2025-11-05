@@ -1,0 +1,1290 @@
+﻿@{
+    ViewData["Title"] = "Supplier Performance Analytics";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="dashboard-header">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col">
+                <h1 class="dashboard-title">
+                    <i class="fas fa-handshake text-primary me-3"></i>
+                    Supplier Performance Analytics
+                </h1>
+                <p class="dashboard-subtitle">Comprehensive supplier risk assessment, performance scoring, and relationship optimization</p>
+            </div>
+            <div class="col-auto">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-primary" onclick="refreshAllData()">
+                        <i class="fas fa-sync-alt me-2"></i>Refresh Data
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="exportSupplierReport()">
+                        <i class="fas fa-download me-2"></i>Export
+                    </button>
+                    <button type="button" class="btn btn-outline-info" onclick="generateRiskReport()">
+                        <i class="fas fa-shield-alt me-2"></i>Risk Report
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <!-- Supplier Overview KPIs -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card kpi-card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="kpi-icon bg-primary bg-opacity-10 text-primary rounded-circle me-3">
+                            <i class="fas fa-truck"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted mb-1">Active Suppliers</h6>
+                            <h3 class="mb-0" id="totalSuppliers">-</h3>
+                            <small class="text-success">
+                                <i class="fas fa-arrow-up me-1"></i>
+                                <span id="supplierGrowth">-</span>% vs last quarter
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card kpi-card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="kpi-icon bg-success bg-opacity-10 text-success rounded-circle me-3">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted mb-1">Avg Performance Score</h6>
+                            <h3 class="mb-0" id="avgPerformanceScore">-</h3>
+                            <small class="text-success">
+                                <i class="fas fa-arrow-up me-1"></i>
+                                <span id="performanceImprovement">-</span>% improvement
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card kpi-card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="kpi-icon bg-warning bg-opacity-10 text-warning rounded-circle me-3">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted mb-1">High Risk Suppliers</h6>
+                            <h3 class="mb-0" id="highRiskSuppliers">-</h3>
+                            <small class="text-danger">
+                                <i class="fas fa-arrow-down me-1"></i>
+                                <span id="riskReduction">-</span>% reduction
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card kpi-card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="kpi-icon bg-info bg-opacity-10 text-info rounded-circle me-3">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted mb-1">On-Time Delivery</h6>
+                            <h3 class="mb-0" id="onTimeDelivery">-</h3>
+                            <small class="text-info">
+                                <i class="fas fa-equals me-1"></i>
+                                <span id="deliveryChange">-</span>% industry avg
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Tabs -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom-0 pt-4">
+                    <ul class="nav nav-tabs card-header-tabs" id="supplierTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="performance-tab" data-bs-toggle="tab" data-bs-target="#performance" type="button" role="tab">
+                                <i class="fas fa-tachometer-alt me-2"></i>Performance Dashboard
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="risk-assessment-tab" data-bs-toggle="tab" data-bs-target="#risk-assessment" type="button" role="tab">
+                                <i class="fas fa-shield-alt me-2"></i>Risk Assessment
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="quality-metrics-tab" data-bs-toggle="tab" data-bs-target="#quality-metrics" type="button" role="tab">
+                                <i class="fas fa-award me-2"></i>Quality Metrics
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="delivery-analysis-tab" data-bs-toggle="tab" data-bs-target="#delivery-analysis" type="button" role="tab">
+                                <i class="fas fa-shipping-fast me-2"></i>Delivery Analysis
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="relationship-tab" data-bs-toggle="tab" data-bs-target="#relationship" type="button" role="tab">
+                                <i class="fas fa-users me-2"></i>Relationship Management
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content" id="supplierTabContent">
+                        <!-- Performance Dashboard Tab -->
+                        <div class="tab-pane fade show active" id="performance" role="tabpanel">
+                            <div class="row mb-4">
+                                <div class="col-lg-8">
+                                    <div class="chart-container">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h5 class="chart-title">Supplier Performance Overview</h5>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <input type="radio" class="btn-check" name="performanceView" id="performanceScatter" autocomplete="off" checked>
+                                                <label class="btn btn-outline-primary" for="performanceScatter">Scatter Plot</label>
+                                                <input type="radio" class="btn-check" name="performanceView" id="performanceBar" autocomplete="off">
+                                                <label class="btn btn-outline-primary" for="performanceBar">Bar Chart</label>
+                                            </div>
+                                        </div>
+                                        <canvas id="performanceOverviewChart" style="max-height: 400px;"></canvas>
+                                    </div>
+                                </div>
+                                <div class="col-lg-4">
+                                    <div class="performance-summary">
+                                        <h6 class="mb-3">Performance Categories</h6>
+                                        <div class="performance-category mb-3">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="category-indicator bg-success me-2"></div>
+                                                <strong class="text-success">Excellent (90-100)</strong>
+                                            </div>
+                                            <div class="d-flex justify-content-between">
+                                                <span class="small">Suppliers</span>
+                                                <span class="fw-bold" id="excellentSuppliers">23</span>
+                                            </div>
+                                        </div>
+                                        <div class="performance-category mb-3">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="category-indicator bg-primary me-2"></div>
+                                                <strong class="text-primary">Good (80-89)</strong>
+                                            </div>
+                                            <div class="d-flex justify-content-between">
+                                                <span class="small">Suppliers</span>
+                                                <span class="fw-bold" id="goodSuppliers">45</span>
+                                            </div>
+                                        </div>
+                                        <div class="performance-category mb-3">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="category-indicator bg-warning me-2"></div>
+                                                <strong class="text-warning">Average (70-79)</strong>
+                                            </div>
+                                            <div class="d-flex justify-content-between">
+                                                <span class="small">Suppliers</span>
+                                                <span class="fw-bold" id="averageSuppliers">28</span>
+                                            </div>
+                                        </div>
+                                        <div class="performance-category">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="category-indicator bg-danger me-2"></div>
+                                                <strong class="text-danger">Poor (&lt;70)</strong>
+                                            </div>
+                                            <div class="d-flex justify-content-between">
+                                                <span class="small">Suppliers</span>
+                                                <span class="fw-bold" id="poorSuppliers">12</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Top Suppliers Table -->
+                            <div class="mt-4">
+                                <h6 class="mb-3">Top Performing Suppliers</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Supplier</th>
+                                                <th>Performance Score</th>
+                                                <th>Quality Rating</th>
+                                                <th>Delivery Performance</th>
+                                                <th>Cost Efficiency</th>
+                                                <th>Risk Level</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="topSuppliersTable">
+                                            <!-- Data will be populated by JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Risk Assessment Tab -->
+                        <div class="tab-pane fade" id="risk-assessment" role="tabpanel">
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <div class="chart-container mb-4">
+                                        <h5 class="chart-title mb-3">Risk Distribution Matrix</h5>
+                                        <canvas id="riskMatrixChart" style="max-height: 350px;"></canvas>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="chart-container mb-4">
+                                        <h5 class="chart-title mb-3">Risk Factors Analysis</h5>
+                                        <canvas id="riskFactorsChart" style="max-height: 350px;"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-lg-8">
+                                    <div class="risk-heatmap">
+                                        <h6 class="mb-3">Supplier Risk Heatmap</h6>
+                                        <div class="heatmap-grid" id="riskHeatmap">
+                                            <!-- Risk heatmap will be generated by JavaScript -->
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-4">
+                                    <div class="risk-alerts">
+                                        <h6 class="mb-3">Risk Alerts</h6>
+                                        <div class="alert alert-danger d-flex align-items-center mb-3">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>
+                                            <div>
+                                                <strong>Critical Risk</strong><br>
+                                                <small>3 suppliers require immediate attention</small>
+                                            </div>
+                                        </div>
+                                        <div class="alert alert-warning d-flex align-items-center mb-3">
+                                            <i class="fas fa-warning me-2"></i>
+                                            <div>
+                                                <strong>High Risk</strong><br>
+                                                <small>12 suppliers need monitoring</small>
+                                            </div>
+                                        </div>
+                                        <div class="alert alert-info d-flex align-items-center">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            <div>
+                                                <strong>Medium Risk</strong><br>
+                                                <small>25 suppliers under review</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Risk Mitigation Strategies -->
+                            <div class="mt-4">
+                                <h6 class="mb-3">Risk Mitigation Strategies</h6>
+                                <div class="row">
+                                    <div class="col-lg-4">
+                                        <div class="mitigation-card p-3 border rounded h-100">
+                                            <div class="d-flex align-items-center mb-3">
+                                                <i class="fas fa-users text-primary me-2"></i>
+                                                <strong>Supplier Diversification</strong>
+                                            </div>
+                                            <p class="small mb-0">Reduce dependency on single suppliers by developing alternative sources</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <div class="mitigation-card p-3 border rounded h-100">
+                                            <div class="d-flex align-items-center mb-3">
+                                                <i class="fas fa-shield-alt text-success me-2"></i>
+                                                <strong>Contract Optimization</strong>
+                                            </div>
+                                            <p class="small mb-0">Implement robust SLAs and penalty clauses for risk mitigation</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <div class="mitigation-card p-3 border rounded h-100">
+                                            <div class="d-flex align-items-center mb-3">
+                                                <i class="fas fa-eye text-info me-2"></i>
+                                                <strong>Enhanced Monitoring</strong>
+                                            </div>
+                                            <p class="small mb-0">Real-time tracking and early warning systems for risk indicators</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quality Metrics Tab -->
+                        <div class="tab-pane fade" id="quality-metrics" role="tabpanel">
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <div class="chart-container mb-4">
+                                        <h5 class="chart-title mb-3">Quality Score Trends</h5>
+                                        <canvas id="qualityTrendChart" style="max-height: 300px;"></canvas>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="chart-container mb-4">
+                                        <h5 class="chart-title mb-3">Defect Rate Analysis</h5>
+                                        <canvas id="defectRateChart" style="max-height: 300px;"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-lg-8">
+                                    <div class="chart-container">
+                                        <h5 class="chart-title mb-3">Quality Certification Status</h5>
+                                        <canvas id="certificationChart" style="max-height: 300px;"></canvas>
+                                    </div>
+                                </div>
+                                <div class="col-lg-4">
+                                    <div class="quality-insights">
+                                        <h6 class="mb-3">Quality Insights</h6>
+                                        <div class="insight-metric p-3 mb-3 bg-light rounded">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <i class="fas fa-certificate text-success me-2"></i>
+                                                <strong>ISO Certified</strong>
+                                            </div>
+                                            <div class="d-flex justify-content-between">
+                                                <span class="small">Suppliers</span>
+                                                <span class="fw-bold text-success" id="isoCertified">89%</span>
+                                            </div>
+                                        </div>
+                                        <div class="insight-metric p-3 mb-3 bg-light rounded">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <i class="fas fa-check-circle text-primary me-2"></i>
+                                                <strong>FDA Approved</strong>
+                                            </div>
+                                            <div class="d-flex justify-content-between">
+                                                <span class="small">Suppliers</span>
+                                                <span class="fw-bold text-primary" id="fdaApproved">76%</span>
+                                            </div>
+                                        </div>
+                                        <div class="insight-metric p-3 bg-light rounded">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                                                <strong>Avg Defect Rate</strong>
+                                            </div>
+                                            <div class="d-flex justify-content-between">
+                                                <span class="small">Per Batch</span>
+                                                <span class="fw-bold text-warning" id="avgDefectRate">0.23%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Delivery Analysis Tab -->
+                        <div class="tab-pane fade" id="delivery-analysis" role="tabpanel">
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <div class="chart-container mb-4">
+                                        <h5 class="chart-title mb-3">On-Time Delivery Performance</h5>
+                                        <canvas id="deliveryPerformanceChart" style="max-height: 300px;"></canvas>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="chart-container mb-4">
+                                        <h5 class="chart-title mb-3">Lead Time Analysis</h5>
+                                        <canvas id="leadTimeChart" style="max-height: 300px;"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-lg-8">
+                                    <div class="chart-container">
+                                        <h5 class="chart-title mb-3">Delivery Reliability by Supplier Category</h5>
+                                        <canvas id="deliveryReliabilityChart" style="max-height: 300px;"></canvas>
+                                    </div>
+                                </div>
+                                <div class="col-lg-4">
+                                    <div class="delivery-metrics">
+                                        <h6 class="mb-3">Delivery Metrics</h6>
+                                        <div class="metric-item mb-3">
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <span class="small">Perfect Order Rate</span>
+                                                <span class="small fw-bold text-success" id="perfectOrderRate">94.2%</span>
+                                            </div>
+                                            <div class="progress" style="height: 4px;">
+                                                <div class="progress-bar bg-success" style="width: 94%"></div>
+                                            </div>
+                                        </div>
+                                        <div class="metric-item mb-3">
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <span class="small">Avg Lead Time</span>
+                                                <span class="small fw-bold text-primary" id="avgLeadTime">12.5 days</span>
+                                            </div>
+                                            <div class="progress" style="height: 4px;">
+                                                <div class="progress-bar bg-primary" style="width: 75%"></div>
+                                            </div>
+                                        </div>
+                                        <div class="metric-item">
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <span class="small">Emergency Orders</span>
+                                                <span class="small fw-bold text-warning" id="emergencyOrders">3.1%</span>
+                                            </div>
+                                            <div class="progress" style="height: 4px;">
+                                                <div class="progress-bar bg-warning" style="width: 31%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Relationship Management Tab -->
+                        <div class="tab-pane fade" id="relationship" role="tabpanel">
+                            <div class="row">
+                                <div class="col-lg-8">
+                                    <div class="chart-container mb-4">
+                                        <h5 class="chart-title mb-3">Supplier Relationship Portfolio</h5>
+                                        <canvas id="relationshipPortfolioChart" style="max-height: 350px;"></canvas>
+                                    </div>
+                                </div>
+                                <div class="col-lg-4">
+                                    <div class="relationship-strategy">
+                                        <h6 class="mb-3">Relationship Strategies</h6>
+                                        <div class="strategy-level mb-3">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="level-indicator bg-success me-2"></div>
+                                                <strong class="text-success">Strategic Partners</strong>
+                                            </div>
+                                            <small class="text-muted">Long-term collaboration, innovation focus</small>
+                                        </div>
+                                        <div class="strategy-level mb-3">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="level-indicator bg-primary me-2"></div>
+                                                <strong class="text-primary">Preferred Suppliers</strong>
+                                            </div>
+                                            <small class="text-muted">Priority ordering, volume discounts</small>
+                                        </div>
+                                        <div class="strategy-level mb-3">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="level-indicator bg-warning me-2"></div>
+                                                <strong class="text-warning">Transactional</strong>
+                                            </div>
+                                            <small class="text-muted">Cost-focused, competitive bidding</small>
+                                        </div>
+                                        <div class="strategy-level">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="level-indicator bg-danger me-2"></div>
+                                                <strong class="text-danger">Exit Strategy</strong>
+                                            </div>
+                                            <small class="text-muted">Performance issues, seeking alternatives</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="relationship-actions">
+                                        <h6 class="mb-3">Relationship Optimization Actions</h6>
+                                        <div class="row">
+                                            <div class="col-lg-3">
+                                                <div class="action-card p-3 border rounded text-center h-100">
+                                                    <i class="fas fa-handshake text-success fa-2x mb-3"></i>
+                                                    <h6>Strategic Reviews</h6>
+                                                    <p class="small mb-3">Quarterly business reviews with top suppliers</p>
+                                                    <button class="btn btn-sm btn-outline-success">Schedule</button>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-3">
+                                                <div class="action-card p-3 border rounded text-center h-100">
+                                                    <i class="fas fa-lightbulb text-primary fa-2x mb-3"></i>
+                                                    <h6>Innovation Programs</h6>
+                                                    <p class="small mb-3">Collaborative innovation initiatives</p>
+                                                    <button class="btn btn-sm btn-outline-primary">Launch</button>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-3">
+                                                <div class="action-card p-3 border rounded text-center h-100">
+                                                    <i class="fas fa-graduation-cap text-info fa-2x mb-3"></i>
+                                                    <h6>Training Programs</h6>
+                                                    <p class="small mb-3">Supplier capability development</p>
+                                                    <button class="btn btn-sm btn-outline-info">Enroll</button>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-3">
+                                                <div class="action-card p-3 border rounded text-center h-100">
+                                                    <i class="fas fa-search text-warning fa-2x mb-3"></i>
+                                                    <h6>Audits & Reviews</h6>
+                                                    <p class="small mb-3">Performance and compliance audits</p>
+                                                    <button class="btn btn-sm btn-outline-warning">Schedule</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.dashboard-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+.dashboard-title {
+    font-size: 2.5rem;
+    font-weight: 300;
+    margin: 0;
+}
+
+.dashboard-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin: 0.5rem 0 0 0;
+}
+
+.kpi-card {
+    transition: transform 0.2s ease;
+}
+
+.kpi-card:hover {
+    transform: translateY(-2px);
+}
+
+.kpi-icon {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.chart-container {
+    position: relative;
+}
+
+.chart-title {
+    color: #333;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.nav-tabs .nav-link {
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: #6c757d;
+    font-weight: 500;
+    padding: 1rem 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.nav-tabs .nav-link.active {
+    background: none;
+    border-bottom-color: #007bff;
+    color: #007bff;
+}
+
+.nav-tabs .nav-link:hover {
+    border-bottom-color: #007bff;
+    color: #007bff;
+}
+
+.category-indicator, .level-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+}
+
+.performance-category, .strategy-level {
+    padding: 0.75rem;
+    border-left: 3px solid #e9ecef;
+    margin-bottom: 0.5rem;
+    transition: border-color 0.3s ease;
+}
+
+.performance-category:hover, .strategy-level:hover {
+    border-left-color: #007bff;
+    background-color: #f8f9fa;
+}
+
+.heatmap-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.heatmap-cell {
+    padding: 1rem;
+    text-align: center;
+    border-radius: 6px;
+    color: white;
+    font-weight: 600;
+    transition: transform 0.2s ease;
+}
+
+.heatmap-cell:hover {
+    transform: scale(1.05);
+}
+
+.heatmap-cell.low-risk {
+    background: #28a745;
+}
+
+.heatmap-cell.medium-risk {
+    background: #ffc107;
+    color: #212529;
+}
+
+.heatmap-cell.high-risk {
+    background: #dc3545;
+}
+
+.heatmap-cell.critical-risk {
+    background: #6f0000;
+}
+
+.mitigation-card, .action-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mitigation-card:hover, .action-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.insight-metric, .metric-item {
+    transition: transform 0.2s ease;
+}
+
+.insight-metric:hover, .metric-item:hover {
+    transform: translateY(-1px);
+}
+
+.table th {
+    font-weight: 600;
+    color: #495057;
+    border-top: none;
+}
+
+.progress {
+    background-color: #e9ecef;
+}
+
+@@media (max-width: 768px) {
+    .dashboard-title {
+        font-size: 2rem;
+    }
+    
+    .nav-tabs .nav-link {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
+    
+    .btn-group {
+        flex-direction: column;
+    }
+    
+    .heatmap-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Supplier Performance Dashboard
+    initializeSupplierPerformance();
+    
+    // Tab change handlers
+    document.querySelectorAll('#supplierTabs button[data-bs-toggle="tab"]').forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function(event) {
+            const targetId = event.target.getAttribute('data-bs-target').substring(1);
+            loadTabData(targetId);
+        });
+    });
+    
+    // Load initial data
+    loadTabData('performance');
+});
+
+function initializeSupplierPerformance() {
+    // Load KPI data
+    loadSupplierKPIs();
+}
+
+async function loadSupplierKPIs() {
+    try {
+        const response = await fetch('@Url.Action("SupplierPerformanceData", "Report")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            
+            if (data.error) {
+                console.error('Error loading supplier data:', data.error);
+                return;
+            }
+
+            // Update KPI values with real data
+            document.getElementById('totalSuppliers').textContent = data.kpis.totalSuppliers;
+            document.getElementById('supplierGrowth').textContent = data.kpis.supplierGrowth;
+            document.getElementById('avgPerformanceScore').textContent = data.kpis.avgPerformanceScore;
+            document.getElementById('performanceImprovement').textContent = data.kpis.performanceImprovement;
+            document.getElementById('highRiskSuppliers').textContent = data.kpis.highRiskSuppliers;
+            document.getElementById('riskReduction').textContent = data.kpis.riskReduction;
+            document.getElementById('onTimeDelivery').textContent = data.kpis.onTimeDelivery + '%';
+            document.getElementById('deliveryChange').textContent = data.kpis.deliveryChange;
+
+            // Update performance category counts
+            document.getElementById('excellentSuppliers').textContent = data.performanceCategories.excellent;
+            document.getElementById('goodSuppliers').textContent = data.performanceCategories.good;
+            document.getElementById('averageSuppliers').textContent = data.performanceCategories.average;
+            document.getElementById('poorSuppliers').textContent = data.performanceCategories.poor;
+
+            // Store data globally for use in charts
+            window.supplierData = data;
+        }
+    } catch (error) {
+        console.error('Error loading supplier KPIs:', error);
+        // Fall back to simulated data
+        document.getElementById('totalSuppliers').textContent = '108';
+        document.getElementById('supplierGrowth').textContent = '5.2';
+        document.getElementById('avgPerformanceScore').textContent = '82.4';
+        document.getElementById('performanceImprovement').textContent = '7.1';
+        document.getElementById('highRiskSuppliers').textContent = '15';
+        document.getElementById('riskReduction').textContent = '23.5';
+        document.getElementById('onTimeDelivery').textContent = '94.7%';
+        document.getElementById('deliveryChange').textContent = '2.3';
+    }
+}
+
+function loadTabData(tabId) {
+    switch(tabId) {
+        case 'performance':
+            loadPerformanceData();
+            break;
+        case 'risk-assessment':
+            loadRiskAssessmentData();
+            break;
+        case 'quality-metrics':
+            loadQualityMetricsData();
+            break;
+        case 'delivery-analysis':
+            loadDeliveryAnalysisData();
+            break;
+        case 'relationship':
+            loadRelationshipData();
+            break;
+    }
+}
+
+function loadPerformanceData() {
+    // Performance Overview Scatter Chart
+    const performanceCtx = document.getElementById('performanceOverviewChart').getContext('2d');
+    new Chart(performanceCtx, {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: 'Excellent (90-100)',
+                data: generateScatterData(23, 90, 100),
+                backgroundColor: '#28a745',
+                borderColor: '#28a745'
+            }, {
+                label: 'Good (80-89)',
+                data: generateScatterData(45, 80, 89),
+                backgroundColor: '#007bff',
+                borderColor: '#007bff'
+            }, {
+                label: 'Average (70-79)',
+                data: generateScatterData(28, 70, 79),
+                backgroundColor: '#ffc107',
+                borderColor: '#ffc107'
+            }, {
+                label: 'Poor (<70)',
+                data: generateScatterData(12, 50, 69),
+                backgroundColor: '#dc3545',
+                borderColor: '#dc3545'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    display: true,
+                    title: {
+                        display: true,
+                        text: 'Cost Efficiency Score'
+                    },
+                    min: 40,
+                    max: 100
+                },
+                y: {
+                    display: true,
+                    title: {
+                        display: true,
+                        text: 'Overall Performance Score'
+                    },
+                    min: 40,
+                    max: 100
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `Performance: ${context.parsed.y}, Cost Efficiency: ${context.parsed.x}`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Load top suppliers table
+    loadTopSuppliersTable();
+}
+
+function generateScatterData(count, minScore, maxScore) {
+    const data = [];
+    for (let i = 0; i < count; i++) {
+        data.push({
+            x: Math.random() * 60 + 40, // Cost efficiency (40-100)
+            y: Math.random() * (maxScore - minScore) + minScore // Performance score
+        });
+    }
+    return data;
+}
+
+function loadTopSuppliersTable() {
+    // Use real data if available, otherwise fall back to mock data
+    const suppliers = window.supplierData?.topSuppliers || [
+        { name: 'PharmaCorp Ltd', performance: 96, quality: 98, delivery: 95, cost: 88, risk: 'Low', riskColor: 'success' },
+        { name: 'MedSupply Inc', performance: 94, quality: 92, delivery: 97, cost: 85, risk: 'Low', riskColor: 'success' },
+        { name: 'Global Pharma', performance: 91, quality: 89, delivery: 93, cost: 92, risk: 'Low', riskColor: 'success' },
+        { name: 'BioTech Solutions', performance: 89, quality: 91, delivery: 88, cost: 87, risk: 'Medium', riskColor: 'warning' },
+        { name: 'HealthCare Plus', performance: 87, quality: 85, delivery: 89, cost: 90, risk: 'Medium', riskColor: 'warning' }
+    ];
+    
+    const tableBody = document.getElementById('topSuppliersTable');
+    tableBody.innerHTML = suppliers.map(supplier => `
+        <tr>
+            <td><strong>${supplier.name}</strong></td>
+            <td>
+                <div class="d-flex align-items-center">
+                    <span class="me-2">${supplier.performance}</span>
+                    <div class="progress flex-grow-1" style="height: 6px;">
+                        <div class="progress-bar bg-primary" style="width: ${supplier.performance}%"></div>
+                    </div>
+                </div>
+            </td>
+            <td>${supplier.quality}%</td>
+            <td>${supplier.delivery}%</td>
+            <td>${supplier.cost}%</td>
+            <td><span class="badge bg-${supplier.riskColor}">${supplier.risk}</span></td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary" onclick="viewSupplierDetails('${supplier.name}')">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function loadRiskAssessmentData() {
+    // Use real data if available, otherwise fall back to mock data
+    const riskData = window.supplierData?.riskDistribution || { lowRisk: 68, mediumRisk: 25, highRisk: 12, criticalRisk: 3 };
+    
+    // Risk Matrix Chart
+    const riskCtx = document.getElementById('riskMatrixChart').getContext('2d');
+    new Chart(riskCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Low Risk', 'Medium Risk', 'High Risk', 'Critical Risk'],
+            datasets: [{
+                data: [riskData.lowRisk, riskData.mediumRisk, riskData.highRisk, riskData.criticalRisk],
+                backgroundColor: ['#28a745', '#ffc107', '#fd7e14', '#dc3545'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    
+    // Risk Factors Chart
+    const factorsCtx = document.getElementById('riskFactorsChart').getContext('2d');
+    new Chart(factorsCtx, {
+        type: 'horizontalBar',
+        data: {
+            labels: ['Financial Stability', 'Delivery Performance', 'Quality Issues', 'Regulatory Compliance', 'Geographic Risk'],
+            datasets: [{
+                label: 'Risk Impact Score',
+                data: [78, 65, 72, 58, 45],
+                backgroundColor: '#dc3545'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            }
+        }
+    });
+    
+    // Generate risk heatmap
+    generateRiskHeatmap();
+}
+
+function generateRiskHeatmap() {
+    const heatmapData = [
+        { name: 'PharmaCorp', risk: 'low-risk', score: 15 },
+        { name: 'MedSupply', risk: 'low-risk', score: 22 },
+        { name: 'Global Pharma', risk: 'medium-risk', score: 45 },
+        { name: 'BioTech Sol', risk: 'medium-risk', score: 52 },
+        { name: 'HealthCare+', risk: 'high-risk', score: 68 },
+        { name: 'ChemCorp', risk: 'high-risk', score: 71 },
+        { name: 'GenericMed', risk: 'critical-risk', score: 85 },
+        { name: 'QuickSupply', risk: 'critical-risk', score: 92 }
+    ];
+    
+    const heatmapContainer = document.getElementById('riskHeatmap');
+    heatmapContainer.innerHTML = heatmapData.map(item => `
+        <div class="heatmap-cell ${item.risk}" title="${item.name}: Risk Score ${item.score}">
+            <div style="font-size: 0.8rem;">${item.name}</div>
+            <div style="font-size: 1.2rem; font-weight: bold;">${item.score}</div>
+        </div>
+    `).join('');
+}
+
+function loadQualityMetricsData() {
+    // Quality Trend Chart
+    const qualityCtx = document.getElementById('qualityTrendChart').getContext('2d');
+    new Chart(qualityCtx, {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+                label: 'Average Quality Score',
+                data: [85, 87, 89, 88, 91, 92],
+                borderColor: '#28a745',
+                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    min: 80,
+                    max: 100
+                }
+            }
+        }
+    });
+    
+    // Defect Rate Chart
+    const defectCtx = document.getElementById('defectRateChart').getContext('2d');
+    new Chart(defectCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+                label: 'Defect Rate (%)',
+                data: [0.28, 0.25, 0.22, 0.24, 0.19, 0.23],
+                backgroundColor: '#dc3545',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 0.5
+                }
+            }
+        }
+    });
+    
+    // Certification Chart
+    const certCtx = document.getElementById('certificationChart').getContext('2d');
+    new Chart(certCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['ISO Certified', 'FDA Approved', 'GMP Compliant', 'Other Certifications'],
+            datasets: [{
+                data: [89, 76, 82, 65],
+                backgroundColor: ['#28a745', '#007bff', '#ffc107', '#6c757d'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+function loadDeliveryAnalysisData() {
+    // Delivery Performance Chart
+    const deliveryCtx = document.getElementById('deliveryPerformanceChart').getContext('2d');
+    new Chart(deliveryCtx, {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+                label: 'On-Time Delivery %',
+                data: [92, 94, 96, 93, 95, 94.7],
+                borderColor: '#007bff',
+                backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    min: 85,
+                    max: 100
+                }
+            }
+        }
+    });
+    
+    // Lead Time Chart
+    const leadTimeCtx = document.getElementById('leadTimeChart').getContext('2d');
+    new Chart(leadTimeCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Antibiotics', 'Pain Relief', 'Vitamins', 'Chronic Care', 'OTC'],
+            datasets: [{
+                label: 'Average Lead Time (days)',
+                data: [15, 8, 12, 18, 5],
+                backgroundColor: '#ffc107',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+    
+    // Delivery Reliability Chart
+    const reliabilityCtx = document.getElementById('deliveryReliabilityChart').getContext('2d');
+    new Chart(reliabilityCtx, {
+        type: 'radar',
+        data: {
+            labels: ['Critical Supplies', 'Standard Items', 'Bulk Orders', 'Emergency Orders', 'Scheduled Deliveries'],
+            datasets: [{
+                label: 'Reliability Score',
+                data: [95, 88, 92, 75, 96],
+                borderColor: '#28a745',
+                backgroundColor: 'rgba(40, 167, 69, 0.2)',
+                pointBackgroundColor: '#28a745'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            }
+        }
+    });
+}
+
+function loadRelationshipData() {
+    // Relationship Portfolio Chart
+    const relationshipCtx = document.getElementById('relationshipPortfolioChart').getContext('2d');
+    new Chart(relationshipCtx, {
+        type: 'bubble',
+        data: {
+            datasets: [{
+                label: 'Strategic Partners',
+                data: [{x: 90, y: 85, r: 20}],
+                backgroundColor: 'rgba(40, 167, 69, 0.6)',
+                borderColor: '#28a745'
+            }, {
+                label: 'Preferred Suppliers',
+                data: [{x: 75, y: 80, r: 15}, {x: 85, y: 75, r: 18}],
+                backgroundColor: 'rgba(0, 123, 255, 0.6)',
+                borderColor: '#007bff'
+            }, {
+                label: 'Transactional',
+                data: [{x: 60, y: 70, r: 12}, {x: 65, y: 65, r: 10}],
+                backgroundColor: 'rgba(255, 193, 7, 0.6)',
+                borderColor: '#ffc107'
+            }, {
+                label: 'Exit Strategy',
+                data: [{x: 45, y: 50, r: 8}],
+                backgroundColor: 'rgba(220, 53, 69, 0.6)',
+                borderColor: '#dc3545'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    display: true,
+                    title: {
+                        display: true,
+                        text: 'Strategic Value'
+                    },
+                    min: 30,
+                    max: 100
+                },
+                y: {
+                    display: true,
+                    title: {
+                        display: true,
+                        text: 'Performance Score'
+                    },
+                    min: 30,
+                    max: 100
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: Performance ${context.parsed.y}, Strategic Value ${context.parsed.x}`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Utility functions
+function refreshAllData() {
+    showLoadingState();
+    setTimeout(() => {
+        loadSupplierKPIs();
+        const activeTab = document.querySelector('#supplierTabs .nav-link.active').getAttribute('data-bs-target').substring(1);
+        loadTabData(activeTab);
+        hideLoadingState();
+        showToast('Data refreshed successfully', 'success');
+    }, 1500);
+}
+
+function exportSupplierReport() {
+    showToast('Exporting supplier performance report...', 'info');
+    // Implementation for export functionality
+}
+
+function generateRiskReport() {
+    showToast('Generating comprehensive risk assessment report...', 'info');
+    // Implementation for risk report generation
+}
+
+function viewSupplierDetails(supplierName) {
+    showToast(`Loading details for ${supplierName}...`, 'info');
+    // Implementation for supplier detail view
+}
+
+function showLoadingState() {
+    // Add loading spinners to charts and tables
+    document.querySelectorAll('.chart-container, .table-responsive').forEach(el => {
+        el.style.opacity = '0.5';
+    });
+}
+
+function hideLoadingState() {
+    document.querySelectorAll('.chart-container, .table-responsive').forEach(el => {
+        el.style.opacity = '1';
+    });
+}
+
+function showToast(message, type) {
+    // Create and show Bootstrap toast notification
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-white bg-${type} border-0`;
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">${message}</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+    
+    setTimeout(() => {
+        document.body.removeChild(toast);
+    }, 5000);
+}
+</script>

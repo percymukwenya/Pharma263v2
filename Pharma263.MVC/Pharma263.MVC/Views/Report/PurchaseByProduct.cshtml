@@ -1,0 +1,73 @@
+﻿@model IEnumerable<Pharma263.MVC.Models.PurchaseByProductReportViewModel>
+
+<style>
+    .highlight {
+        color: #007bff; /* Change this to your desired text color */
+        font-weight: bold;
+    }
+</style>
+
+<h5 style="margin-top: 200px">Purchase By Product</h5>
+
+<form id="purchaseByProductForm">
+    Start Date: <input type="date" id="startDate" />
+    End Date: <input type="date" id="endDate" />
+    <br>
+    <label><input type="radio" name="exportOption" value="preview" checked> Preview</label>
+    <label><input type="radio" name="exportOption" value="csv"> CSV Export</label>
+    <label><input type="radio" name="exportOption" value="pdf"> PDF Export</label>
+    <br>
+    <button type="submit">Generate Report</button>
+    <a id="downloadCsvButton" style="display: none;" href="#">Download CSV</a>
+    <a id="downloadPdfButton" style="display: none;" href="#">Download PDF</a>
+</form>
+
+<div style="margin-left: 30px;" id="purchaseByProductResults">
+    <!-- The report preview or download link will be displayed here -->
+</div>
+
+@section scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Include jQuery UI library -->
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $("#purchaseByProductForm").submit(function (event) {
+                event.preventDefault();
+
+                var startDate = $("#startDate").val();
+                var endDate = $("#endDate").val();
+                var selectedExportOption = $("input[name='exportOption']:checked").val();
+
+                $.ajax({
+                    type: "POST",
+                    url: "@Url.Action("PurchaseByProduct", "Report")",
+                    data: { startDate: startDate, endDate: endDate, exportFormat: selectedExportOption },
+                    dataType: "html",
+                    success: function (data) {
+                        if (selectedExportOption === "preview") {
+                            $("#purchaseByProductResults").html(data);
+                        } else if (selectedExportOption === "csv") {
+                            // Show the download button
+                            $("#downloadCsvButton").show();
+
+                            // Set the button's href attribute to the CSV download action
+                            var downloadUrl = "@Url.Action("DownloadPurchaseByProductCSV", "Report")" + "?startDate=" + startDate + "&endDate=" + endDate;
+                            $("#downloadCsvButton").attr("href", downloadUrl);
+                        } else if (selectedExportOption === "pdf") {
+                            // Show the download button for PDF
+                            $("#downloadPdfButton").show();
+                            // Set the button's href attribute for PDF download
+                            var pdfDownloadUrl = "@Url.Action("DownloadPurchaseByProductPDF", "Report")" + "?startDate=" + startDate + "&endDate=" + endDate;
+                            $("#downloadPdfButton").attr("href", pdfDownloadUrl);
+                        }
+                    },
+                    error: function () {
+                        $("#purchaseByProductResults").html("An error occurred while fetching data.");
+                    }
+                });
+            });
+
+        });
+    </script>
+}

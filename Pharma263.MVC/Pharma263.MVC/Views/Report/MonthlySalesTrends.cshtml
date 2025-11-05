@@ -1,0 +1,192 @@
+﻿@model List<MonthlySalesTrendViewModel>
+@{
+    ViewData["Title"] = "Monthly Sales Trends";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Monthly Sales Trends</h2>
+        <a href="@Url.Action("Index", "Report")" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Reports
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Parameters Card -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Report Parameters</h5>
+                    <form id="reportForm">
+                        <div class="mb-3">
+                            <label for="startDate" class="form-label">Start Date</label>
+                            <input type="month" class="form-control" id="startDate" name="startDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="endDate" class="form-label">End Date</label>
+                            <input type="month" class="form-control" id="endDate" name="endDate" required>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="button" onclick="generateReport('preview')" class="btn btn-primary">
+                                <i class="fas fa-search me-2"></i>Generate Report
+                            </button>
+                            <button type="button" onclick="generateReport('pdf')" class="btn btn-secondary">
+                                <i class="fas fa-file-pdf me-2"></i>Export PDF
+                            </button>
+                            <button type="button" onclick="generateReport('csv')" class="btn btn-secondary">
+                                <i class="fas fa-file-csv me-2"></i>Export CSV
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Container -->
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div id="reportResults">
+                        <!-- Charts will be rendered here -->
+                        <canvas id="salesTrendChart" class="mb-4"></canvas>
+
+                        <!-- Summary Statistics -->
+                        <div class="row mb-4" id="summaryStats"></div>
+
+                        <!-- Detailed Data Table -->
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover" id="detailedData">
+                                <thead>
+                                    <tr>
+                                        <th>Month</th>
+                                        <th>Total Sales</th>
+                                        <th>Transactions</th>
+                                        <th>Avg Transaction</th>
+                                        <th>Growth %</th>
+                                        <th>Unique Customers</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        let salesChart;
+
+        function generateReport(format) {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+
+            if (!startDate || !endDate) {
+                alert('Please select both start and end dates');
+                return;
+            }
+
+            if (format === 'preview') {
+                $.post('@Url.Action("MonthlySalesTrends")',
+                    { startDate, endDate },
+                    function (data) {
+                        displayReport(data);
+                    });
+            } else if (format === 'pdf') {
+                window.location.href = `@Url.Action("DownloadMonthlySalesTrendsPDF")?startDate=${startDate}&endDate=${endDate}`;
+            } else if (format === 'csv') {
+                window.location.href = `@Url.Action("DownloadMonthlySalesTrendsCSV")?startDate=${startDate}&endDate=${endDate}`;
+            }
+        }
+
+        function displayReport(data) {
+            displaySummaryStats(data);
+            displayChart(data);
+            displayDetailedTable(data);
+        }
+
+        function displaySummaryStats(data) {
+            const totalSales = data.reduce((sum, item) => sum + item.totalSales, 0);
+            const avgTransactionValue = data.reduce((sum, item) => sum + item.averageTransactionValue, 0) / data.length;
+
+            const statsHtml = `
+                    <div class="col-md-4">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body">
+                                <h6>Total Sales</h6>
+                                <h3>$${totalSales.toLocaleString()}</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-success text-white">
+                            <div class="card-body">
+                                <h6>Avg Transaction</h6>
+                                <h3>$${avgTransactionValue.toLocaleString()}</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-info text-white">
+                            <div class="card-body">
+                                <h6>Growth Trend</h6>
+                                <h3>${data[data.length - 1].growthPercentage}%</h3>
+                            </div>
+                        </div>
+                    </div>`;
+
+            $('#summaryStats').html(statsHtml);
+        }
+
+        function displayChart(data) {
+            const ctx = document.getElementById('salesTrendChart').getContext('2d');
+
+            if (salesChart) {
+                salesChart.destroy();
+            }
+
+            salesChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(item => new Date(item.month).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })),
+                    datasets: [{
+                        label: 'Total Sales',
+                        data: data.map(item => item.totalSales),
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function displayDetailedTable(data) {
+            const tbody = $('#detailedData tbody');
+            tbody.empty();
+
+            data.forEach(item => {
+                tbody.append(`
+                        <tr>
+                            <td>${new Date(item.month).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</td>
+                            <td>$${item.totalSales.toLocaleString()}</td>
+                            <td>${item.totalTransactions}</td>
+                            <td>$${item.averageTransactionValue.toLocaleString()}</td>
+                            <td>${item.growthPercentage}%</td>
+                            <td>${item.uniqueCustomers}</td>
+                        </tr>
+                    `);
+            });
+        }
+    </script>
+}

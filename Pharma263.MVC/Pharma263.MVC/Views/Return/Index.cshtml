@@ -1,0 +1,166 @@
+﻿@model IEnumerable<Pharma263.MVC.DTOs.Returns.ReturnsDto>
+@{
+    ViewBag.Title = "Return List";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="wraper container-fluid">
+    <div class="page-title">
+        <h3 class="title">Returns Management</h3>
+        <div class="clearfix"></div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">
+                        <i class="fa fa-undo"></i> Return List
+                    </h3>
+                </div>
+                <div class="panel-body">
+                    @if (TempData["success"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissable">
+                            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                            <i class="fa fa-check"></i> @TempData["success"]
+                        </div>
+                    }
+                    @if (TempData["error"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissable">
+                            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                            <i class="fa fa-exclamation-triangle"></i> @TempData["error"]
+                        </div>
+                    }
+
+                    <div class="table-responsive">
+                        <table id="returnsTable" class="table table-hover table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Return ID</th>
+                                    <th>Sale ID</th>
+                                    <th>Medicine</th>
+                                    <th>Quantity</th>
+                                    <th>Return Reason</th>
+                                    <th>Destination</th>
+                                    <th>Status</th>
+                                    <th>Date Returned</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model)
+                                {
+                                    <tr>
+                                        <td><strong>#@item.Id</strong></td>
+                                        <td>
+                                            <a href="@Url.Action("Details", "Sale", new { id = item.SaleId })" class="text-primary">
+                                                #@item.SaleId
+                                            </a>
+                                        </td>
+                                        <td><strong>@item.MedicineName</strong></td>
+                                        <td>@item.Quantity</td>
+                                        <td>
+                                            @if (item.ReturnReason == "Expired Product")
+                                            {
+                                                <span class="label label-warning">@item.ReturnReason</span>
+                                            }
+                                            else if (item.ReturnReason == "Damaged")
+                                            {
+                                                <span class="label label-danger">@item.ReturnReason</span>
+                                            }
+                                            else if (item.ReturnReason == "Factory Recall")
+                                            {
+                                                <span class="label label-info">@item.ReturnReason</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="label label-default">@item.ReturnReason</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (item.ReturnDestination == "Stock Update")
+                                            {
+                                                <span class="label label-success">@item.ReturnDestination</span>
+                                            }
+                                            else if (item.ReturnDestination == "Quarantine")
+                                            {
+                                                <span class="label label-warning">@item.ReturnDestination</span>
+                                            }
+                                            else if (item.ReturnDestination == "Disposal")
+                                            {
+                                                <span class="label label-danger">@item.ReturnDestination</span>
+                                            }
+                                            else if (item.ReturnDestination == "Supplier")
+                                            {
+                                                <span class="label label-info">@item.ReturnDestination</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="label label-default">@item.ReturnDestination</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (item.ReturnStatus == "Decision Pending")
+                                            {
+                                                <span class="label label-warning">@item.ReturnStatus</span>
+                                            }
+                                            else if (item.ReturnStatus == "Quarantined")
+                                            {
+                                                <span class="label label-info">@item.ReturnStatus</span>
+                                            }
+                                            else if (item.ReturnStatus == "Disposed")
+                                            {
+                                                <span class="label label-danger">@item.ReturnStatus</span>
+                                            }
+                                            else if (item.ReturnStatus == "Returned To Supplier")
+                                            {
+                                                <span class="label label-primary">@item.ReturnStatus</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="label label-success">@item.ReturnStatus</span>
+                                            }
+                                        </td>
+                                        <td>@item.DateReturned.ToString("MMM dd, yyyy")</td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <button type="button" class="btn btn-purple dropdown-toggle btn-xs" data-toggle="dropdown" aria-expanded="true">
+                                                    actions <span class="caret"></span>
+                                                </button>
+                                                <ul class="dropdown-menu" role="menu">
+                                                    <li>
+                                                        <a href="@Url.Action("Details", "Return", new { id = item.Id })">
+                                                            <i class="fa fa-eye"></i> View Details
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a href="@Url.Action("Details", "Sale", new { id = item.SaleId })">
+                                                            <i class="fa fa-file-text"></i> View Original Sale
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#returnsTable').DataTable({
+                "order": [[7, "desc"]], // Sort by date returned (newest first)
+                "pageLength": 25
+            });
+        });
+    </script>
+}

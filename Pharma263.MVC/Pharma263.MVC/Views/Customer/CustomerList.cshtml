@@ -1,0 +1,97 @@
+﻿@{
+    ViewBag.Title = "CustomerList";
+}
+<div class="wraper container-fluid">
+    <div class="page-title">
+        <a href="@Url.Action("AddCustomer", "Customer")" class="btn btn-primary pull-left">Add Customer </a>
+        <br />
+    </div>
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title"> Customer List </h3>
+
+                </div>
+                <div class="panel-body">
+                    <div class="row">
+                        <div class="col-md-12 col-sm-12 col-xs-12">
+                            <table class="table table-hover" id="customersDataTable">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Phone</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <link rel="stylesheet" href="~/Content/adminFront/assets/plugins/datatables/jquery.dataTables.min.css">
+    <script src="~/Content/adminFront/assets/plugins/datatables/jquery.dataTables.min.js"></script>
+    
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#customersDataTable').DataTable({
+                "processing": true,
+                "serverSide": true,
+                "ajax": {
+                    "url": "@Url.Action("GetCustomersDataTable", "Customer")",
+                    "type": "POST",
+                    "contentType": "application/json",
+                    "data": function (d) {
+                        return JSON.stringify(d);
+                    },
+                    "dataSrc": function (json) {
+                        if (json.error) {
+                            console.error('DataTable Error:', json.error);
+                            toastr.error('Failed to load customers: ' + json.error);
+                        }
+                        return json.data;
+                    }
+                },
+                "columns": [
+                    { "data": "name" },
+                    { "data": "email" },
+                    { "data": "phone" },
+                    {
+                        "data": null,
+                        "orderable": false,
+                        "render": function (data, type, row) {
+                            var editUrl = '@Url.Action("EditCustomer", "Customer")' + '?customerId=' + row.id;
+                            var deleteUrl = '@Url.Action("DeleteCustomer", "Customer")' + '?customerId=' + row.id;
+                            return '<a href="' + editUrl + '" class="btn btn-icon btn-warning btn-xs m-b-5">' +
+                                   '<i class="fa fa-edit"></i></a> ' +
+                                   '<a href="' + deleteUrl + '" onclick="return confirm(\'Are you sure you want to Remove this customer?\')" class="btn btn-icon btn-danger btn-xs m-b-5">' +
+                                   '<i class="fa fa-remove"></i></a>';
+                        }
+                    }
+                ],
+                "pageLength": 25,
+                "lengthMenu": [[10, 25, 50, 100], [10, 25, 50, 100]],
+                "searching": true,
+                "ordering": true,
+                "info": true,
+                "autoWidth": false,
+                "language": {
+                    "searchPlaceholder": "Search customers...",
+                    "processing": '<i class="fa fa-spinner fa-spin fa-3x fa-fw"></i><span class="sr-only">Loading...</span>',
+                    "emptyTable": "No customers found",
+                    "zeroRecords": "No matching customers found"
+                }
+            });
+        });
+    </script>
+}
+

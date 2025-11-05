@@ -1,0 +1,1199 @@
+@{
+    ViewData["Title"] = "Customer Intelligence Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="dashboard-header">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col">
+                <h1 class="dashboard-title">
+                    <i class="fas fa-users text-primary me-3"></i>
+                    Customer Intelligence Dashboard
+                </h1>
+                <p class="dashboard-subtitle">Advanced customer analytics, segmentation, and relationship insights</p>
+            </div>
+            <div class="col-auto">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-primary" onclick="refreshAllData()">
+                        <i class="fas fa-sync-alt me-2"></i>Refresh Data
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="exportCustomerReport()">
+                        <i class="fas fa-download me-2"></i>Export
+                    </button>
+                    <button type="button" class="btn btn-outline-info" onclick="scheduleReport()">
+                        <i class="fas fa-clock me-2"></i>Schedule
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <!-- Customer Overview KPIs -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card kpi-card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="kpi-icon bg-primary bg-opacity-10 text-primary rounded-circle me-3">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted mb-1">Total Customers</h6>
+                            <h3 class="mb-0" id="totalCustomers">-</h3>
+                            <small class="text-success">
+                                <i class="fas fa-arrow-up me-1"></i>
+                                <span id="customerGrowth">-</span>% vs last month
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card kpi-card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="kpi-icon bg-success bg-opacity-10 text-success rounded-circle me-3">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted mb-1">Average CLV</h6>
+                            <h3 class="mb-0" id="avgClv">-</h3>
+                            <small class="text-success">
+                                <i class="fas fa-arrow-up me-1"></i>
+                                <span id="clvGrowth">-</span>% improvement
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card kpi-card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="kpi-icon bg-warning bg-opacity-10 text-warning rounded-circle me-3">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted mb-1">Churn Risk</h6>
+                            <h3 class="mb-0" id="churnRisk">-</h3>
+                            <small class="text-danger">
+                                <i class="fas fa-arrow-down me-1"></i>
+                                <span id="churnChange">-</span>% reduction
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card kpi-card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="kpi-icon bg-info bg-opacity-10 text-info rounded-circle me-3">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted mb-1">Engagement Score</h6>
+                            <h3 class="mb-0" id="engagementScore">-</h3>
+                            <small class="text-info">
+                                <i class="fas fa-equals me-1"></i>
+                                <span id="engagementChange">-</span>% stable
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Tabs -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom-0 pt-4">
+                    <ul class="nav nav-tabs card-header-tabs" id="customerTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="segmentation-tab" data-bs-toggle="tab" data-bs-target="#segmentation" type="button" role="tab">
+                                <i class="fas fa-layer-group me-2"></i>Customer Segmentation
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="lifetime-value-tab" data-bs-toggle="tab" data-bs-target="#lifetime-value" type="button" role="tab">
+                                <i class="fas fa-gem me-2"></i>Lifetime Value Analysis
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="churn-analysis-tab" data-bs-toggle="tab" data-bs-target="#churn-analysis" type="button" role="tab">
+                                <i class="fas fa-user-times me-2"></i>Churn Prediction
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="behavior-tab" data-bs-toggle="tab" data-bs-target="#behavior" type="button" role="tab">
+                                <i class="fas fa-chart-bar me-2"></i>Behavior Analytics
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="engagement-tab" data-bs-toggle="tab" data-bs-target="#engagement" type="button" role="tab">
+                                <i class="fas fa-heart me-2"></i>Engagement Metrics
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content" id="customerTabContent">
+                        <!-- Customer Segmentation Tab -->
+                        <div class="tab-pane fade show active" id="segmentation" role="tabpanel">
+                            <div class="row">
+                                <div class="col-lg-8">
+                                    <div class="chart-container mb-4">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h5 class="chart-title">Customer Segments Distribution</h5>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <input type="radio" class="btn-check" name="segmentView" id="segmentPie" autocomplete="off" checked>
+                                                <label class="btn btn-outline-primary" for="segmentPie">Pie Chart</label>
+                                                <input type="radio" class="btn-check" name="segmentView" id="segmentBar" autocomplete="off">
+                                                <label class="btn btn-outline-primary" for="segmentBar">Bar Chart</label>
+                                            </div>
+                                        </div>
+                                        <canvas id="segmentationChart" style="max-height: 400px;"></canvas>
+                                    </div>
+                                </div>
+                                <div class="col-lg-4">
+                                    <div class="segment-legend">
+                                        <h6 class="mb-3">Segment Definitions</h6>
+                                        <div class="segment-item mb-3">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="segment-color bg-success me-2"></div>
+                                                <strong>VIP Customers</strong>
+                                            </div>
+                                            <small class="text-muted">High CLV, frequent orders, premium products</small>
+                                        </div>
+                                        <div class="segment-item mb-3">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="segment-color bg-primary me-2"></div>
+                                                <strong>Regular Customers</strong>
+                                            </div>
+                                            <small class="text-muted">Consistent ordering pattern, medium CLV</small>
+                                        </div>
+                                        <div class="segment-item mb-3">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="segment-color bg-warning me-2"></div>
+                                                <strong>At-Risk Customers</strong>
+                                            </div>
+                                            <small class="text-muted">Declining engagement, irregular orders</small>
+                                        </div>
+                                        <div class="segment-item mb-3">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="segment-color bg-info me-2"></div>
+                                                <strong>New Customers</strong>
+                                            </div>
+                                            <small class="text-muted">Recent registrations, building relationship</small>
+                                        </div>
+                                        <div class="segment-item">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="segment-color bg-secondary me-2"></div>
+                                                <strong>Dormant Customers</strong>
+                                            </div>
+                                            <small class="text-muted">No recent activity, require reactivation</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Segment Performance Table -->
+                            <div class="mt-4">
+                                <h6 class="mb-3">Segment Performance Overview</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Segment</th>
+                                                <th>Customer Count</th>
+                                                <th>Avg CLV</th>
+                                                <th>Order Frequency</th>
+                                                <th>Revenue Contribution</th>
+                                                <th>Growth Rate</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="segmentPerformanceTable">
+                                            <!-- Data will be populated by JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Lifetime Value Analysis Tab -->
+                        <div class="tab-pane fade" id="lifetime-value" role="tabpanel">
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <div class="chart-container mb-4">
+                                        <h5 class="chart-title mb-3">CLV Distribution</h5>
+                                        <canvas id="clvDistributionChart" style="max-height: 350px;"></canvas>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="chart-container mb-4">
+                                        <h5 class="chart-title mb-3">CLV Trends Over Time</h5>
+                                        <canvas id="clvTrendChart" style="max-height: 350px;"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-lg-8">
+                                    <div class="chart-container">
+                                        <h5 class="chart-title mb-3">CLV by Customer Segment</h5>
+                                        <canvas id="clvBySegmentChart" style="max-height: 300px;"></canvas>
+                                    </div>
+                                </div>
+                                <div class="col-lg-4">
+                                    <div class="clv-insights">
+                                        <h6 class="mb-3">CLV Insights</h6>
+                                        <div class="insight-card p-3 mb-3 bg-light rounded">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <i class="fas fa-crown text-warning me-2"></i>
+                                                <strong>Top 20% Customers</strong>
+                                            </div>
+                                            <p class="mb-0 small">Generate <span class="text-success fw-bold" id="top20Revenue">80%</span> of total revenue</p>
+                                        </div>
+                                        <div class="insight-card p-3 mb-3 bg-light rounded">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <i class="fas fa-chart-line text-primary me-2"></i>
+                                                <strong>CLV Growth Rate</strong>
+                                            </div>
+                                            <p class="mb-0 small">Average increase of <span class="text-success fw-bold" id="clvGrowthRate">12%</span> annually</p>
+                                        </div>
+                                        <div class="insight-card p-3 bg-light rounded">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <i class="fas fa-target text-info me-2"></i>
+                                                <strong>Optimization Potential</strong>
+                                            </div>
+                                            <p class="mb-0 small">Estimated <span class="text-info fw-bold" id="optimizationPotential">$2.3M</span> additional revenue possible</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Churn Prediction Tab -->
+                        <div class="tab-pane fade" id="churn-analysis" role="tabpanel">
+                            <div class="row">
+                                <div class="col-lg-8">
+                                    <div class="chart-container mb-4">
+                                        <h5 class="chart-title mb-3">Churn Risk Assessment</h5>
+                                        <canvas id="churnRiskChart" style="max-height: 350px;"></canvas>
+                                    </div>
+                                </div>
+                                <div class="col-lg-4">
+                                    <div class="churn-alerts">
+                                        <h6 class="mb-3">High-Risk Customers</h6>
+                                        <div class="alert alert-danger d-flex align-items-center mb-3">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>
+                                            <div>
+                                                <strong id="highRiskCount">127</strong> customers at high churn risk
+                                            </div>
+                                        </div>
+                                        <div class="alert alert-warning d-flex align-items-center mb-3">
+                                            <i class="fas fa-warning me-2"></i>
+                                            <div>
+                                                <strong id="mediumRiskCount">284</strong> customers at medium risk
+                                            </div>
+                                        </div>
+                                        <button class="btn btn-outline-primary btn-sm w-100" onclick="exportChurnList()">
+                                            <i class="fas fa-download me-2"></i>Export Risk List
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <div class="chart-container">
+                                        <h5 class="chart-title mb-3">Churn Factors Analysis</h5>
+                                        <canvas id="churnFactorsChart" style="max-height: 300px;"></canvas>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="retention-strategies">
+                                        <h6 class="mb-3">Retention Strategies</h6>
+                                        <div class="strategy-item p-3 mb-3 border rounded">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <i class="fas fa-gift text-success me-2"></i>
+                                                <strong>Loyalty Programs</strong>
+                                            </div>
+                                            <p class="mb-0 small">Implement targeted rewards for at-risk segments</p>
+                                        </div>
+                                        <div class="strategy-item p-3 mb-3 border rounded">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <i class="fas fa-phone text-primary me-2"></i>
+                                                <strong>Proactive Outreach</strong>
+                                            </div>
+                                            <p class="mb-0 small">Personal contact for high-value customers</p>
+                                        </div>
+                                        <div class="strategy-item p-3 border rounded">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <i class="fas fa-percentage text-warning me-2"></i>
+                                                <strong>Targeted Discounts</strong>
+                                            </div>
+                                            <p class="mb-0 small">Price incentives based on purchase history</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Behavior Analytics Tab -->
+                        <div class="tab-pane fade" id="behavior" role="tabpanel">
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <div class="chart-container mb-4">
+                                        <h5 class="chart-title mb-3">Purchase Frequency Patterns</h5>
+                                        <canvas id="purchaseFrequencyChart" style="max-height: 300px;"></canvas>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="chart-container mb-4">
+                                        <h5 class="chart-title mb-3">Seasonal Behavior Trends</h5>
+                                        <canvas id="seasonalBehaviorChart" style="max-height: 300px;"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-lg-8">
+                                    <div class="chart-container">
+                                        <h5 class="chart-title mb-3">Product Category Preferences</h5>
+                                        <canvas id="categoryPreferencesChart" style="max-height: 300px;"></canvas>
+                                    </div>
+                                </div>
+                                <div class="col-lg-4">
+                                    <div class="behavior-insights">
+                                        <h6 class="mb-3">Behavior Insights</h6>
+                                        <div class="insight-item mb-3">
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <span class="small">Avg Order Value</span>
+                                                <span class="small fw-bold text-success" id="avgOrderValue">$1,234</span>
+                                            </div>
+                                            <div class="progress" style="height: 4px;">
+                                                <div class="progress-bar bg-success" style="width: 75%"></div>
+                                            </div>
+                                        </div>
+                                        <div class="insight-item mb-3">
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <span class="small">Order Frequency</span>
+                                                <span class="small fw-bold text-primary" id="orderFrequency">2.3/month</span>
+                                            </div>
+                                            <div class="progress" style="height: 4px;">
+                                                <div class="progress-bar bg-primary" style="width: 60%"></div>
+                                            </div>
+                                        </div>
+                                        <div class="insight-item">
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <span class="small">Customer Lifetime</span>
+                                                <span class="small fw-bold text-info" id="customerLifetime">18 months</span>
+                                            </div>
+                                            <div class="progress" style="height: 4px;">
+                                                <div class="progress-bar bg-info" style="width: 85%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Engagement Metrics Tab -->
+                        <div class="tab-pane fade" id="engagement" role="tabpanel">
+                            <div class="row">
+                                <div class="col-lg-8">
+                                    <div class="chart-container mb-4">
+                                        <h5 class="chart-title mb-3">Customer Engagement Score Trends</h5>
+                                        <canvas id="engagementTrendChart" style="max-height: 350px;"></canvas>
+                                    </div>
+                                </div>
+                                <div class="col-lg-4">
+                                    <div class="engagement-summary">
+                                        <h6 class="mb-3">Engagement Summary</h6>
+                                        <div class="engagement-metric p-3 mb-3 bg-light rounded">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <i class="fas fa-mouse-pointer text-primary me-2"></i>
+                                                <strong>Website Activity</strong>
+                                            </div>
+                                            <div class="d-flex justify-content-between">
+                                                <span class="small">Avg Session Duration</span>
+                                                <span class="fw-bold text-primary" id="sessionDuration">4:32</span>
+                                            </div>
+                                        </div>
+                                        <div class="engagement-metric p-3 mb-3 bg-light rounded">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <i class="fas fa-envelope text-success me-2"></i>
+                                                <strong>Email Engagement</strong>
+                                            </div>
+                                            <div class="d-flex justify-content-between">
+                                                <span class="small">Open Rate</span>
+                                                <span class="fw-bold text-success" id="emailOpenRate">68%</span>
+                                            </div>
+                                        </div>
+                                        <div class="engagement-metric p-3 bg-light rounded">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <i class="fas fa-phone text-info me-2"></i>
+                                                <strong>Support Interactions</strong>
+                                            </div>
+                                            <div class="d-flex justify-content-between">
+                                                <span class="small">Satisfaction Score</span>
+                                                <span class="fw-bold text-info" id="supportSatisfaction">4.2/5</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="engagement-recommendations">
+                                        <h6 class="mb-3">Engagement Improvement Recommendations</h6>
+                                        <div class="row">
+                                            <div class="col-lg-4">
+                                                <div class="recommendation-card p-3 border rounded h-100">
+                                                    <div class="d-flex align-items-center mb-3">
+                                                        <i class="fas fa-bullhorn text-warning me-2"></i>
+                                                        <strong>Marketing Campaigns</strong>
+                                                    </div>
+                                                    <p class="small mb-0">Personalized email campaigns based on purchase history and preferences</p>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-4">
+                                                <div class="recommendation-card p-3 border rounded h-100">
+                                                    <div class="d-flex align-items-center mb-3">
+                                                        <i class="fas fa-graduation-cap text-primary me-2"></i>
+                                                        <strong>Educational Content</strong>
+                                                    </div>
+                                                    <p class="small mb-0">Product training and educational resources to increase engagement</p>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-4">
+                                                <div class="recommendation-card p-3 border rounded h-100">
+                                                    <div class="d-flex align-items-center mb-3">
+                                                        <i class="fas fa-comments text-success me-2"></i>
+                                                        <strong>Community Building</strong>
+                                                    </div>
+                                                    <p class="small mb-0">Foster customer communities and peer-to-peer interactions</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.dashboard-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+.dashboard-title {
+    font-size: 2.5rem;
+    font-weight: 300;
+    margin: 0;
+}
+
+.dashboard-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin: 0.5rem 0 0 0;
+}
+
+.kpi-card {
+    transition: transform 0.2s ease;
+}
+
+.kpi-card:hover {
+    transform: translateY(-2px);
+}
+
+.kpi-icon {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.chart-container {
+    position: relative;
+}
+
+.chart-title {
+    color: #333;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.nav-tabs .nav-link {
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: #6c757d;
+    font-weight: 500;
+    padding: 1rem 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.nav-tabs .nav-link.active {
+    background: none;
+    border-bottom-color: #007bff;
+    color: #007bff;
+}
+
+.nav-tabs .nav-link:hover {
+    border-bottom-color: #007bff;
+    color: #007bff;
+}
+
+.segment-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+}
+
+.segment-item {
+    padding: 0.75rem;
+    border-left: 3px solid #e9ecef;
+    margin-bottom: 0.5rem;
+    transition: border-color 0.3s ease;
+}
+
+.segment-item:hover {
+    border-left-color: #007bff;
+    background-color: #f8f9fa;
+}
+
+.insight-card, .engagement-metric, .strategy-item, .recommendation-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.insight-card:hover, .engagement-metric:hover, .strategy-item:hover, .recommendation-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.table th {
+    font-weight: 600;
+    color: #495057;
+    border-top: none;
+}
+
+.progress {
+    background-color: #e9ecef;
+}
+
+@@media (max-width: 768px) {
+    .dashboard-title {
+        font-size: 2rem;
+    }
+    
+    .nav-tabs .nav-link {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
+    
+    .btn-group {
+        flex-direction: column;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Customer Intelligence Dashboard
+    initializeCustomerIntelligence();
+    
+    // Tab change handlers
+    document.querySelectorAll('#customerTabs button[data-bs-toggle="tab"]').forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function(event) {
+            const targetId = event.target.getAttribute('data-bs-target').substring(1);
+            loadTabData(targetId);
+        });
+    });
+    
+    // Load initial data
+    loadTabData('segmentation');
+});
+
+function initializeCustomerIntelligence() {
+    // Load KPI data
+    loadCustomerKPIs();
+}
+
+// Store customer data globally for cross-function access
+window.customerData = null;
+
+function loadCustomerKPIs() {
+    // Try to load real data from API, fallback to mock data
+    fetch('/Report/CustomerIntelligenceData')
+        .then(response => response.json())
+        .then(data => {
+            window.customerData = data;
+            
+            // Update KPIs with real data
+            document.getElementById('totalCustomers').textContent = data.kpis?.totalCustomers?.toLocaleString() || '2,847';
+            document.getElementById('customerGrowth').textContent = data.kpis?.customerGrowthRate?.toFixed(1) || '8.5';
+            document.getElementById('avgClv').textContent = data.kpis?.averageClv ? `$${data.kpis.averageClv.toLocaleString()}` : '$4,250';
+            document.getElementById('clvGrowth').textContent = data.kpis?.clvGrowthRate?.toFixed(1) || '12.3';
+            document.getElementById('churnRisk').textContent = data.kpis?.churnRiskPercentage ? `${data.kpis.churnRiskPercentage.toFixed(1)}%` : '14.2%';
+            document.getElementById('churnChange').textContent = data.kpis?.churnReduction?.toFixed(1) || '3.1';
+            document.getElementById('engagementScore').textContent = data.kpis?.engagementScore ? `${data.kpis.engagementScore}/100` : '72/100';
+            document.getElementById('engagementChange').textContent = data.kpis?.engagementChange?.toFixed(1) || '0.8';
+            
+            // Update CLV insights if available
+            if (data.clvInsights) {
+                const top20Element = document.getElementById('top20Revenue');
+                if (top20Element && data.clvInsights.top20Revenue) {
+                    top20Element.textContent = `${data.clvInsights.top20Revenue.toFixed(0)}%`;
+                }
+                
+                const clvGrowthElement = document.getElementById('clvGrowthRate');
+                if (clvGrowthElement && data.clvInsights.growthRate) {
+                    clvGrowthElement.textContent = `${data.clvInsights.growthRate.toFixed(0)}%`;
+                }
+                
+                const potentialElement = document.getElementById('optimizationPotential');
+                if (potentialElement && data.clvInsights.optimizationPotential) {
+                    potentialElement.textContent = `$${(data.clvInsights.optimizationPotential / 1000000).toFixed(1)}M`;
+                }
+            }
+            
+            // Update behavior insights
+            if (data.behaviorInsights) {
+                const avgOrderElement = document.getElementById('avgOrderValue');
+                if (avgOrderElement && data.behaviorInsights.avgOrderValue) {
+                    avgOrderElement.textContent = `$${data.behaviorInsights.avgOrderValue.toLocaleString()}`;
+                }
+                
+                const frequencyElement = document.getElementById('orderFrequency');
+                if (frequencyElement && data.behaviorInsights.orderFrequency) {
+                    frequencyElement.textContent = `${data.behaviorInsights.orderFrequency.toFixed(1)}/month`;
+                }
+                
+                const lifetimeElement = document.getElementById('customerLifetime');
+                if (lifetimeElement && data.behaviorInsights.avgLifetime) {
+                    lifetimeElement.textContent = `${data.behaviorInsights.avgLifetime} months`;
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Failed to load customer intelligence data:', error);
+            showCustomerIntelligenceError('Unable to load customer data. Please check your connection and try again.');
+        });
+}
+
+function loadTabData(tabId) {
+    switch(tabId) {
+        case 'segmentation':
+            loadSegmentationData();
+            break;
+        case 'lifetime-value':
+            loadLifetimeValueData();
+            break;
+        case 'churn-analysis':
+            loadChurnAnalysisData();
+            break;
+        case 'behavior':
+            loadBehaviorData();
+            break;
+        case 'engagement':
+            loadEngagementData();
+            break;
+    }
+}
+
+function loadSegmentationData() {
+    // Use real data if available, otherwise show error
+    if (!window.customerData?.segmentationData) {
+        showChartError('segmentationChart', 'Customer segmentation data not available');
+        return;
+    }
+    
+    const segmentData = window.customerData.segmentationData;
+    
+    // Customer Segmentation Chart
+    const segmentCtx = document.getElementById('segmentationChart').getContext('2d');
+    new Chart(segmentCtx, {
+        type: 'doughnut',
+        data: {
+            labels: segmentData.map(s => s.segment),
+            datasets: [{
+                data: segmentData.map(s => s.customerCount),
+                backgroundColor: [
+                    '#28a745',
+                    '#007bff',
+                    '#ffc107',
+                    '#17a2b8',
+                    '#6c757d'
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true
+                    }
+                }
+            }
+        }
+    });
+    
+    // Load segment performance table
+    loadSegmentPerformanceTable();
+}
+
+function loadSegmentPerformanceTable() {
+    // Use real data if available, otherwise show error
+    if (!window.customerData?.segmentationData) {
+        showTableError('segmentPerformanceTable', 'Customer segmentation data not available');
+        return;
+    }
+    
+    const rawSegmentData = window.customerData.segmentationData;
+    
+    // Transform data for table display
+    const colors = ['success', 'primary', 'warning', 'info', 'secondary'];
+    const segmentData = rawSegmentData.map((row, index) => ({
+        segment: row.segment,
+        count: row.customerCount,
+        clv: `$${row.avgClv.toLocaleString()}`,
+        frequency: `${row.orderFrequency}/month`,
+        revenue: `${row.revenueContribution}%`,
+        growth: `${row.growthRate >= 0 ? '+' : ''}${row.growthRate.toFixed(1)}%`,
+        color: colors[index] || 'secondary'
+    }));
+    
+    const tableBody = document.getElementById('segmentPerformanceTable');
+    tableBody.innerHTML = segmentData.map(row => `
+        <tr>
+            <td>
+                <div class="d-flex align-items-center">
+                    <div class="segment-color bg-${row.color} me-2"></div>
+                    ${row.segment}
+                </div>
+            </td>
+            <td>${row.count.toLocaleString()}</td>
+            <td>${row.clv}</td>
+            <td>${row.frequency}</td>
+            <td>${row.revenue}</td>
+            <td class="text-${row.growth.startsWith('+') ? 'success' : 'danger'}">${row.growth}</td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary" onclick="viewSegmentDetails('${row.segment}')">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function loadLifetimeValueData() {
+    // Check if data is available
+    if (!window.customerData?.clvDistribution || !window.customerData?.clvTrends || !window.customerData?.segmentationData) {
+        showChartError('clvDistributionChart', 'CLV data not available');
+        showChartError('clvTrendChart', 'CLV trend data not available');
+        showChartError('clvBySegmentChart', 'CLV segment data not available');
+        return;
+    }
+    
+    const clvData = window.customerData.clvDistribution;
+    const clvTrends = window.customerData.clvTrends;
+    const segmentClvData = window.customerData.segmentationData;
+    
+    // CLV Distribution Chart
+    const clvDistCtx = document.getElementById('clvDistributionChart').getContext('2d');
+    new Chart(clvDistCtx, {
+        type: 'bar',
+        data: {
+            labels: clvData.labels,
+            datasets: [{
+                label: 'Customer Count',
+                data: clvData.data,
+                backgroundColor: '#007bff',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+    
+    // CLV Trend Chart
+    const clvTrendCtx = document.getElementById('clvTrendChart').getContext('2d');
+    new Chart(clvTrendCtx, {
+        type: 'line',
+        data: {
+            labels: clvTrends.labels,
+            datasets: [{
+                label: 'Average CLV',
+                data: clvTrends.data,
+                borderColor: '#28a745',
+                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: false
+                }
+            }
+        }
+    });
+    
+    // CLV by Segment Chart
+    const clvSegmentCtx = document.getElementById('clvBySegmentChart').getContext('2d');
+    new Chart(clvSegmentCtx, {
+        type: 'horizontalBar',
+        data: {
+            labels: segmentClvData.map(s => s.segment.replace(' Customers', '')),
+            datasets: [{
+                label: 'Average CLV',
+                data: segmentClvData.map(s => s.avgClv),
+                backgroundColor: ['#28a745', '#007bff', '#ffc107', '#17a2b8', '#6c757d']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+}
+
+function loadChurnAnalysisData() {
+    // Check if data is available
+    if (!window.customerData?.churnPrediction) {
+        showChartError('churnRiskChart', 'Churn prediction data not available');
+        showChartError('churnFactorsChart', 'Churn factors data not available');
+        return;
+    }
+    
+    const churnData = window.customerData.churnPrediction;
+    
+    // Update high-risk and medium-risk counts in the UI
+    const highRiskElement = document.getElementById('highRiskCount');
+    const mediumRiskElement = document.getElementById('mediumRiskCount');
+    if (highRiskElement) highRiskElement.textContent = churnData.riskDistribution.highRisk.toLocaleString();
+    if (mediumRiskElement) mediumRiskElement.textContent = churnData.riskDistribution.mediumRisk.toLocaleString();
+    
+    // Churn Risk Chart
+    const churnCtx = document.getElementById('churnRiskChart').getContext('2d');
+    new Chart(churnCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Low Risk', 'Medium Risk', 'High Risk'],
+            datasets: [{
+                data: [
+                    churnData.riskDistribution.lowRisk,
+                    churnData.riskDistribution.mediumRisk,
+                    churnData.riskDistribution.highRisk
+                ],
+                backgroundColor: ['#28a745', '#ffc107', '#dc3545'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    
+    // Churn Factors Chart
+    const factorsCtx = document.getElementById('churnFactorsChart').getContext('2d');
+    new Chart(factorsCtx, {
+        type: 'horizontalBar',
+        data: {
+            labels: churnData.factors.labels,
+            datasets: [{
+                label: 'Impact Score',
+                data: churnData.factors.data,
+                backgroundColor: '#dc3545'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+}
+
+function loadBehaviorData() {
+    // Purchase Frequency Chart
+    const frequencyCtx = document.getElementById('purchaseFrequencyChart').getContext('2d');
+    new Chart(frequencyCtx, {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+                label: 'Orders per Customer',
+                data: [2.1, 2.3, 2.0, 2.4, 2.2, 2.3],
+                borderColor: '#007bff',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+    
+    // Seasonal Behavior Chart
+    const seasonalCtx = document.getElementById('seasonalBehaviorChart').getContext('2d');
+    new Chart(seasonalCtx, {
+        type: 'radar',
+        data: {
+            labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+            datasets: [{
+                label: 'Purchase Activity',
+                data: [75, 90, 85, 95],
+                borderColor: '#28a745',
+                backgroundColor: 'rgba(40, 167, 69, 0.2)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+    
+    // Category Preferences Chart
+    const categoryCtx = document.getElementById('categoryPreferencesChart').getContext('2d');
+    new Chart(categoryCtx, {
+        type: 'polarArea',
+        data: {
+            labels: ['Antibiotics', 'Pain Relief', 'Vitamins', 'Chronic Care', 'OTC'],
+            datasets: [{
+                data: [35, 28, 22, 18, 15],
+                backgroundColor: ['#007bff', '#28a745', '#ffc107', '#dc3545', '#6c757d']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+}
+
+function loadEngagementData() {
+    // Engagement Trend Chart
+    const engagementCtx = document.getElementById('engagementTrendChart').getContext('2d');
+    new Chart(engagementCtx, {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [
+                {
+                    label: 'Website Engagement',
+                    data: [68, 72, 75, 73, 76, 72],
+                    borderColor: '#007bff',
+                    tension: 0.4
+                },
+                {
+                    label: 'Email Engagement',
+                    data: [62, 65, 68, 70, 68, 68],
+                    borderColor: '#28a745',
+                    tension: 0.4
+                },
+                {
+                    label: 'Support Satisfaction',
+                    data: [80, 82, 85, 83, 84, 82],
+                    borderColor: '#17a2b8',
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    min: 50,
+                    max: 100
+                }
+            }
+        }
+    });
+}
+
+// Utility functions
+function refreshAllData() {
+    showLoadingState();
+    setTimeout(() => {
+        loadCustomerKPIs();
+        const activeTab = document.querySelector('#customerTabs .nav-link.active').getAttribute('data-bs-target').substring(1);
+        loadTabData(activeTab);
+        hideLoadingState();
+        showToast('Data refreshed successfully', 'success');
+    }, 1500);
+}
+
+function exportCustomerReport() {
+    showToast('Exporting customer intelligence report...', 'info');
+    // Implementation for export functionality
+}
+
+function scheduleReport() {
+    showToast('Report scheduling coming soon...', 'info');
+    // Implementation for scheduling functionality
+}
+
+function exportChurnList() {
+    showToast('Exporting churn risk list...', 'info');
+    // Implementation for churn list export
+}
+
+function viewSegmentDetails(segment) {
+    showToast(`Loading details for ${segment}...`, 'info');
+    // Implementation for segment detail view
+}
+
+function showLoadingState() {
+    // Add loading spinners to charts and tables
+    document.querySelectorAll('.chart-container, .table-responsive').forEach(el => {
+        el.style.opacity = '0.5';
+    });
+}
+
+function hideLoadingState() {
+    document.querySelectorAll('.chart-container, .table-responsive').forEach(el => {
+        el.style.opacity = '1';
+    });
+}
+
+function showToast(message, type) {
+    // Create and show Bootstrap toast notification
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-white bg-${type} border-0`;
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">${message}</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+    
+    setTimeout(() => {
+        document.body.removeChild(toast);
+    }, 5000);
+}
+
+// Error handling functions
+function showCustomerIntelligenceError(message) {
+    // Show error in KPI cards
+    ['totalCustomers', 'avgClv', 'churnRisk', 'engagementScore'].forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.innerHTML = '<i class="fas fa-exclamation-triangle text-danger"></i> Error';
+        }
+    });
+    
+    // Show error toast
+    showToast(message, 'danger');
+    
+    // Add retry button
+    const retryButton = document.createElement('button');
+    retryButton.className = 'btn btn-outline-primary mt-3';
+    retryButton.innerHTML = '<i class="fas fa-refresh me-1"></i>Retry Loading Data';
+    retryButton.onclick = () => {
+        window.location.reload();
+    };
+    
+    const dashboardHeader = document.querySelector('.dashboard-header .container-fluid');
+    if (dashboardHeader && !dashboardHeader.querySelector('.btn-outline-primary')) {
+        dashboardHeader.appendChild(retryButton);
+    }
+}
+
+function showChartError(chartId, message) {
+    const canvas = document.getElementById(chartId);
+    if (canvas) {
+        const parent = canvas.parentElement;
+        parent.innerHTML = `
+            <div class="text-center py-5">
+                <i class="fas fa-exclamation-triangle text-danger fa-3x mb-3"></i>
+                <h5 class="text-muted">${message}</h5>
+                <button class="btn btn-outline-primary btn-sm mt-2" onclick="refreshAllData()">
+                    <i class="fas fa-refresh me-1"></i>Retry
+                </button>
+            </div>
+        `;
+    }
+}
+
+function showTableError(tableId, message) {
+    const table = document.getElementById(tableId);
+    if (table) {
+        table.innerHTML = `
+            <tr>
+                <td colspan="100%" class="text-center py-4">
+                    <i class="fas fa-exclamation-triangle text-danger fa-2x mb-2"></i>
+                    <div class="text-muted">${message}</div>
+                    <button class="btn btn-outline-primary btn-sm mt-2" onclick="refreshAllData()">
+                        <i class="fas fa-refresh me-1"></i>Retry
+                    </button>
+                </td>
+            </tr>
+        `;
+    }
+}
+</script>

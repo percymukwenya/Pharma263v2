@@ -1,0 +1,78 @@
+@model Pharma263.MVC.DTOs.User.UpdateRoleDto
+@{
+    ViewBag.Title = "Edit Role";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="wraper container-fluid">
+    <div class="page-title">
+        <h3 class="title">Edit Role</h3>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-8 col-md-offset-2">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Update Role Information</h3>
+                </div>
+                <div class="panel-body">
+                    @using (Html.BeginForm("EditRole", "Role", FormMethod.Post))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(x => x.OldRoleName)
+                        
+                        <div class="form-group">
+                            <label class="control-label">Current Role Name</label>
+                            <p class="form-control-static">
+                                <strong>@Model.OldRoleName</strong>
+                                @if (Model.OldRoleName == "Administrator")
+                                {
+                                    <span class="label label-danger">System Admin</span>
+                                }
+                                else if (Model.OldRoleName == "SuperUser")
+                                {
+                                    <span class="label label-warning">Super User</span>
+                                }
+                                else if (Model.OldRoleName == "Supervisor")
+                                {
+                                    <span class="label label-info">Supervisor</span>
+                                }
+                                else if (Model.OldRoleName == "Sales")
+                                {
+                                    <span class="label label-success">Sales</span>
+                                }
+                                else
+                                {
+                                    <span class="label label-default">Custom</span>
+                                }
+                            </p>
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(x => x.NewRoleName, "New Role Name", new { @class = "control-label" })
+                            @Html.TextBoxFor(x => x.NewRoleName, new { @class = "form-control", @placeholder = "Enter new role name" })
+                            @Html.ValidationMessageFor(x => x.NewRoleName, "", new { @class = "text-danger" })
+                            <small class="text-muted">This will update the role name for all users assigned to this role</small>
+                        </div>
+
+                        @if (Model.OldRoleName == "Administrator")
+                        {
+                            <div class="alert alert-warning">
+                                <strong>Warning:</strong> You are editing the Administrator role. This is a system role and changes should be made carefully.
+                            </div>
+                        }
+
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fa fa-save"></i> Update Role
+                            </button>
+                            <a href="@Url.Action("Index", "Role")" class="btn btn-default">
+                                <i class="fa fa-arrow-left"></i> Back to Roles
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

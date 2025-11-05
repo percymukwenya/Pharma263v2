@@ -1,0 +1,766 @@
+﻿@{
+    ViewData["Title"] = "Medicine Expiry Tracking - Compliance Dashboard";
+}
+
+<div class="container-fluid mt-4">
+    <!-- Page Header with Alert Summary -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="fas fa-exclamation-triangle me-2 text-warning"></i>Medicine Expiry Tracking</h2>
+            <p class="text-muted mb-0">Regulatory compliance and inventory protection dashboard</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-danger" onclick="generateAlert()">
+                <i class="fas fa-bell me-1"></i>Create Alert
+            </button>
+            <button type="button" class="btn btn-outline-primary" onclick="exportExpiryReport('pdf')">
+                <i class="fas fa-file-pdf me-1"></i>Export PDF
+            </button>
+            <a href="@Url.Action("Index", "Report")" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Back to Reports
+            </a>
+        </div>
+    </div>
+
+    <!-- Alert Summary Cards -->
+    <div class="row mb-4" id="alertSummary">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="alert-card critical">
+                <div class="alert-icon">
+                    <i class="fas fa-skull-crossbones"></i>
+                </div>
+                <div class="alert-content">
+                    <h3 id="criticalCount">0</h3>
+                    <p class="alert-label">Critical (≤30 days)</p>
+                    <div class="alert-value" id="criticalValue">$0.00</div>
+                </div>
+                <div class="alert-action">
+                    <button class="btn btn-sm btn-light" onclick="filterByStatus('critical')">View</button>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="alert-card warning">
+                <div class="alert-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="alert-content">
+                    <h3 id="warningCount">0</h3>
+                    <p class="alert-label">Warning (31-90 days)</p>
+                    <div class="alert-value" id="warningValue">$0.00</div>
+                </div>
+                <div class="alert-action">
+                    <button class="btn btn-sm btn-light" onclick="filterByStatus('warning')">View</button>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="alert-card safe">
+                <div class="alert-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div class="alert-content">
+                    <h3 id="safeCount">0</h3>
+                    <p class="alert-label">Safe (>90 days)</p>
+                    <div class="alert-value" id="safeValue">$0.00</div>
+                </div>
+                <div class="alert-action">
+                    <button class="btn btn-sm btn-light" onclick="filterByStatus('safe')">View</button>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="alert-card total">
+                <div class="alert-icon">
+                    <i class="fas fa-calculator"></i>
+                </div>
+                <div class="alert-content">
+                    <h3 id="totalItems">0</h3>
+                    <p class="alert-label">Total Items</p>
+                    <div class="alert-value" id="totalValue">$0.00</div>
+                </div>
+                <div class="alert-action">
+                    <button class="btn btn-sm btn-light" onclick="filterByStatus('all')">View All</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Controls and Filters -->
+        <div class="col-md-3 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-gradient-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filters & Settings</h5>
+                </div>
+                <div class="card-body">
+                    <form id="reportForm">
+                        <div class="mb-3">
+                            <label for="monthsToExpiry" class="form-label fw-semibold">Tracking Period</label>
+                            <select class="form-control" id="monthsToExpiry" name="monthsToExpiry" onchange="loadExpiryData()">
+                                <option value="3">Next 3 Months</option>
+                                <option value="6" selected>Next 6 Months</option>
+                                <option value="12">Next 12 Months</option>
+                                <option value="24">Next 24 Months</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="statusFilter" class="form-label fw-semibold">Status Filter</label>
+                            <select class="form-control" id="statusFilter" onchange="applyStatusFilter()">
+                                <option value="all">All Statuses</option>
+                                <option value="critical">Critical Only</option>
+                                <option value="warning">Warning Only</option>
+                                <option value="safe">Safe Only</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="sortBy" class="form-label fw-semibold">Sort By</label>
+                            <select class="form-control" id="sortBy" onchange="applySorting()">
+                                <option value="daysToExpiry">Days to Expiry</option>
+                                <option value="totalValue">Total Value</option>
+                                <option value="productName">Product Name</option>
+                                <option value="currentStock">Stock Quantity</option>
+                            </select>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="button" onclick="loadExpiryData()" class="btn btn-primary">
+                                <i class="fas fa-sync me-1"></i>Refresh Data
+                            </button>
+                            <button type="button" onclick="scheduleAlert()" class="btn btn-outline-warning">
+                                <i class="fas fa-clock me-1"></i>Schedule Alert
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card shadow-sm mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-lightning-bolt me-2"></i>Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="markForDisposal()">
+                            <i class="fas fa-trash me-1"></i>Mark for Disposal
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-warning" onclick="createReturnRequest()">
+                            <i class="fas fa-undo me-1"></i>Return to Supplier
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-info" onclick="printBarcodes()">
+                            <i class="fas fa-barcode me-1"></i>Print Barcodes
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Legend -->
+            <div class="card shadow-sm mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Status Legend</h6>
+                </div>
+                <div class="card-body">
+                    <div class="legend-item mb-2">
+                        <span class="status-indicator critical"></span>
+                        <span>Critical (≤30 days)</span>
+                    </div>
+                    <div class="legend-item mb-2">
+                        <span class="status-indicator warning"></span>
+                        <span>Warning (31-90 days)</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="status-indicator safe"></span>
+                        <span>Safe (>90 days)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="col-md-9">
+            <div class="card shadow-sm">
+                <div class="card-header bg-gradient-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-table me-2"></i>Expiry Tracking Results
+                        </h5>
+                        <small class="last-updated">
+                            <i class="fas fa-clock me-1"></i>
+                            <span id="last-updated-expiryTracking">Just now</span>
+                        </small>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Loading State -->
+                    <div class="loading-state d-none" id="loading-expiryTracking">
+                        <div class="d-flex justify-content-center align-items-center" style="min-height: 200px;">
+                            <div class="spinner-border spinner-border-lg text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <span class="ms-3 text-muted">Loading expiry data...</span>
+                        </div>
+                    </div>
+
+                    <!-- Error State -->
+                    <div class="error-state d-none" id="error-expiryTracking">
+                        <div class="alert alert-danger" role="alert">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <div>
+                                    <strong>Error Loading Data</strong>
+                                    <p class="mb-0 mt-1">
+                                        <span class="error-message">Unable to load expiry data. Please try again.</span>
+                                    </p>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-outline-danger btn-sm mt-2" onclick="loadExpiryData()">
+                                <i class="fas fa-redo me-1"></i>Retry
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Content Area -->
+                    <div class="report-content" id="content-expiryTracking">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="expiryTable">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>
+                                            <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                                        </th>
+                                        <th>Status</th>
+                                        <th>Product Name</th>
+                                        <th>Batch Number</th>
+                                        <th>Stock</th>
+                                        <th>Expiry Date</th>
+                                        <th>Days Left</th>
+                                        <th>Unit Cost</th>
+                                        <th>Total Value</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reportData">
+                                    <!-- Data will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        <nav aria-label="Expiry tracking pagination" class="mt-3">
+                            <ul class="pagination justify-content-center" id="pagination">
+                                <!-- Pagination will be generated here -->
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+                <div class="card-footer bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="report-actions">
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="loadExpiryData()">
+                                <i class="fas fa-sync-alt me-1"></i>Refresh
+                            </button>
+                        </div>
+                        <div class="export-actions">
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="exportExpiryReport('pdf')">
+                                    <i class="fas fa-file-pdf me-1"></i>PDF
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="exportExpiryReport('excel')">
+                                    <i class="fas fa-file-excel me-1"></i>Excel
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="exportExpiryReport('csv')">
+                                    <i class="fas fa-file-csv me-1"></i>CSV
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let expiryData = [];
+        let filteredData = [];
+        let currentPage = 1;
+        const itemsPerPage = 25;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadExpiryData();
+            
+            // Auto-refresh every 5 minutes
+            setInterval(loadExpiryData, 300000);
+        });
+
+        async function loadExpiryData() {
+            const monthsToExpiry = document.getElementById('monthsToExpiry').value;
+            
+            try {
+                const params = { monthsToExpiry: parseInt(monthsToExpiry) };
+                
+                const data = await reportManager.loadReportData(
+                    'expiryTracking',
+                    '@Url.Action("ExpiryTrackingData", "Report")',
+                    params
+                );
+
+                expiryData = data.items || [];
+                updateAlertSummary(data.summary);
+                applyCurrentFilters();
+                
+            } catch (error) {
+                console.error('Error loading expiry data:', error);
+                reportManager.showToast('Failed to load expiry data', 'error');
+            }
+        }
+
+        function updateAlertSummary(summary) {
+            document.getElementById('criticalCount').textContent = summary.criticalCount;
+            document.getElementById('criticalValue').textContent = reportManager.formatCurrency(summary.criticalValue);
+            
+            document.getElementById('warningCount').textContent = summary.warningCount;
+            document.getElementById('warningValue').textContent = reportManager.formatCurrency(summary.warningValue);
+            
+            document.getElementById('safeCount').textContent = summary.safeCount;
+            document.getElementById('safeValue').textContent = reportManager.formatCurrency(summary.safeValue);
+            
+            document.getElementById('totalItems').textContent = summary.totalCount;
+            document.getElementById('totalValue').textContent = reportManager.formatCurrency(summary.totalValue);
+
+            // Flash critical alerts
+            if (summary.criticalCount > 0) {
+                flashAlert('critical');
+            }
+        }
+
+        function flashAlert(type) {
+            const card = document.querySelector(`.alert-card.${type}`);
+            card.classList.add('flash-alert');
+            setTimeout(() => card.classList.remove('flash-alert'), 2000);
+        }
+
+        function applyCurrentFilters() {
+            let filtered = [...expiryData];
+            
+            // Apply status filter
+            const statusFilter = document.getElementById('statusFilter').value;
+            if (statusFilter !== 'all') {
+                filtered = filtered.filter(item => 
+                    item.expiryStatus.toLowerCase() === statusFilter
+                );
+            }
+
+            // Apply sorting
+            const sortBy = document.getElementById('sortBy').value;
+            filtered.sort((a, b) => {
+                switch (sortBy) {
+                    case 'daysToExpiry':
+                        return a.daysToExpiry - b.daysToExpiry;
+                    case 'totalValue':
+                        return b.totalValue - a.totalValue;
+                    case 'productName':
+                        return a.productName.localeCompare(b.productName);
+                    case 'currentStock':
+                        return b.currentStock - a.currentStock;
+                    default:
+                        return 0;
+                }
+            });
+
+            filteredData = filtered;
+            currentPage = 1;
+            displayReport();
+            updatePagination();
+        }
+
+        function displayReport() {
+            const tbody = document.getElementById('reportData');
+            tbody.innerHTML = '';
+
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = Math.min(startIndex + itemsPerPage, filteredData.length);
+            const pageData = filteredData.slice(startIndex, endIndex);
+
+            pageData.forEach((item, index) => {
+                const rowClass = getRowClass(item.expiryStatus, item.daysToExpiry);
+                const statusBadge = getStatusBadge(item.expiryStatus);
+                const globalIndex = startIndex + index;
+
+                tbody.innerHTML += `
+                    <tr class="${rowClass}" data-index="${globalIndex}">
+                        <td>
+                            <input type="checkbox" class="item-checkbox" value="${globalIndex}">
+                        </td>
+                        <td>${statusBadge}</td>
+                        <td>
+                            <strong>${item.productName}</strong>
+                            ${item.genericName ? `<br><small class="text-muted">${item.genericName}</small>` : ''}
+                        </td>
+                        <td><code>${item.batchNo}</code></td>
+                        <td>
+                            <span class="badge ${item.currentStock <= 10 ? 'bg-warning' : 'bg-light text-dark'}">
+                                ${item.currentStock}
+                            </span>
+                        </td>
+                        <td>
+                            ${new Date(item.expiryDate).toLocaleDateString()}
+                            <br><small class="text-muted">${getRelativeDate(item.expiryDate)}</small>
+                        </td>
+                        <td>
+                            <span class="days-badge ${getDaysBadgeClass(item.daysToExpiry)}">
+                                ${item.daysToExpiry} days
+                            </span>
+                        </td>
+                        <td>${reportManager.formatCurrency(item.buyingPrice)}</td>
+                        <td>
+                            <strong>${reportManager.formatCurrency(item.totalValue)}</strong>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary btn-sm" onclick="viewDetails(${globalIndex})" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-outline-warning btn-sm" onclick="createAlert(${globalIndex})" title="Create Alert">
+                                    <i class="fas fa-bell"></i>
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm" onclick="markExpired(${globalIndex})" title="Mark as Expired">
+                                    <i class="fas fa-ban"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function getRowClass(status, daysToExpiry) {
+            if (status === 'Critical' || daysToExpiry <= 7) return 'table-danger';
+            if (status === 'Warning' || daysToExpiry <= 30) return 'table-warning';
+            return '';
+        }
+
+        function getStatusBadge(status) {
+            const badges = {
+                'Critical': '<span class="badge bg-danger"><i class="fas fa-skull-crossbones me-1"></i>Critical</span>',
+                'Warning': '<span class="badge bg-warning"><i class="fas fa-exclamation-triangle me-1"></i>Warning</span>',
+                'Safe': '<span class="badge bg-success"><i class="fas fa-shield-alt me-1"></i>Safe</span>'
+            };
+            return badges[status] || '<span class="badge bg-secondary">Unknown</span>';
+        }
+
+        function getDaysBadgeClass(days) {
+            if (days <= 7) return 'bg-danger text-white';
+            if (days <= 30) return 'bg-warning text-dark';
+            if (days <= 90) return 'bg-info text-white';
+            return 'bg-success text-white';
+        }
+
+        function getRelativeDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffTime = date - now;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays < 0) return 'Expired';
+            if (diffDays === 0) return 'Expires today';
+            if (diffDays === 1) return 'Expires tomorrow';
+            if (diffDays <= 7) return `Expires in ${diffDays} days`;
+            if (diffDays <= 30) return `Expires in ${Math.ceil(diffDays / 7)} weeks`;
+            return `Expires in ${Math.ceil(diffDays / 30)} months`;
+        }
+
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+            const pagination = document.getElementById('pagination');
+            
+            let html = '';
+            
+            // Previous button
+            html += `
+                <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage - 1})">Previous</a>
+                </li>
+            `;
+            
+            // Page numbers
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                    html += `
+                        <li class="page-item ${i === currentPage ? 'active' : ''}">
+                            <a class="page-link" href="#" onclick="changePage(${i})">${i}</a>
+                        </li>
+                    `;
+                } else if (i === currentPage - 3 || i === currentPage + 3) {
+                    html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                }
+            }
+            
+            // Next button
+            html += `
+                <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage + 1})">Next</a>
+                </li>
+            `;
+            
+            pagination.innerHTML = html;
+        }
+
+        function changePage(page) {
+            const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+            if (page >= 1 && page <= totalPages) {
+                currentPage = page;
+                displayReport();
+                updatePagination();
+            }
+        }
+
+        // Filter and utility functions
+        function filterByStatus(status) {
+            document.getElementById('statusFilter').value = status === 'all' ? 'all' : status;
+            applyCurrentFilters();
+        }
+
+        function applyStatusFilter() {
+            applyCurrentFilters();
+        }
+
+        function applySorting() {
+            applyCurrentFilters();
+        }
+
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAll');
+            const checkboxes = document.querySelectorAll('.item-checkbox');
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAll.checked;
+            });
+        }
+
+        // Action functions
+        function viewDetails(index) {
+            const item = filteredData[index];
+            reportManager.showToast(`Viewing details for ${item.productName} (${item.batchNo})`, 'info');
+        }
+
+        function createAlert(index) {
+            const item = filteredData[index];
+            reportManager.showToast(`Alert created for ${item.productName}`, 'success');
+        }
+
+        function markExpired(index) {
+            const item = filteredData[index];
+            if (confirm(`Mark ${item.productName} (${item.batchNo}) as expired?`)) {
+                reportManager.showToast(`${item.productName} marked as expired`, 'warning');
+            }
+        }
+
+        function generateAlert() {
+            reportManager.showToast('Automated alerts configured successfully', 'success');
+        }
+
+        function scheduleAlert() {
+            reportManager.showToast('Alert schedule updated', 'info');
+        }
+
+        function markForDisposal() {
+            const selected = getSelectedItems();
+            if (selected.length > 0) {
+                reportManager.showToast(`${selected.length} items marked for disposal`, 'warning');
+            } else {
+                reportManager.showToast('Please select items first', 'warning');
+            }
+        }
+
+        function createReturnRequest() {
+            const selected = getSelectedItems();
+            if (selected.length > 0) {
+                reportManager.showToast(`Return request created for ${selected.length} items`, 'info');
+            } else {
+                reportManager.showToast('Please select items first', 'warning');
+            }
+        }
+
+        function printBarcodes() {
+            const selected = getSelectedItems();
+            if (selected.length > 0) {
+                reportManager.showToast(`Printing barcodes for ${selected.length} items`, 'info');
+            } else {
+                reportManager.showToast('Please select items first', 'warning');
+            }
+        }
+
+        function getSelectedItems() {
+            const checkboxes = document.querySelectorAll('.item-checkbox:checked');
+            return Array.from(checkboxes).map(cb => parseInt(cb.value));
+        }
+
+        function exportExpiryReport(format) {
+            const params = {
+                monthsToExpiry: document.getElementById('monthsToExpiry').value,
+                statusFilter: document.getElementById('statusFilter').value,
+                format: format
+            };
+
+            reportManager.exportReport('expiryTracking', format, '@Url.Action("ExportExpiryTracking", "Report")', params);
+        }
+    </script>
+}
+
+<style>
+.alert-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    border-left: 4px solid #6c757d;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.alert-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+}
+
+.alert-card.critical {
+    border-left-color: #dc3545;
+    background: linear-gradient(135deg, #fff 0%, #ffe6e6 100%);
+}
+
+.alert-card.warning {
+    border-left-color: #ffc107;
+    background: linear-gradient(135deg, #fff 0%, #fff8e1 100%);
+}
+
+.alert-card.safe {
+    border-left-color: #28a745;
+    background: linear-gradient(135deg, #fff 0%, #e8f5e8 100%);
+}
+
+.alert-card.total {
+    border-left-color: #667eea;
+    background: linear-gradient(135deg, #fff 0%, #f0f2ff 100%);
+}
+
+.alert-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+}
+
+.alert-card.critical .alert-icon {
+    background: #dc3545;
+}
+
+.alert-card.warning .alert-icon {
+    background: #ffc107;
+    color: #212529;
+}
+
+.alert-card.safe .alert-icon {
+    background: #28a745;
+}
+
+.alert-card.total .alert-icon {
+    background: #667eea;
+}
+
+.alert-content h3 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin: 0;
+    color: #2c3e50;
+}
+
+.alert-label {
+    color: #6c757d;
+    font-size: 0.85rem;
+    margin: 0;
+    font-weight: 500;
+}
+
+.alert-value {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #495057;
+}
+
+.alert-action {
+    margin-left: auto;
+}
+
+.flash-alert {
+    animation: flash 1s ease-in-out 2;
+}
+
+@@keyframes flash {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; transform: scale(1.02); }
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.status-indicator {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+}
+
+.status-indicator.critical {
+    background: #dc3545;
+}
+
+.status-indicator.warning {
+    background: #ffc107;
+}
+
+.status-indicator.safe {
+    background: #28a745;
+}
+
+.days-badge {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.table-dark th {
+    background: #2c3e50;
+    border-color: #34495e;
+}
+
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+</style>

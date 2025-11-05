@@ -1,0 +1,295 @@
+﻿@model Pharma263.MVC.DTOs.PaymentReceived.AddPaymentReceivedDto
+@{
+    ViewData["Title"] = "Capture Payment";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+
+<div class="wraper container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Capture Payment from Customer</h3>
+                </div>
+                <div class="panel-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <form id="paymentForm">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" id="AccountsReceivableId" name="AccountsReceivableId" value="@Model.AccountsReceivableId" />
+                                <input type="hidden" id="CustomerId" name="CustomerId" value="@Model.CustomerId" />
+                                <input type="hidden" id="BalanceDueValue" value="@Model.BalanceDue.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
+
+                                <div class="form-group">
+                                    <label for="CustomerName" class="control-label">Customer</label>
+                                    <input id="CustomerName" class="form-control" value="@Model.CustomerName" readonly />
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="AmountDue" class="control-label">Amount Due</label>
+                                            <input id="AmountDue" class="form-control" value="@Model.AmountDue.ToString("C2")" readonly />
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="AmountPaid" class="control-label">Amount Paid</label>
+                                            <input id="AmountPaid" class="form-control" value="@Model.AmountPaid.ToString("C2")" readonly />
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="BalanceDue" class="control-label">Balance Due</label>
+                                            <input id="BalanceDue" class="form-control" value="@Model.BalanceDue.ToString("C2")" readonly />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <hr />
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="AmountToReceive" class="control-label">Amount to Receive</label>
+                                            <input id="AmountToReceive" name="AmountToReceive" class="form-control" />
+                                            <span id="AmountToReceiveError" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="PaymentMethodId" class="control-label">Payment Method</label>
+                                            <select id="PaymentMethodId" name="PaymentMethodId" class="form-control">
+                                                <option value="">-- Select Payment Method --</option>
+                                                @foreach (var method in ViewBag.PaymentMethods)
+                                                {
+                                                            <option value="@method.Value">@method.Text</option>
+                                                }
+                                            </select>
+                                            <span id="PaymentMethodIdError" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="PaymentDate" class="control-label">Payment Date</label>
+                                    <input id="PaymentDate" name="PaymentDate" class="form-control mydatepicker" />
+                                    <span id="PaymentDateError" class="text-danger"></span>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="Notes" class="control-label">Notes</label>
+                                    <textarea id="Notes" name="Notes" class="form-control" rows="3"></textarea>
+                                </div>
+
+                                <div class="form-group">
+                                    <button type="button" id="submitPayment" class="btn btn-primary">Record Payment</button>
+                                    <a href="@Url.Action("Index")" class="btn btn-default">Back to List</a>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="panel panel-info">
+                                <div class="panel-heading">
+                                    <h3 class="panel-title">Payment Information</h3>
+                                </div>
+                                <div class="panel-body">
+                                    <p>Record a payment received from the customer to reduce the balance due.</p>
+                                    <ul>
+                                        <li>The payment date defaults to today but can be changed if needed.</li>
+                                        <li>The payment amount cannot exceed the balance due.</li>
+                                        <li>Choose the payment method used for this transaction.</li>
+                                        <li>Add any relevant notes about this payment for future reference.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+            <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+
+            <script>
+                $(document).ready(function() {
+                    // Initialize datepicker
+                    $.datepicker.setDefaults({
+                        dateFormat: "dd/mm/yy"
+                    });
+
+                    $(".mydatepicker").datepicker({
+                        dateFormat: "dd/mm/yy",
+                        autoclose: true,
+                        onSelect: function(dateText, inst) {
+                            var selectedDate = $.datepicker.parseDate("dd/mm/yy", dateText);
+                            var currentTime = new Date();
+                            selectedDate.setHours(currentTime.getHours());
+                            selectedDate.setMinutes(currentTime.getMinutes());
+                            selectedDate.setSeconds(currentTime.getSeconds());
+                            $(this).val($.datepicker.formatDate("dd/mm/yy", selectedDate));
+                        }
+                    });
+
+                    // Set today's date by default
+                    var today = new Date();
+                    $("#PaymentDate").datepicker("setDate", today);
+
+                    // Get the balance due from the hidden field
+                    var balanceDue = parseFloat($("#BalanceDueValue").val());
+
+                    // Set max amount for payment to be the balance due
+                    $('#AmountToReceive').attr('max', balanceDue);
+                    $('#AmountToReceive').val(balanceDue.toFixed(2));
+
+                    // Validate amount on change
+                    $('#AmountToReceive').on('change', function() {
+                        var amountToReceive = parseFloat($(this).val());
+                        if (isNaN(amountToReceive)) {
+                            $(this).val('0.00');
+                            $('#AmountToReceiveError').text('Please enter a valid amount');
+                            return;
+                        }
+
+                        if (amountToReceive > balanceDue) {
+                            $(this).val(balanceDue.toFixed(2));
+                            $('#AmountToReceiveError').text('Payment amount cannot exceed the balance due: $' + balanceDue.toFixed(2));
+                        } else {
+                            $('#AmountToReceiveError').text('');
+                        }
+                    });
+
+                    // Handle form submission via AJAX
+                    $('#submitPayment').on('click', function() {
+                        console.log("Submit button clicked");
+                        // Reset error messages
+                        $('.text-danger').text('');
+
+                        // Validate form
+                        var isValid = true;
+
+                        var amountToReceive = parseFloat($('#AmountToReceive').val());                        
+
+                        console.log("Amount to receive:", amountToReceive);
+
+                        if (isNaN(amountToReceive) || amountToReceive <= 0) {
+                            $('#AmountToReceiveError').text('Please enter a valid amount greater than zero');
+                            isValid = false;
+                        }
+
+                        var paymentMethodId = $('#PaymentMethodId').val();
+                        console.log("Payment method ID:", paymentMethodId);
+
+                        if (!paymentMethodId) {
+                            $('#PaymentMethodIdError').text('Please select a payment method');
+                            isValid = false;
+                        }
+
+                        var paymentDate = $('#PaymentDate').val();
+                        console.log("Payment date:", paymentDate);
+                        if (!paymentDate) {
+                            $('#PaymentDateError').text('Please select a payment date');
+                            isValid = false;
+                        }
+
+                        if (!isValid) {
+                            console.log("Form validation failed");
+                            return;
+                        }
+
+                        console.log("Form validation passed, preparing to submit");
+
+                        // Disable the button to prevent double submissions
+                        $(this).prop('disabled', true).text('Processing...');
+
+                            var accountReceivableId = parseInt($('#AccountsReceivableId').val());
+                            var customerId = parseInt($('#CustomerId').val());
+                            var amountReceived = parseFloat($('#AmountToReceive').val());                            
+                            var paymentMethodId = parseInt($('#PaymentMethodId').val());
+                            var notes = $('#Notes').val() || "";  // Ensure it's not undefined
+
+                        // Prepare the data
+                        var rawDate = $('#PaymentDate').val();
+                        var parts = rawDate.split('/');
+                        var paymentDate = new Date(
+                            parseInt(parts[2]),    // year
+                            parseInt(parts[1]) - 1, // month (0-based)
+                            parseInt(parts[0])     // day
+                        );
+
+                        var formattedAmount = amountReceived.toFixed(2);
+
+                        // Format date in yyyy-MM-dd format for ASP.NET binding
+                        var formattedDate = paymentDate.getFullYear() + '-' + 
+                                            ('0' + (paymentDate.getMonth() + 1)).slice(-2) + '-' + 
+                                            ('0' + paymentDate.getDate()).slice(-2);
+
+                        console.log("Formatted date:", formattedDate);
+
+                            // Log the prepared data
+                            console.log("Form data:");
+                            console.log("- AccountReceivableId:", accountReceivableId, typeof accountReceivableId);
+                            console.log("- CustomerId:", customerId, typeof customerId);
+                            console.log("- AmountReceived:", formattedAmount, typeof formattedAmount);
+                            console.log("- PaymentDate:", formattedDate, typeof formattedDate);
+                            console.log("- PaymentMethodId:", paymentMethodId, typeof paymentMethodId);
+                            console.log("- Notes:", notes, typeof notes);
+
+                            var data = {
+                                AccountsReceivableId: accountReceivableId,
+                                CustomerId: customerId,
+                                AmountToReceive: formattedAmount,
+                                PaymentDate: formattedDate,
+                                PaymentMethodId: paymentMethodId,
+                                Notes: notes
+                            };
+
+                            var formData = new FormData();
+                            formData.append('AccountsReceivableId', accountReceivableId);
+                            formData.append('CustomerId', customerId);
+                            formData.append('AmountToReceive', formattedAmount);
+                            formData.append('PaymentDate', formattedDate);
+                            formData.append('PaymentMethodId', paymentMethodId);
+                            formData.append('Notes', notes);
+
+                            console.log("Submitting data:", data);
+                            console.log("Submitting form data:", formData);
+
+                        // Submit the data
+                            $.ajax({
+            url: '@Url.Action("CapturePayment", "AccountsReceivable")',
+            type: 'POST',
+            data: formData,
+            processData: false,  // Don't process the FormData
+            contentType: false,  // Let browser set content type with boundary
+            headers: {
+                'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+            },
+            success: function(response) {
+                console.log("Success:", response);
+                if (response.success) {
+                    // Redirect to the URL provided by the server
+                    window.location.href = response.redirectUrl || '@Url.Action("AccountDashboard", "Dashboard")';
+                } else {
+                    // Show error message
+                    alert(response.message || 'Failed to record payment');
+                    $('#submitPayment').prop('disabled', false).text('Record Payment');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.log("Error status:", status);
+                console.log("Error:", error);
+                console.log("Response:", xhr.responseText);
+                alert('An error occurred while processing your payment. Please try again.');
+                $('#submitPayment').prop('disabled', false).text('Record Payment');
+            }
+        });
+                    });
+                });
+            </script>
+}

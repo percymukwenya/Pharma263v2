@@ -1,0 +1,118 @@
+﻿@model Pharma263.Integration.Api.Models.Request.UpdateMedicineRequest
+@{
+    ViewBag.Title = "EditMedicine";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style type="text/css">
+    .bg_1 {
+        background-color: green;
+    }
+
+    .bg_2 {
+        background-color: gray;
+    }
+
+
+    .error_msg {
+        color: #f00;
+        display: none;
+    }
+
+    .table {
+        /* width: 100%; */
+        /* max-width: 100%; */
+        margin-bottom: 0px;
+    }
+</style>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.7.1/css/bootstrap-datepicker3.css" rel="stylesheet" />
+
+<div class="wraper container-fluid">
+    <div class="page-title">
+        <h3 class="title">Medicine </h3>
+    </div>
+    <div class="row">
+        <div class="col-lg-10 col-md-offset-1">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Update Medicine</h3>
+                </div>
+                <div class="panel-body">
+                    @using (Html.BeginForm("EditMedicine", "Medicine", FormMethod.Post, new { @class = "ajax-form", data_ajax = "true", data_validate = "true", data_ajax_options = "{\"showSuccess\": true, \"redirect\": \"/Medicine/Index\"}" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(x => x.Id)
+
+                        <div class="form-group">
+                            @Html.LabelFor(x => x.Name)
+                            @Html.TextBoxFor(x => x.Name, null, new { @class = "form-control", @placeholder = "Enter Product Name", @required = "required" })
+                            @Html.ValidationMessageFor(x => x.Name, "", new { @class = "text-danger" })
+                        </div>
+
+
+                        <div class="form-group">
+                            @Html.LabelFor(x => x.GenericName)
+                            @Html.TextBoxFor(x => x.GenericName, null, new { @class = "form-control", @placeholder = "Enter Generic Name", @required = "required" })
+                            @Html.ValidationMessageFor(x => x.GenericName, "", new { @class = "text-danger" })
+                        </div>
+
+                        <div class="row">
+                            <div class="col-lg-6 col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(x => x.Brand)
+                                    @Html.TextBoxFor(x => x.Brand, null, new { @class = "form-control", @placeholder = "Enter Brand", @required = "required" })
+                                    @Html.ValidationMessageFor(x => x.Brand, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(x => x.Manufacturer)
+                                    @Html.TextBoxFor(x => x.Manufacturer, null, new { @class = "form-control", @placeholder = "Enter manufacturer" })
+                                    @Html.ValidationMessageFor(x => x.Manufacturer, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-lg-4 col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(x => x.DosageForm)
+                                    @Html.TextBoxFor(x => x.DosageForm, null, new { @class = "form-control", @placeholder = "Enter Dosage Form (optional for non-medicine products)" })
+                                    @Html.ValidationMessageFor(x => x.DosageForm, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-lg-4 col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(x => x.PackSize)
+                                    @Html.TextBoxFor(x => x.PackSize, null, new { @class = "form-control", @placeholder = "Enter Pack Size" })
+                                    @Html.ValidationMessageFor(x => x.PackSize, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-lg-4 col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(x => x.QuantityPerUnit)
+                                    @Html.TextBoxFor(x => x.QuantityPerUnit, null, new { @class = "form-control", @placeholder = "Quantity Per Unit", @type = "number", @min = "1" })
+                                    @Html.ValidationMessageFor(x => x.QuantityPerUnit, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-purple btn-lg">
+                            <i class="fas fa-edit"></i> Update Medicine
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.7.1/js/bootstrap-datepicker.js"></script>
+    @*@Scripts.Render("~/bundles/App")*@
+    <script src="~/Scripts/App/App.js"></script>
+    <script type="text/javascript">
+
+    </script>
+}

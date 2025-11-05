@@ -1,0 +1,236 @@
+﻿@model Pharma263.MVC.Models.ProcessReturnViewModel
+
+@{
+    ViewData["Title"] = "Process Return";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    /* Style for form container */
+    .form-container {
+        max-width: 1200px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    /* Style for sale info */
+    .sale-info {
+        display: flex;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+        padding: 15px;
+        background-color: #e9ecef;
+        border-radius: 5px;
+    }
+
+    .sale-info-item {
+        flex: 1;
+        min-width: 200px;
+        margin-bottom: 10px;
+    }
+
+    .sale-info-label {
+        font-weight: bold;
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    /* Style for form elements */
+    .form-label {
+        font-weight: bold;
+    }
+
+    .form-input, .form-select {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    /* Style for return items table */
+    .return-items-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+    }
+
+        .return-items-table th, .return-items-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .return-items-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+
+        .return-items-table tr:hover {
+            background-color: #f5f5f5;
+        }
+
+    /* Style for submit button */
+    .submit-button {
+        background-color: #007bff;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+        .submit-button:hover {
+            background-color: #0069d9;
+        }
+
+    /* Responsive adjustments */
+    @@media (max-width: 768px) {
+        .sale-info-item {
+            flex: 0 0 100%;
+        }
+    }
+
+    /* Style for validation messages */
+    .validation-summary-errors {
+        color: #dc3545;
+        margin-bottom: 20px;
+    }
+
+        .validation-summary-errors ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+</style>
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="form-container">
+            <h2 class="mb-4">Process Return</h2>
+
+            @if (TempData["error"] != null)
+            {
+                <div class="alert alert-danger">
+                    @TempData["error"]
+                </div>
+            }
+
+            <div class="sale-info">
+                <div class="sale-info-item">
+                    <span class="sale-info-label">Sale ID:</span>
+                    <span>@Model.SaleId</span>
+                </div>
+                <div class="sale-info-item">
+                    <span class="sale-info-label">Customer:</span>
+                    <span>@Model.CustomerName</span>
+                </div>
+                <div class="sale-info-item">
+                    <span class="sale-info-label">Sale Date:</span>
+                    <span>@Model.SaleDate</span>
+                </div>
+                <div class="sale-info-item">
+                    <span class="sale-info-label">Total:</span>
+                    <span>@Model.SaleTotal.ToString("F2")</span>
+                </div>
+                <div class="sale-info-item">
+                    <span class="sale-info-label">Status:</span>
+                    <span>@Model.SaleStatus</span>
+                </div>
+            </div>
+
+            @using (Html.BeginForm("Process", "Return", FormMethod.Post, new { @class = "needs-validation" }))
+            {
+                @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+                @Html.HiddenFor(m => m.SaleId)
+
+                <table class="return-items-table">
+                    <thead>
+                        <tr>
+                            <th>Medicine</th>
+                            <th>Original Qty</th>
+                            <th>Unit Price</th>
+                            <th>Total</th>
+                            <th>Return Qty</th>
+                            <th>Return Reason</th>
+                            <th>Return Destination</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < Model.ReturnItems.Count; i++)
+                        {
+                            <tr>
+                                <td>
+                                    @Html.HiddenFor(m => Model.ReturnItems[i].SaleItemId)
+                                    @Html.HiddenFor(m => Model.ReturnItems[i].MedicineName)
+                                    @Html.HiddenFor(m => Model.ReturnItems[i].Quantity)
+                                    @Html.HiddenFor(m => Model.ReturnItems[i].UnitPrice)
+                                    @Html.HiddenFor(m => Model.ReturnItems[i].Total)
+                                    @Html.HiddenFor(m => Model.ReturnItems[i].IsReturned)
+                                    @Model.ReturnItems[i].MedicineName
+                                </td>
+                                <td>@Model.ReturnItems[i].Quantity</td>
+                                <td>@Model.ReturnItems[i].UnitPrice.ToString("F2")</td>
+                                <td>@Model.ReturnItems[i].Total.ToString("F2")</td>
+                                <td>
+                                    @if (Model.ReturnItems[i].IsReturned)
+                                    {
+                                        <span>Already Returned</span>
+                                        @Html.HiddenFor(m => Model.ReturnItems[i].QuantityToReturn, new { Value = 0 })
+                                    }
+                                    else
+                                    {
+                                        @Html.TextBoxFor(m => Model.ReturnItems[i].QuantityToReturn, new { @class = "form-input", type = "number", min = "0", max = Model.ReturnItems[i].Quantity })
+                                    }
+                                </td>
+                                <td>
+                                    @if (!Model.ReturnItems[i].IsReturned)
+                                    {
+                                        @Html.DropDownListFor(m => Model.ReturnItems[i].SelectedReturnReasonId, Model.ReturnReasonsSelectList, "Select a reason", new { @class = "form-select" })
+                                    }
+                                </td>
+                                <td>
+                                    @if (!Model.ReturnItems[i].IsReturned)
+                                    {
+                                        @Html.DropDownListFor(m => Model.ReturnItems[i].SelectedReturnDestinationId, Model.ReturnDestinationsSelectList, "Select a destination", new { @class = "form-select" })
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <div class="text-right">
+                    <a href="@Url.Action("Index", "Sale")" class="btn btn-secondary mr-2">Cancel</a>
+                    <button type="submit" class="submit-button">Process Return</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Enable only return reason and destination for items with quantity > 0
+            $('input[name$=".QuantityToReturn"]').on('change', function () {
+                var index = $(this).attr('name').match(/\d+/)[0];
+                var quantityInput = $(this);
+                var reasonSelect = $(`#ReturnItems_${index}__SelectedReturnReasonId`);
+                var destinationSelect = $(`#ReturnItems_${index}__SelectedReturnDestinationId`);
+
+                if (parseInt(quantityInput.val()) > 0) {
+                    reasonSelect.prop('required', true);
+                    destinationSelect.prop('required', true);
+                } else {
+                    reasonSelect.prop('required', false);
+                    destinationSelect.prop('required', false);
+                }
+            });
+        });
+    </script>
+}

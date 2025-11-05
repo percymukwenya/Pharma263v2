@@ -1,0 +1,522 @@
+﻿@{
+    ViewData["Title"] = "Accounting Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="wraper container-fluid">
+    <div class="page-title">
+        <h3 class="title">Accounting Dashboard</h3>
+        <div class="pull-right">
+            <div class="btn-group">
+                <a href="@Url.Action("Index", "AccountsReceivable")" class="btn btn-primary btn-sm">
+                    <i class="fa fa-money"></i> Manage A/R
+                </a>
+                <a href="@Url.Action("Index", "AccountsPayable")" class="btn btn-info btn-sm">
+                    <i class="fa fa-credit-card"></i> Manage A/P
+                </a>
+            </div>
+        </div>
+        <div class="clearfix"></div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row">
+        <div class="col-md-3">
+            <div class="panel panel-primary">
+                <div class="panel-heading">
+                    <h3 class="panel-title">
+                        <i class="fa fa-money"></i> Total A/R
+                    </h3>
+                </div>
+                <div class="panel-body text-center">
+                    <h3 id="totalAccountsReceivable" class="text-primary">
+                        <i class="fa fa-spinner fa-spin"></i> Loading...
+                    </h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="panel panel-info">
+                <div class="panel-heading">
+                    <h3 class="panel-title">
+                        <i class="fa fa-credit-card"></i> Total A/P
+                    </h3>
+                </div>
+                <div class="panel-body text-center">
+                    <h3 id="totalAccountsPayable" class="text-info">
+                        <i class="fa fa-spinner fa-spin"></i> Loading...
+                    </h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="panel panel-warning">
+                <div class="panel-heading">
+                    <h3 class="panel-title">
+                        <i class="fa fa-exclamation-triangle"></i> Past Due A/R
+                    </h3>
+                </div>
+                <div class="panel-body text-center">
+                    <h3 id="pastDueReceivables" class="text-warning">
+                        <i class="fa fa-spinner fa-spin"></i> Loading...
+                    </h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="panel panel-danger">
+                <div class="panel-heading">
+                    <h3 class="panel-title">
+                        <i class="fa fa-warning"></i> Past Due A/P
+                    </h3>
+                </div>
+                <div class="panel-body text-center">
+                    <h3 id="pastDuePayables" class="text-danger">
+                        <i class="fa fa-spinner fa-spin"></i> Loading...
+                    </h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Action Section -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-info">
+                <div class="panel-heading">
+                    <h3 class="panel-title">
+                        <i class="fa fa-bolt"></i> Quick Actions
+                    </h3>
+                </div>
+                <div class="panel-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <a href="@Url.Action("Index", "AccountsReceivable")" class="btn btn-block btn-primary">
+                                <i class="fa fa-list"></i><br>View All A/R
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="@Url.Action("Index", "AccountsPayable")" class="btn btn-block btn-info">
+                                <i class="fa fa-list"></i><br>View All A/P
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="@Url.Action("CustomerStatement", "Statement")" class="btn btn-block btn-success">
+                                <i class="fa fa-file-text"></i><br>Customer Statement
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="@Url.Action("SupplierStatement", "Statement")" class="btn btn-block btn-warning">
+                                <i class="fa fa-file-text"></i><br>Supplier Statement
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Priority Items -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="panel panel-warning">
+                <div class="panel-heading">
+                    <h3 class="panel-title">
+                        <i class="fa fa-exclamation-triangle"></i> Top 10 Past Due Receivables
+                    </h3>
+                    <div class="pull-right">
+                        <a href="@Url.Action("Index", "AccountsReceivable")" class="btn btn-xs btn-default">
+                            <i class="fa fa-external-link"></i> View All
+                        </a>
+                    </div>
+                    <div class="clearfix"></div>
+                </div>
+                <div class="panel-body">
+                    <div class="table-responsive">
+                        <table id="pastDueReceivablesTable" class="table table-hover table-condensed">
+                            <thead>
+                                <tr>
+                                    <th>Customer</th>
+                                    <th>Amount</th>
+                                    <th>Days</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">
+                                        <i class="fa fa-spinner fa-spin"></i> Loading data...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="panel panel-danger">
+                <div class="panel-heading">
+                    <h3 class="panel-title">
+                        <i class="fa fa-warning"></i> Top 10 Past Due Payables
+                    </h3>
+                    <div class="pull-right">
+                        <a href="@Url.Action("Index", "AccountsPayable")" class="btn btn-xs btn-default">
+                            <i class="fa fa-external-link"></i> View All
+                        </a>
+                    </div>
+                    <div class="clearfix"></div>
+                </div>
+                <div class="panel-body">
+                    <div class="table-responsive">
+                        <table id="pastDuePayablesTable" class="table table-hover table-condensed">
+                            <thead>
+                                <tr>
+                                    <th>Supplier</th>
+                                    <th>Amount</th>
+                                    <th>Days</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">
+                                        <i class="fa fa-spinner fa-spin"></i> Loading data...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Aging Summary (Collapsed by default) -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">
+                        <i class="fa fa-calendar"></i> A/R Aging Summary
+                    </h3>
+                    <div class="pull-right">
+                        <button class="btn btn-xs btn-default" type="button" data-toggle="collapse" data-target="#agingReportCollapse" aria-expanded="false">
+                            <i class="fa fa-chevron-down"></i> Show/Hide
+                        </button>
+                        <a href="@Url.Action("AgingReport", "Report")" class="btn btn-xs btn-primary">
+                            <i class="fa fa-external-link"></i> Full Report
+                        </a>
+                    </div>
+                    <div class="clearfix"></div>
+                </div>
+                <div class="collapse" id="agingReportCollapse">
+                    <div class="panel-body">
+                        <div class="table-responsive">
+                            <table id="agingReportTable" class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Customer</th>
+                                        <th>Current</th>
+                                        <th>31-60 Days</th>
+                                        <th>61-90 Days</th>
+                                        <th>Over 90 Days</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted">
+                                            <i class="fa fa-info-circle"></i> Click "Show/Hide" to load aging data
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment History Charts -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Payments Received (Last 30 Days)</h3>
+                </div>
+                <div class="panel-body">
+                    <canvas id="paymentsReceivedChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Payments Made (Last 30 Days)</h3>
+                </div>
+                <div class="panel-body">
+                    <canvas id="paymentsMadeChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Load summary data
+            loadAccountingSummary();
+
+            // Load past due accounts
+            loadPastDueAccounts();
+
+            // Load payment charts
+            loadPaymentCharts();
+
+            // Load aging report when collapsed section is opened
+            $('#agingReportCollapse').on('shown.bs.collapse', function () {
+                if ($('#agingReportTable tbody tr').length <= 1) {
+                    loadAgingReport();
+                }
+            });
+        });
+
+        function loadAccountingSummary() {
+            $.ajax({
+                url: '@Url.Action("GetAccountingSummary", "Dashboard")',
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    $('#totalAccountsReceivable').text(formatCurrency(data.totalAccountsReceivable));
+                    $('#totalAccountsPayable').text(formatCurrency(data.totalAccountsPayable));
+                    $('#pastDueReceivables').text(formatCurrency(data.pastDueReceivables));
+                    $('#pastDuePayables').text(formatCurrency(data.pastDuePayables));
+                },
+                error: function () {
+                    console.error('Failed to load accounting summary');
+                }
+            });
+        }
+
+        function loadPastDueAccounts() {
+            // Load top 10 past due receivables
+            $.ajax({
+                url: '@Url.Action("GetPastDueReceivables", "Dashboard")',
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    var tbody = '';
+                    
+                    if (data.length === 0) {
+                        tbody = '<tr><td colspan="4" class="text-center text-muted">No past due accounts</td></tr>';
+                    } else {
+                        // Limit to top 10 and sort by amount descending
+                        var topItems = data.sort((a, b) => b.balanceDue - a.balanceDue).slice(0, 10);
+                        
+                        $.each(topItems, function (i, item) {
+                            var daysPastDue = calculateDaysPastDue(item.dueDate);
+                            var badgeClass = daysPastDue > 90 ? 'badge-danger' : daysPastDue > 60 ? 'badge-warning' : 'badge-info';
+                            
+                            tbody += '<tr>';
+                            tbody += '<td><strong>' + item.customer + '</strong></td>';
+                            tbody += '<td><strong>' + formatCurrency(item.balanceDue) + '</strong></td>';
+                            tbody += '<td><span class="badge ' + badgeClass + '">' + daysPastDue + 'd</span></td>';
+                            tbody += '<td>';
+                            tbody += '<div class="btn-group btn-group-xs">';
+                            tbody += '<a href="/AccountsReceivable/CapturePayment?accountReceivableId=' + item.id + '" class="btn btn-primary btn-xs" title="Record Payment">';
+                            tbody += '<i class="fa fa-money"></i></a>';
+                            tbody += '</div>';
+                            tbody += '</td>';
+                            tbody += '</tr>';
+                        });
+                    }
+
+                    $('#pastDueReceivablesTable tbody').html(tbody);
+                },
+                error: function () {
+                    console.error('Failed to load past due receivables');
+                    $('#pastDueReceivablesTable tbody').html('<tr><td colspan="4" class="text-danger text-center">Failed to load data</td></tr>');
+                }
+            });
+
+            // Load top 10 past due payables
+            $.ajax({
+                url: '@Url.Action("GetPastDuePayables", "Dashboard")',
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    var tbody = '';
+
+                    if (data.length === 0) {
+                        tbody = '<tr><td colspan="4" class="text-center text-muted">No past due accounts</td></tr>';
+                    } else {
+                        // Limit to top 10 and sort by amount descending
+                        var topItems = data.sort((a, b) => b.balanceOwed - a.balanceOwed).slice(0, 10);
+                        
+                        $.each(topItems, function (i, item) {
+                            var daysPastDue = calculateDaysPastDue(item.dueDate);
+                            var badgeClass = daysPastDue > 90 ? 'badge-danger' : daysPastDue > 60 ? 'badge-warning' : 'badge-info';
+                            
+                            tbody += '<tr>';
+                            tbody += '<td><strong>' + item.supplier + '</strong></td>';
+                            tbody += '<td><strong>' + formatCurrency(item.balanceOwed) + '</strong></td>';
+                            tbody += '<td><span class="badge ' + badgeClass + '">' + daysPastDue + 'd</span></td>';
+                            tbody += '<td>';
+                            tbody += '<div class="btn-group btn-group-xs">';
+                            tbody += '<a href="/AccountsPayable/CapturePayment?accountPayableId=' + item.id + '" class="btn btn-primary btn-xs" title="Make Payment">';
+                            tbody += '<i class="fa fa-money"></i></a>';
+                            tbody += '</div>';
+                            tbody += '</td>';
+                            tbody += '</tr>';
+                        });
+                    }
+
+                    $('#pastDuePayablesTable tbody').html(tbody);
+                },
+                error: function () {
+                    console.error('Failed to load past due payables');
+                    $('#pastDuePayablesTable tbody').html('<tr><td colspan="4" class="text-danger text-center">Failed to load data</td></tr>');
+                }
+            });
+        }
+
+        function loadAgingReport() {
+            // Show loading indicator
+            $('#agingReportTable tbody').html('<tr><td colspan="6" class="text-center"><i class="fa fa-spinner fa-spin"></i> Loading aging data...</td></tr>');
+            
+            $.ajax({
+                url: '@Url.Action("GetAccountsReceivableAging", "Dashboard")',
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    var tbody = '';
+
+                    if (data.length === 0) {
+                        tbody = '<tr><td colspan="6" class="text-center text-muted">No aging data available</td></tr>';
+                    } else {
+                        var totalCurrent = 0;
+                        var total31to60 = 0;
+                        var total61to90 = 0;
+                        var totalOver90 = 0;
+                        var grandTotal = 0;
+
+                        // Limit to top 20 customers with highest balances
+                        var topCustomers = data.sort((a, b) => b.totalBalance - a.totalBalance).slice(0, 20);
+
+                        $.each(topCustomers, function (i, item) {
+                            tbody += '<tr>';
+                            tbody += '<td><strong>' + item.customerName + '</strong></td>';
+                            tbody += '<td>' + formatCurrency(item.current30Days) + '</td>';
+                            tbody += '<td>' + formatCurrency(item.days31To60) + '</td>';
+                            tbody += '<td>' + formatCurrency(item.days61To90) + '</td>';
+                            tbody += '<td>' + formatCurrency(item.daysOver90) + '</td>';
+                            tbody += '<td><strong>' + formatCurrency(item.totalBalance) + '</strong></td>';
+                            tbody += '</tr>';
+
+                            totalCurrent += item.current30Days;
+                            total31to60 += item.days31To60;
+                            total61to90 += item.days61To90;
+                            totalOver90 += item.daysOver90;
+                            grandTotal += item.totalBalance;
+                        });
+
+                        // Add totals row
+                        tbody += '<tr class="info">';
+                        tbody += '<th>Totals (Top 20)</th>';
+                        tbody += '<th>' + formatCurrency(totalCurrent) + '</th>';
+                        tbody += '<th>' + formatCurrency(total31to60) + '</th>';
+                        tbody += '<th>' + formatCurrency(total61to90) + '</th>';
+                        tbody += '<th>' + formatCurrency(totalOver90) + '</th>';
+                        tbody += '<th>' + formatCurrency(grandTotal) + '</th>';
+                        tbody += '</tr>';
+                    }
+
+                    $('#agingReportTable tbody').html(tbody);
+                },
+                error: function () {
+                    console.error('Failed to load aging report');
+                    $('#agingReportTable tbody').html('<tr><td colspan="6" class="text-danger text-center">Failed to load aging data</td></tr>');
+                }
+            });
+        }
+
+        function loadPaymentCharts() {
+            // Payments Received Chart
+            $.ajax({
+                url: '@Url.Action("GetPaymentsReceivedChart", "Dashboard")',
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    createPaymentChart('paymentsReceivedChart', 'Payments Received', data.labels, data.amounts, 'rgba(75, 192, 192, 0.6)');
+                },
+                error: function () {
+                    console.error('Failed to load payments received chart');
+                }
+            });
+
+            // Payments Made Chart
+            $.ajax({
+                url: '@Url.Action("GetPaymentsMadeChart", "Dashboard")',
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    createPaymentChart('paymentsMadeChart', 'Payments Made', data.labels, data.amounts, 'rgba(255, 99, 132, 0.6)');
+                },
+                error: function () {
+                    console.error('Failed to load payments made chart');
+                }
+            });
+        }
+
+        function createPaymentChart(canvasId, label, labels, data, backgroundColor) {
+            var ctx = document.getElementById(canvasId).getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: label,
+                        data: data,
+                        backgroundColor: backgroundColor,
+                        borderColor: backgroundColor.replace('0.6', '1'),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function formatCurrency(value) {
+            return '$' + parseFloat(value).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+        }
+
+        function formatDate(dateString) {
+            var date = new Date(dateString);
+            return (date.getMonth() + 1) + '/' + date.getDate() + '/' + date.getFullYear();
+        }
+
+        function calculateDaysPastDue(dueDateString) {
+            var dueDate = new Date(dueDateString);
+            var today = new Date();
+            var timeDifference = today.getTime() - dueDate.getTime();
+            var daysDifference = Math.ceil(timeDifference / (1000 * 3600 * 24));
+            return Math.max(0, daysDifference);
+        }
+    </script>
+}

@@ -1,0 +1,98 @@
+﻿@model IEnumerable<Pharma263.MVC.Models.SalesByCustomerViewModel>
+
+<style>
+    .highlight {
+        color: #007bff; /* Change this to your desired text color */
+        font-weight: bold;
+    }
+</style>
+
+<h5 style="margin-top: 200px">Sale By Customer</h5>
+
+<form id="saleByCustomerForm">
+    <div class="col-md-4">
+        <div class="form-group">
+            <label for="Name">Customer : </label>
+            <select id="CustomerId" class="form-control">
+                <option value="">Select Customer</option>
+            </select>
+        </div>
+    </div>
+    <br>
+    <label><input type="radio" name="exportOption" value="preview" checked> Preview</label>
+    <label><input type="radio" name="exportOption" value="csv"> CSV Export</label>
+    <label><input type="radio" name="exportOption" value="pdf"> PDF Export</label>
+    <br>
+    <button type="submit">Generate Report</button>
+    <a id="downloadCsvButton" style="display: none;" href="#">Download CSV</a>
+    <a id="downloadPdfButton" style="display: none;" href="#">Download PDF</a>
+</form>
+
+<div style="margin-left: 30px;" id="saleByCustomerResults">
+    <!-- The report preview or download link will be displayed here -->
+</div>
+
+
+@section scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            $.ajax({
+                type: "GET",
+                url: "@Url.Action("GetCustomer", "Customer")",
+                datatype: "Json",
+                success: function (data) {
+                    // Clear existing options from select element
+                    $('#CustomerId').empty();
+                    // Add empty option as first option
+                    $('#CustomerId').append($('<option>').text('Select Customer').attr('value', ''));
+                    $.each(data, function (index, value) {
+                        $('#CustomerId').append($('<option>').text(value.name).attr('value', value.id));
+                        //$("#Customer").append('<option value="' + value.Id + '">' + value.Name + "</option>");
+                    });
+                    // Initialize Select2 plugin on select element
+                    //$('#CustomerId').select2();
+                },
+            });
+
+            $("#saleByCustomerForm").submit(function (event) {
+                event.preventDefault();
+
+                var customerId = $("#CustomerId").val();
+                var selectedExportOption = $("input[name='exportOption']:checked").val();
+
+                $.ajax({
+                    type: "POST",
+                    url: "@Url.Action("SaleByCustomer", "Report")",
+                    data: { customerId: customerId, exportFormat: selectedExportOption },
+                    dataType: "html",
+                    success: function (data) {
+                        if (selectedExportOption === "preview") {
+                            $("#saleByCustomerResults").html(data);
+                        } else if (selectedExportOption === "csv") {
+                            // Show the download button
+                            $("#downloadCsvButton").show();
+
+                            // Set the button's href attribute to the CSV download action
+                            var downloadUrl = "@Url.Action("DownloadSaleByCustomerCSV", "Report")" + "?customerId=" + customerId;
+                            $("#downloadCsvButton").attr("href", downloadUrl);
+                        } else if (selectedExportOption === "pdf") {
+                            // Show the download button for PDF
+                            $("#downloadPdfButton").show();
+                            // Set the button's href attribute for PDF download
+                            var pdfDownloadUrl = "@Url.Action("DownloadSaleByCustomerPDF", "Report")" + "?customerId=" + customerId;
+                            $("#downloadPdfButton").attr("href", pdfDownloadUrl);
+                        }
+                    },
+                    error: function () {
+                        $("#saleByCustomerResults").html("An error occurred while fetching data.");
+                    }
+                });
+            });
+
+        });
+    </script>
+}

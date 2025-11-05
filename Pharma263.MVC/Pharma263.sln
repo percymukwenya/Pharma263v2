@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.33530.505
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Presentation", "Presentation", "{9264DBBA-2237-4E6D-94EC-BD2EE82659A2}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pharma263.MVC", "Pharma263.MVC\Pharma263.MVC.csproj", "{7D0ED64D-571A-481A-A274-5E3D7D5DC54E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pharma263.Integration.Api", "Pharma263.Integration.Api\Pharma263.Integration.Api.csproj", "{0D7FB433-DFF0-4AE7-A5DE-1CACF16744ED}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7D0ED64D-571A-481A-A274-5E3D7D5DC54E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7D0ED64D-571A-481A-A274-5E3D7D5DC54E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7D0ED64D-571A-481A-A274-5E3D7D5DC54E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7D0ED64D-571A-481A-A274-5E3D7D5DC54E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0D7FB433-DFF0-4AE7-A5DE-1CACF16744ED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0D7FB433-DFF0-4AE7-A5DE-1CACF16744ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0D7FB433-DFF0-4AE7-A5DE-1CACF16744ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0D7FB433-DFF0-4AE7-A5DE-1CACF16744ED}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{7D0ED64D-571A-481A-A274-5E3D7D5DC54E} = {9264DBBA-2237-4E6D-94EC-BD2EE82659A2}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {8B1FE4F6-8A0D-4C10-B7FD-C718F6926B0D}
+	EndGlobalSection
+EndGlobal

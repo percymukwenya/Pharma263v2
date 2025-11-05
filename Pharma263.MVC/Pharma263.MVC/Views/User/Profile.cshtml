@@ -1,0 +1,60 @@
+﻿@model Pharma263.MVC.DTOs.User.UserProfileDto
+
+<div class="wraper container-fluid">
+    <div class="row">
+        <div class="col-lg-10 col-md-offset-1">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4>Your Profile</h4>
+                </div>
+                <div class="panel-body">
+                    <form asp-action="Profile" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                        <input type="hidden" asp-for="Id" />
+
+                        <div class="form-group">
+                            <label asp-for="UserName" class="control-label">Username</label>
+                            <input asp-for="UserName" class="form-control" />
+                            <span asp-validation-for="UserName" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label asp-for="Email" class="control-label">Email</label>
+                            <input asp-for="Email" class="form-control" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label asp-for="Firstname" class="control-label">First Name</label>
+                            <input asp-for="Firstname" class="form-control" />
+                            <span asp-validation-for="Firstname" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label asp-for="Lastname" class="control-label">Last Name</label>
+                            <input asp-for="Lastname" class="form-control" />
+                            <span asp-validation-for="Lastname" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label asp-for="Phone" class="control-label">Phone</label>
+                            <input asp-for="Phone" class="form-control" />
+                            <span asp-validation-for="Phone" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group mt-3">
+                            <button type="submit" class="btn btn-primary">Update Profile</button>
+                            <a asp-action="ChangeOwnPassword" class="btn btn-warning">Change Password</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

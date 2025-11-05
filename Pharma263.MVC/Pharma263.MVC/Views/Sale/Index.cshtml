@@ -1,0 +1,132 @@
+﻿@model IEnumerable<Pharma263.MVC.DTOs.Sales.SaleDto>
+@{
+    ViewBag.Title = "Sales List";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<div class="wraper container-fluid">
+    <div class="page-title">
+        <a href="@Url.Action("AddSale", "Sale")" class="btn btn-primary pull-left">New Sales </a>
+        <br />
+    </div>
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title"> Sales List </h3>
+
+                </div>
+                <div class="panel-body">
+                    <div class="row">
+                        <div class="col-md-12 col-sm-12 col-xs-12">
+                            <table class="table table-hover table-bordered" id="saledatatable">
+                                <thead>
+                                    <tr>
+                                        <td>
+                                            #
+                                        </td>
+                                        <th>
+                                            Customer
+                                        </th>
+                                        <th>
+                                            Sale Date
+                                        </th>
+                                        <th>
+                                            @Html.DisplayNameFor(model => model.Total)
+                                        </th>
+                                        <th>
+                                            @Html.DisplayNameFor(model => model.Discount)
+                                        </th>
+                                        <th>
+                                            @Html.DisplayNameFor(model => model.GrandTotal)
+                                        </th>
+                                        <th>
+                                            @Html.DisplayNameFor(model => model.SaleStatus)
+                                        </th>
+
+                                        <th>action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model)
+                                    {
+
+                                        <tr>
+                                            <td>
+                                                @Html.DisplayFor(modelItem => item.Id)
+                                            </td>
+                                            <td>
+                                                @item.CustomerName
+                                            </td>
+                                            <td>
+                                                @Html.DisplayFor(modelItem => item.SalesDate)
+                                            </td>
+                                            <td>
+                                                @Html.DisplayFor(modelItem => item.Total)
+                                            </td>
+                                            <td>
+                                                @Html.DisplayFor(modelItem => item.Discount)
+                                            </td>
+                                            <td>
+                                                @Html.DisplayFor(modelItem => item.GrandTotal)
+                                            </td>
+                                            <td>
+                                                @Html.DisplayFor(modelItem => item.SaleStatus)
+                                            </td>
+
+                                            <td>
+                                                <div class="btn-group">
+                                                    <button type="button" class="btn btn-purple dropdown-toggle btn-xs" data-toggle="dropdown" aria-expanded="true">
+                                                        action <span class="caret"></span>
+                                                    </button>
+                                                    <ul class="dropdown-menu" role="menu">
+                                                        <li>
+                                                            <a href="@Url.Action("Details", "Sale", new { id = item.Id })"><i class="fa fa-eye"></i> View Details</a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="@Url.Action("Process", "Return", new {saleId = item.Id})"><i class="fa fa-refresh"></i> Return</a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="@Url.Action("DeleteSale", "Sale", new { saleId = item.Id })" onclick="return confirm('Are you sure you want to Remove this Sale ?')"> <i class="fa fa-remove"></i> Delete</a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="@Url.Action("SaleInvoice","Sale", new {saleId = item.Id,style=1})" target="_blank"><i class="fa fa-print"></i> Invoice</a>
+                                                        </li>
+                                                        @* <li>
+                                                            <a href="@Url.Action("DispatchVoucher","Sale", new {saleId = item.Id,style=2})" target="_blank"><i class="fa fa-print"> </i> Dispatch Voucher</a>
+                                                        </li> *@
+                                                    </ul>
+                                                </div>
+                                            </td>
+                                        </tr>
+
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+@section scripts {
+    <script type="text/javascript">
+        $(document).ready(function () {
+
+            $('#saledatatable').DataTable({
+                "paging": true,
+                "lengthChange": false,
+                "searching": true,
+                "info": false,
+                "autoWidth": false,
+                "dom": '<lf<t>ip>',
+                language: {
+                    searchPlaceholder: "Search anything"
+                },
+                order: [[0, 'desc']]
+            });
+        });
+
+    </script>
+}

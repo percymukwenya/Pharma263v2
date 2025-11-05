@@ -1,0 +1,138 @@
+﻿@model IEnumerable<Pharma263.MVC.DTOs.Quotation.QuotationDto>
+@{
+    ViewBag.Title = "Quotation List";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="wraper container-fluid">
+    <div class="page-title">
+        <a href="@Url.Action("AddQuotation", "Quotation")" class="btn btn-primary pull-left">New Quotation </a>
+        <br />
+    </div>
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title"> Quotation List </h3>
+
+                </div>
+                <div class="panel-body">
+                    <div class="row">
+                        <div class="col-md-12 col-sm-12 col-xs-12">
+                            <table class="table table-hover table-bordered" id="quotedatatable">
+                                <thead>
+                                    <tr>
+                                        <td>
+                                            #
+                                        </td>
+                                        <th>
+                                            Customer
+                                        </th>
+                                        <th>
+                                            Quotation Date
+                                        </th>
+                                        <th>
+                                            @Html.DisplayNameFor(model => model.Total)
+                                        </th>
+                                        <th>
+                                            @Html.DisplayNameFor(model => model.Discount)
+                                        </th>
+                                        <th>
+                                            @Html.DisplayNameFor(model => model.GrandTotal)
+                                        </th>
+                                        <th>
+                                            @Html.DisplayNameFor(model => model.QuotationStatus)
+                                        </th>
+
+                                        <th>action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model)
+                                    {
+
+                                        <tr>
+                                            <td>
+                                                @Html.DisplayFor(modelItem => item.Id)
+                                            </td>
+                                            <td>
+                                                @item.CustomerName
+                                            </td>
+                                            <td>
+                                                @Html.DisplayFor(modelItem => item.QuotationDate)
+                                            </td>
+                                            <td>
+                                                @Html.DisplayFor(modelItem => item.Total)
+                                            </td>
+                                            <td>
+                                                @Html.DisplayFor(modelItem => item.Discount)
+                                            </td>
+                                            <td>
+                                                @Html.DisplayFor(modelItem => item.GrandTotal)
+                                            </td>
+                                            <td>
+                                                @Html.DisplayFor(modelItem => item.QuotationStatus)
+                                            </td>
+
+                                            <td>
+                                                <div class="btn-group">
+                                                    <button type="button" class="btn btn-purple dropdown-toggle btn-xs" data-toggle="dropdown" aria-expanded="true">
+                                                        action <span class="caret"></span>
+                                                    </button>
+                                                    <ul class="dropdown-menu" role="menu">
+                                                        <li>
+                                                            <a href="@Url.Action("EditQuotation", "Quotation", new {quotationId = item.Id})"><i class="fa fa-edit"></i> Edit</a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="@Url.Action("DeleteQuotation", "Quotation", new { quotationId = item.Id })" onclick="return confirm('Are you sure you want to Remove this Quotation ?')"> <i class="fa fa-remove"></i> Delete</a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="@Url.Action("QuotationDoc","Quotation", new {quotationId = item.Id,style=1})" target="_blank"><i class="fa fa-print"></i> Invoice</a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="@Url.Action("FinalizeSale","Quotation", new {quotationId = item.Id,style=2})"><i class="fa fa-print"> </i> Finalize Sale</a>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+
+                                                @*<a href="@Url.Action("EditSale", "Sales", new {saleId = item.Id})" class="btn btn-icon btn-warning btn-xs m-b-5">
+                                            <i class="fa fa-edit"></i>
+                                            </a>
+                                            <a href="@Url.Action("DeleteSale", "Sales", new {saleId = item.Id})" onclick="return confirm('Are you sure you want to Remove this Sale ?')" class="btn btn-icon btn-danger btn-xs m-b-5">
+                                            <i class="fa fa-remove"></i>
+                                            </a>*@
+                                            </td>
+                                        </tr>
+
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script type="text/javascript">
+        $(document).ready(function () {
+
+            $('#quotedatatable').DataTable({
+                "paging": true,
+                "lengthChange": false,
+                "searching": true,
+                "info": false,
+                "autoWidth": false,
+                "dom": '<lf<t>ip>',
+                language: {
+                    searchPlaceholder: "Search anything"
+                },
+                order: [[0, 'desc']]
+            });
+        });
+
+    </script>
+}

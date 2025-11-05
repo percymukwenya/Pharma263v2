@@ -1,0 +1,35 @@
+﻿@model Pharma263.MVC.DTOs.User.UserDto
+
+<div class="wraper container-fluid">
+    <div class="row">
+        <div class="col-lg-10 col-md-offset-1">
+            <div class="panel panel-default">
+                <div>
+                    <h4>@Model.UserName</h4>
+                    <hr />
+                    <dl class="row">
+                        <dt class="col-sm-2">Email</dt>
+                        <dd class="col-sm-10">@Model.Email</dd>
+
+                        <dt class="col-sm-2">Role</dt>
+                        <dd class="col-sm-10">@Model.Role</dd>
+                    </dl>
+                </div>
+
+                <div>
+                    <a href="@Url.Action("EditUser", "User", new {userId = @Model.Id})" class="btn btn-primary">Edit</a>
+                    <a asp-action="ForgotPassword" asp-route-id="@Model.Email" class="btn btn-primary">Forgot Password</a>
+                    <a asp-action="ResetUserPassword" asp-route-userId="@Model.Id" class="btn btn-sm btn-warning">Reset Password</a>
+                    <form asp-action="TriggerPasswordResetEmail" method="post" style="display: inline;">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="userId" value="@Model.Id" />
+                        <button type="submit" class="btn btn-sm btn-secondary">Send Reset Email</button>
+                    </form>
+                    <a asp-action="UserList" class="btn btn-secondary">Back to List</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+</div>
+

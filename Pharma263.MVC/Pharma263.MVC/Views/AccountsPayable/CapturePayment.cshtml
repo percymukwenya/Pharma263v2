@@ -1,0 +1,253 @@
+﻿@model Pharma263.MVC.DTOs.PaymentMade.AddPaymentMadeDto
+@{
+    ViewData["Title"] = "Capture Payment";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+
+<div class="wraper container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Capture Payment to Supplier</h3>
+                </div>
+                <div class="panel-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <form id="paymentForm">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" id="AccountPayableId" name="AccountPayableId" value="@Model.AccountPayableId" />
+                                <input type="hidden" id="SupplierId" name="SupplierId" value="@Model.SupplierId" />
+                                <input type="hidden" id="BalanceOwedValue" value="@Model.BalanceOwed.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)" />
+
+                                <div class="form-group">
+                                    <label for="SupplierName" class="control-label">Supplier</label>
+                                    <input id="SupplierName" class="form-control" value="@Model.SupplierName" readonly />
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="AmountOwed" class="control-label">Amount Owed</label>
+                                            <input id="AmountOwed" class="form-control" value="@Model.AmountOwed.ToString("C2")" readonly />
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="AmountPaid" class="control-label">Amount Paid</label>
+                                            <input id="AmountPaid" class="form-control" value="@Model.AmountPaid.ToString("C2")" readonly />
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="BalanceOwed" class="control-label">Balance Owed</label>
+                                            <input id="BalanceOwed" class="form-control" value="@Model.BalanceOwed.ToString("C2")" readonly />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <hr />
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="AmountToPay" class="control-label">Amount to Pay</label>
+                                            <input id="AmountToPay" name="AmountToPay" class="form-control" value="@Model.AmountToPay" />
+                                            <span id="AmountToPayError" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="PaymentMethodId" class="control-label">Payment Method</label>
+                                            <select id="PaymentMethodId" name="PaymentMethodId" class="form-control">
+                                                <option value="">-- Select Payment Method --</option>
+                                                @foreach (var method in ViewBag.PaymentMethods)
+                                                {
+                                                    <option value="@method.Value">@method.Text</option>
+                                                }
+                                            </select>
+                                            <span id="PaymentMethodIdError" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="PaymentDate" class="control-label">Payment Date</label>
+                                    <input id="PaymentDate" name="PaymentDate" class="form-control mydatepicker" />
+                                    <span id="PaymentDateError" class="text-danger"></span>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="Notes" class="control-label">Notes</label>
+                                    <textarea id="Notes" name="Notes" class="form-control" rows="3"></textarea>
+                                </div>
+
+                                <div class="form-group">
+                                    <button type="button" id="submitPayment" class="btn btn-primary">Record Payment</button>
+                                    <a href="@Url.Action("Index")" class="btn btn-default">Back to List</a>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="panel panel-info">
+                                <div class="panel-heading">
+                                    <h3 class="panel-title">Payment Information</h3>
+                                </div>
+                                <div class="panel-body">
+                                    <p>Record a payment to the supplier to reduce the balance owed.</p>
+                                    <ul>
+                                        <li>The payment date defaults to today but can be changed if needed.</li>
+                                        <li>The payment amount cannot exceed the balance owed.</li>
+                                        <li>Choose the payment method used for this transaction.</li>
+                                        <li>Add any relevant notes about this payment for future reference.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            // Initialize datepicker
+            $.datepicker.setDefaults({
+                dateFormat: "dd/mm/yy"
+            });
+
+            $(".mydatepicker").datepicker({
+                dateFormat: "dd/mm/yy",
+                autoclose: true,
+                onSelect: function(dateText, inst) {
+                    var selectedDate = $.datepicker.parseDate("dd/mm/yy", dateText);
+                    var currentTime = new Date();
+                    selectedDate.setHours(currentTime.getHours());
+                    selectedDate.setMinutes(currentTime.getMinutes());
+                    selectedDate.setSeconds(currentTime.getSeconds());
+                    $(this).val($.datepicker.formatDate("dd/mm/yy", selectedDate));
+                }
+            });
+
+            // Set today's date by default
+            var today = new Date();
+            $("#PaymentDate").datepicker("setDate", today);
+
+            // Set max amount for payment to be the balance owed
+            var balanceOwed = parseFloat($("#BalanceOwedValue").val());
+
+            $('#AmountToPay').attr('max', balanceOwed);
+            $('#AmountToPay').val(balanceOwed.toFixed(2));
+
+            // Validate amount on change
+                $('#AmountToPay').on('change', function() {
+                    var amountToPay = parseFloat($(this).val());
+                    if (isNaN(amountToPay)) {
+                        $(this).val('0.00');
+                        $('#AmountToPayError').text('Please enter a valid amount');
+                        return;
+                    }
+
+                    if (amountToPay > balanceOwed) {
+                        $(this).val(balanceOwed.toFixed(2));
+                        $('#AmountToPayError').text('Payment amount cannot exceed the balance owed: $' + balanceOwed.toFixed(2));
+                    } else {
+                        $('#AmountToPayError').text('');
+                    }
+                });
+
+            // Handle form submission via AJAX
+            $('#submitPayment').on('click', function() {
+                // Reset error messages
+                $('.text-danger').text('');
+
+                // Validate form
+                var isValid = true;
+
+                var amountToPay = parseFloat($('#AmountToPay').val());
+                if (isNaN(amountToPay) || amountToPay <= 0) {
+                    $('#AmountToPayError').text('Please enter a valid amount greater than zero');
+                    isValid = false;
+                }
+
+                var paymentMethodId = $('#PaymentMethodId').val();
+                if (!paymentMethodId) {
+                    $('#PaymentMethodIdError').text('Please select a payment method');
+                    isValid = false;
+                }
+
+                var paymentDate = $('#PaymentDate').val();
+                if (!paymentDate) {
+                    $('#PaymentDateError').text('Please select a payment date');
+                    isValid = false;
+                }
+
+                if (!isValid) {
+                    return;
+                }
+
+                // Disable the button to prevent double submissions
+                $(this).prop('disabled', true).text('Processing...');
+
+                // Prepare the data
+                var rawDate = $('#PaymentDate').val();
+                var parts = rawDate.split('/');
+                var paymentDate = new Date(parts[2], parts[1] - 1, parts[0]);
+                // Format date in yyyy-MM-dd format for ASP.NET binding
+                var formattedDate = paymentDate.getFullYear() + '-' + 
+                                    ('0' + (paymentDate.getMonth() + 1)).slice(-2) + '-' + 
+                                    ('0' + paymentDate.getDate()).slice(-2);
+
+                var data = {
+                    AccountPayableId: $('#AccountPayableId').val(),
+                    SupplierId: $('#SupplierId').val(),
+                    AmountToPay: amountToPay.toFixed(2),
+                    PaymentDate: formattedDate,
+                    PaymentMethodId: parseInt(paymentMethodId),
+                    Notes: $('#Notes').val()
+                };
+
+                console.log('Data to be submitted:', data);
+
+                // Submit the data
+                $.ajax({
+                    url: '@Url.Action("CapturePayment", "AccountsPayable")',
+                    type: 'POST',
+                    data: JSON.stringify(data),
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(response) {
+                        console.log("Success response:", response);
+
+                        if (response.success) {
+                            // Redirect to the URL provided by the server
+                            window.location.href = response.redirectUrl || '@Url.Action("Index", "AccountsPayable")';
+                        } else {
+                            // Show error message
+                            alert(response.message || 'Failed to record payment');
+                            $('#submitPayment').prop('disabled', false).text('Record Payment');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.log("Error status:", status);
+                        console.log("Error:", error);
+                        console.log("Response text:", xhr.responseText ? xhr.responseText.substring(0, 500) : "Empty response");
+
+                        alert('An error occurred while processing your payment. Please try again.');
+                        $('#submitPayment').prop('disabled', false).text('Record Payment');
+                    }
+                });
+            });
+        });
+    </script>
+}

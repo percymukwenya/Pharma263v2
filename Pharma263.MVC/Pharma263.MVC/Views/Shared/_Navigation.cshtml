@@ -1,0 +1,102 @@
+﻿@using Pharma263.MVC.Extensions;
+@using Pharma263.MVC.Utility;
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor httpAcc
+@{
+    var userRoles = Context.Items["UserRoles"] as List<string>;
+    var currentController = ViewContext.RouteData.Values["Controller"]?.ToString();
+    var currentAction = ViewContext.RouteData.Values["Action"]?.ToString();
+}
+
+<aside class="left-panel" role="navigation" aria-label="Main navigation">
+    <!-- Brand Section in Sidebar -->
+    <div class="sidebar-brand">
+        <a href="@Url.Action("Index", "Dashboard")" class="sidebar-brand-link" aria-label="Pharma263 Dashboard">
+            <img src="/images/pharma263Logo.jpg" alt="Pharma263 Logo" class="sidebar-logo" />
+            <span class="sidebar-brand-text">Pharma263</span>
+        </a>
+    </div>
+    
+    <!-- Navbar -->
+    <nav class="navigation">
+        <ul class="list-unstyled" role="menubar">
+            @if (User.Identity.IsAuthenticated)
+            {
+                <li class="@Html.IsSelected("Dashboard", "Index")" role="menuitem">
+                    <a href="@Url.Action("Index", "Dashboard")" aria-label="Dashboard"><i class="fas fa-tachometer-alt" aria-hidden="true"></i> <span class="nav-label">Dashboard</span></a>
+                </li>
+                <li class="@Html.IsSelected("Medicine", "Index")  @Html.IsSelected("Medicine", "AddMedicine") @Html.IsSelected("Medicine", "EditMedicine")" role="menuitem">
+                    <a href="@Url.Action("Index", "Medicine")" aria-label="Medicine Management"><i class="fas fa-pills" aria-hidden="true"></i> <span class="nav-label">Medicine</span></a>
+                </li>
+                <li class="@Html.IsSelected("Customer", "CustomerList") @Html.IsSelected("Customer", "AddCustomer") @Html.IsSelected("Customer", "EditCustomer")" role="menuitem">
+                    <a href="@Url.Action("CustomerList", "Customer")" aria-label="Customer Management"><i class="fas fa-users" aria-hidden="true"></i> <span class="nav-label">Customers</span></a>
+                </li>
+                <li class="@Html.IsSelected("Supplier", "Index") @Html.IsSelected("Supplier", "AddSupplier") @Html.IsSelected("Supplier", "EditSupplier")" role="menuitem">
+                    <a href="@Url.Action("Index", "Supplier")" aria-label="Supplier Management"><i class="fas fa-truck" aria-hidden="true"></i> <span class="nav-label">Suppliers</span></a>
+                </li>
+                <li class="@Html.IsSelected("Purchase", "Index") @Html.IsSelected("Purchase", "Purchase") @Html.IsSelected("Purchase", "EditPurchase")" role="menuitem">
+                    <a href="@Url.Action("Index", "Purchase")" aria-label="Purchase Management"><i class="fas fa-shopping-cart" aria-hidden="true"></i> <span class="nav-label">Purchases</span></a>
+                </li>
+                <li class="@Html.IsSelected("Stock", "Index")" role="menuitem">
+                    <a href="@Url.Action("Index", "Stock")" aria-label="Stock Management"><i class="fas fa-boxes" aria-hidden="true"></i> <span class="nav-label">Stock</span></a>
+                </li>
+
+                <li class="@Html.IsSelected("Return", "Index") @Html.IsSelected("Returns", "AddReturn") @Html.IsSelected("Returns", "EditReturn")" role="menuitem">
+                    <a href="@Url.Action("Index", "Return")" aria-label="Return Management"><i class="fas fa-undo" aria-hidden="true"></i> <span class="nav-label">Returns</span></a>
+                </li>
+
+                <li class="@Html.IsSelected("Sale", "Index") @Html.IsSelected("Sale", "AddSale") @Html.IsSelected("Sale", "EditSale")" role="menuitem">
+                    <a href="@Url.Action("Index", "Sale")" aria-label="Sales Management"><i class="fas fa-cash-register" aria-hidden="true"></i> <span class="nav-label">Sales</span></a>
+                </li>
+                <li class="@Html.IsSelected("Quotation", "Index") @Html.IsSelected("Quotation", "AddQuotation") @Html.IsSelected("Quotation", "EditQuotation")" role="menuitem">
+                    <a href="@Url.Action("Index", "Quotation")" aria-label="Quotation Management"><i class="fas fa-file-invoice" aria-hidden="true"></i> <span class="nav-label">Quotations</span></a>
+                </li>
+                @if (userRoles != null && userRoles.Contains(UserRoles.Administrator))
+                {
+                    <li class="has-submenu" role="menuitem" aria-haspopup="true" aria-expanded="false">
+                        <a href="#" aria-label="User Management"><i class="fas fa-users-cog" aria-hidden="true"></i> <span class="nav-label">User Management</span> <span class="caret pull-right m-t-10"></span></a>
+                        <ul class="list-unstyled" role="menu">
+                            <li role="menuitem">
+                                <a href="@Url.Action("AddUser", "User")" aria-label="Add New User"><i class="fas fa-user-plus" aria-hidden="true"></i> New User</a>
+                            </li>
+                            <li role="menuitem">
+                                <a href="@Url.Action("UserList", "User")" aria-label="View User List"><i class="fas fa-list" aria-hidden="true"></i> User List</a>
+                            </li>
+                            <li role="menuitem">
+                                <a href="@Url.Action("Index", "Role")" aria-label="Manage Role Permissions"><i class="fas fa-shield-alt" aria-hidden="true"></i> Role Permissions</a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="has-submenu" role="menuitem" aria-haspopup="true" aria-expanded="false">
+                        <a href="#" aria-label="Reports"><i class="fas fa-chart-bar" aria-hidden="true"></i> <span class="nav-label">Reports</span> <span class="caret pull-right m-t-10"></span></a>
+                        <ul class="list-unstyled" role="menu">
+                            <li role="menuitem">
+                                <a href="@Url.Action("Index", "Report")" aria-label="Reports Dashboard"><i class="fas fa-chart-line" aria-hidden="true"></i> Reports Dashboard</a>
+                            </li>                            
+                        </ul>
+                    </li>
+                    <li class="has-submenu" role="menuitem" aria-haspopup="true" aria-expanded="false">
+                        <a href="#" aria-label="Accounts"><i class="fas fa-calculator" aria-hidden="true"></i> <span class="nav-label">Accounts</span> <span class="caret pull-right m-t-10"></span></a>
+                        <ul class="list-unstyled" role="menu">
+                            <li role="menuitem">
+                                <a href="@Url.Action("AccountDashboard", "Dashboard")" aria-label="Accounts Dashboard"><i class="fas fa-chart-pie" aria-hidden="true"></i> Accounts Dashboard</a>
+                            </li>
+                            <li role="menuitem">
+                                <a href="@Url.Action("Index", "AccountsPayable")" aria-label="Accounts Payable"><i class="fas fa-credit-card" aria-hidden="true"></i> Accounts Payable</a>
+                            </li>
+                            <li role="menuitem">
+                                <a href="@Url.Action("Index", "AccountsReceivable")" aria-label="Accounts Receivable"><i class="fas fa-money-bill-wave" aria-hidden="true"></i> Accounts Receivable</a>
+                            </li>                           
+                        </ul>
+                    </li>
+                }
+                
+                <li class="@Html.IsSelected("StoreSettings", "StoreSetting")" role="menuitem">
+                    <a href="@Url.Action("StoreSetting", "StoreSettings")" aria-label="Store Settings"><i class="fas fa-cog" aria-hidden="true"></i> <span class="nav-label">Store Settings</span></a>
+                </li>
+                <li role="menuitem">
+                    <a href="@Url.Action("Logout", "Auth")" aria-label="Logout"><i class="fas fa-sign-out-alt" aria-hidden="true"></i> <span class="nav-label">Logout</span></a>
+                </li>
+            }
+        </ul>
+    </nav>
+</aside>

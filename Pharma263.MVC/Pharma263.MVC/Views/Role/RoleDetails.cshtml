@@ -1,0 +1,146 @@
+@model IEnumerable<Pharma263.MVC.DTOs.User.UserDto>
+@{
+    ViewBag.Title = "Role Details - " + ViewBag.RoleName;
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    string roleName = ViewBag.RoleName as string;
+}
+
+<div class="wraper container-fluid">
+    <div class="page-title">
+        <h3 class="title">
+            Users in Role: <strong>@roleName</strong>
+            @if (roleName == "Administrator")
+            {
+                <span class="label label-danger">System Admin</span>
+            }
+            else if (roleName == "SuperUser")
+            {
+                <span class="label label-warning">Super User</span>
+            }
+            else if (roleName == "Supervisor")
+            {
+                <span class="label label-info">Supervisor</span>
+            }
+            else if (roleName == "Sales")
+            {
+                <span class="label label-success">Sales</span>
+            }
+            else
+            {
+                <span class="label label-default">Custom</span>
+            }
+        </h3>
+        <a href="@Url.Action("Index", "Role")" class="btn btn-default pull-right">
+            <i class="fa fa-arrow-left"></i> Back to Roles
+        </a>
+        <div class="clearfix"></div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Users Assigned to @roleName Role</h3>
+                </div>
+                <div class="panel-body">
+                    @if (Model != null && Model.Any())
+                    {
+                        <div class="alert alert-info">
+                            <strong>@Model.Count()</strong> user(s) are currently assigned to the <strong>@roleName</strong> role.
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-12 col-sm-12 col-xs-12">
+                                <table class="table table-hover table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>User</th>
+                                            <th>Email</th>
+                                            <th>Phone</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var user in Model)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <strong>@user.UserName</strong>
+                                                    @if (!string.IsNullOrEmpty(user.Firstname) || !string.IsNullOrEmpty(user.Lastname))
+                                                    {
+                                                        <br/>
+                                                        <small class="text-muted">@user.Firstname @user.Lastname</small>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <a href="mailto:@user.Email">@user.Email</a>
+                                                </td>
+                                                <td>
+                                                    @(string.IsNullOrEmpty(user.Phone) ? "N/A" : user.Phone)
+                                                </td>
+                                                <td>
+                                                    <a href="@Url.Action("Details", "User", new { userId = user.Id })" 
+                                                       class="btn btn-info btn-xs" title="View User Details">
+                                                        <i class="fa fa-eye"></i> View
+                                                    </a>
+                                                    <a href="@Url.Action("EditUser", "User", new { userId = user.Id })" 
+                                                       class="btn btn-warning btn-xs" title="Edit User">
+                                                        <i class="fa fa-edit"></i> Edit
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning text-center">
+                            <h4><i class="fa fa-users"></i> No Users Found</h4>
+                            <p>There are currently no users assigned to the <strong>@roleName</strong> role.</p>
+                            <a href="@Url.Action("AddUser", "User")" class="btn btn-primary">
+                                <i class="fa fa-plus"></i> Add New User
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="panel panel-info">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Role Management Options</h3>
+                </div>
+                <div class="panel-body">
+                    <div class="btn-group" role="group">
+                        <a href="@Url.Action("EditRole", "Role", new { roleName = roleName })" 
+                           class="btn btn-warning">
+                            <i class="fa fa-edit"></i> Edit Role Name
+                        </a>
+                        <a href="@Url.Action("UserList", "User")" 
+                           class="btn btn-success">
+                            <i class="fa fa-users"></i> Manage All Users
+                        </a>
+                        @if (roleName != "Administrator") // Don't allow deleting Administrator role
+                        {
+                            <form asp-action="DeleteRole" method="post" style="display: inline;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="roleName" value="@roleName" />
+                                <button type="submit" 
+                                        onclick="return confirm('Are you sure you want to delete the @roleName role? This will remove the role from all users. This action cannot be undone.')"
+                                        class="btn btn-danger">
+                                    <i class="fa fa-trash"></i> Delete Role
+                                </button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

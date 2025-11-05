@@ -1,0 +1,63 @@
+# ASP.NET Core
+# Build and test ASP.NET Core projects targeting .NET Core.
+# Add steps that run tests, create a NuGet package, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
+
+name: $(Build.DefinitionName)_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.rr)
+
+trigger:
+- main
+- develop
+- feature/*
+- bugfix/*
+- hotfix/*
+- release/*
+
+pool:
+  vmImage: 'windows-latest' 
+
+variables:
+  buildConfiguration: 'Release'
+  dotNetFramework: 'net8.0'
+  dotNetVersion: '8.0.x'
+
+steps:
+- task: UseDotNet@2
+  displayName: "Use .NET Core SDK"
+  inputs:
+    packageType: sdk
+    version: 8.x   
+    installationPath: $(Agent.ToolsDirectory)/dotnet
+
+- task: DotNetCoreCLI@2
+  displayName: Restore  
+  inputs:
+    command: 'restore'
+    projects: '**/*.csproj'
+    feedsToUse: 'select' 
+
+- task: DotNetCoreCLI@2
+  displayName: Publish
+  inputs:
+    command: publish
+    publishWebProjects: true
+    arguments: '--configuration $(BuildConfiguration) --framework $(dotNetFramework) -r win-x64 --self-contained --output $(build.artifactstagingdirectory)'
+    zipAfterPublish: true
+    modifyOutputPath: false
+    feedsToUse: 'select'
+
+- task: FileTransform@1
+  displayName: Transform appsettings.json
+  inputs:
+    folderPath: '$(Build.ArtifactStagingDirectory)/**/*.zip'
+    fileType: 'json'
+    targetFiles: 'appsettings.json' 
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact'
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'Release'
+    publishLocation: 'Container'
+
+  condition: succeededOrFailed()

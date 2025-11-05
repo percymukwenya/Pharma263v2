@@ -1,0 +1,211 @@
+﻿@{
+    ViewData["Title"] = "Expense Analysis";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Expense Analysis</h2>
+        <a href="@Url.Action("Index", "Report")" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Reports
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Parameters Card -->
+        <div class="col-md-3">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Report Parameters</h5>
+                    <form id="reportForm">
+                        <div class="mb-3">
+                            <label for="startDate" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="startDate" name="startDate" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="endDate" class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="endDate" name="endDate" required>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="button" onclick="generateReport('preview')" class="btn btn-primary">
+                                <i class="fas fa-search me-2"></i>Generate Report
+                            </button>
+                            <button type="button" onclick="generateReport('pdf')" class="btn btn-secondary">
+                                <i class="fas fa-file-pdf me-2"></i>Export PDF
+                            </button>
+                            <button type="button" onclick="generateReport('csv')" class="btn btn-secondary">
+                                <i class="fas fa-file-csv me-2"></i>Export CSV
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Container -->
+        <div class="col-md-9">
+            <!-- Summary Stats -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <h6 class="card-title">Total Expenses</h6>
+                            <h3 id="totalExpenses">$0.00</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h6 class="card-title">Average Monthly Expenses</h6>
+                            <h3 id="avgMonthlyExpenses">$0.00</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <h6 class="card-title">Expense Trend</h6>
+                            <h3 id="expenseTrend">0%</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Expense Categories -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Expense By Category</h5>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Expense Category</th>
+                                    <th>Amount</th>
+                                    <th>% of Total</th>
+                                    <th>Monthly Average</th>
+                                </tr>
+                            </thead>
+                            <tbody id="expenseCategoryData">
+                            </tbody>
+                            <tfoot>
+                                <tr class="fw-bold">
+                                    <td>Total</td>
+                                    <td id="totalAmount"></td>
+                                    <td>100%</td>
+                                    <td id="totalMonthlyAverage"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Monthly Breakdown -->
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Monthly Expense Breakdown</h5>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Month</th>
+                                    <th>Total Expenses</th>
+                                    <th>Average Daily Expenses</th>
+                                    <th>Highest Category</th>
+                                    <th>% Change from Previous</th>
+                                </tr>
+                            </thead>
+                            <tbody id="monthlyBreakdownData">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function generateReport(format) {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+
+            if (!startDate || !endDate) {
+                alert('Please select both start and end dates');
+                return;
+            }
+
+            if (format === 'preview') {
+                $.post('@Url.Action("ExpenseAnalysis")',
+                    { startDate, endDate },
+                    function (data) {
+                        if (data && data.result) {
+                            displayReport(data.result);
+                        }
+                    });
+            } else if (format === 'pdf') {
+                window.location.href = `@Url.Action("DownloadExpenseAnalysisPDF")?startDate=${startDate}&endDate=${endDate}`;
+            } else if (format === 'csv') {
+                window.location.href = `@Url.Action("DownloadExpenseAnalysisCSV")?startDate=${startDate}&endDate=${endDate}`;
+            }
+        }
+
+        function displayReport(data) {
+            updateSummaryCards(data);
+            displayExpenseCategories(data.expenseCategories);
+            displayMonthlyBreakdown(data.monthlyBreakdown);
+        }
+
+        function updateSummaryCards(data) {
+            document.getElementById('totalExpenses').textContent = `$${data.totalExpenses.toLocaleString()}`;
+            document.getElementById('avgMonthlyExpenses').textContent = `$${data.averageMonthlyExpenses.toLocaleString()}`;
+            document.getElementById('expenseTrend').textContent = `${data.expenseTrend > 0 ? '+' : ''}${data.expenseTrend.toFixed(1)}%`;
+        }
+
+        function displayExpenseCategories(categories) {
+            const tbody = document.getElementById('expenseCategoryData');
+            tbody.innerHTML = '';
+            let totalAmount = 0;
+            let totalMonthlyAvg = 0;
+
+            categories.forEach(category => {
+                totalAmount += category.amount;
+                totalMonthlyAvg += category.monthlyAverage;
+
+                tbody.innerHTML += `
+                        <tr>
+                            <td>${category.expenseCategory}</td>
+                            <td>$${category.amount.toLocaleString()}</td>
+                            <td>${category.percentageOfTotal.toFixed(2)}%</td>
+                            <td>$${category.monthlyAverage.toLocaleString()}</td>
+                        </tr>
+                    `;
+            });
+
+            document.getElementById('totalAmount').textContent = `$${totalAmount.toLocaleString()}`;
+            document.getElementById('totalMonthlyAverage').textContent = `$${totalMonthlyAvg.toLocaleString()}`;
+        }
+
+        function displayMonthlyBreakdown(monthlyData) {
+            const tbody = document.getElementById('monthlyBreakdownData');
+            tbody.innerHTML = '';
+
+            monthlyData.forEach(month => {
+                tbody.innerHTML += `
+                        <tr>
+                            <td>${new Date(month.month).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}</td>
+                            <td>$${month.totalExpenses.toLocaleString()}</td>
+                            <td>$${month.averageDailyExpenses.toLocaleString()}</td>
+                            <td>${month.highestCategory}</td>
+                            <td>
+                                <span class="${month.percentageChange >= 0 ? 'text-success' : 'text-danger'}">
+                                    ${month.percentageChange > 0 ? '+' : ''}${month.percentageChange.toFixed(1)}%
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+            });
+        }
+    </script>
+}

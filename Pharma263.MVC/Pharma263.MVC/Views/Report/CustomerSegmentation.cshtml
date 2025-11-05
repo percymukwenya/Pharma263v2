@@ -1,0 +1,232 @@
+﻿@{
+    ViewData["Title"] = "Customer Segmentation Analysis";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Customer Segmentation Analysis</h2>
+        <a href="@Url.Action("Index", "Report")" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Reports
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Parameters Card -->
+        <div class="col-md-3">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Analysis Parameters</h5>
+                    <form id="reportForm">
+                        <div class="mb-3">
+                            <label for="asOfDate" class="form-label">As of Date</label>
+                            <input type="date" class="form-control" id="asOfDate" name="asOfDate" required>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="button" onclick="generateReport('preview')" class="btn btn-primary">
+                                <i class="fas fa-search me-2"></i>Generate Analysis
+                            </button>
+                            <button type="button" onclick="generateReport('pdf')" class="btn btn-secondary">
+                                <i class="fas fa-file-pdf me-2"></i>Export PDF
+                            </button>
+                            <button type="button" onclick="generateReport('csv')" class="btn btn-secondary">
+                                <i class="fas fa-file-csv me-2"></i>Export CSV
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Segment Legend -->
+            <div class="card shadow-sm mt-3">
+                <div class="card-body">
+                    <h5 class="card-title">Segment Definitions</h5>
+                    <div class="mt-2">
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="badge bg-success me-2">Premium</span>
+                            <small>High value, frequent buyers</small>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="badge bg-primary me-2">High Value</span>
+                            <small>Regular, valuable customers</small>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="badge bg-info me-2">Medium Value</span>
+                            <small>Moderate purchase patterns</small>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <span class="badge bg-secondary me-2">Low Value</span>
+                            <small>Infrequent or small purchases</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Container -->
+        <div class="col-md-9">
+            <!-- Segment Summary -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Segment Overview</h5>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Segment</th>
+                                    <th>Customer Count</th>
+                                    <th>Total Revenue</th>
+                                    <th>Avg Order Value</th>
+                                    <th>Purchase Frequency</th>
+                                    <th>% of Total Revenue</th>
+                                </tr>
+                            </thead>
+                            <tbody id="segmentData">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Segment Details -->
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Segment Details</h5>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Segment</th>
+                                    <th>Top Products</th>
+                                    <th>Avg Days Between Orders</th>
+                                    <th>Active Customers</th>
+                                    <th>At Risk</th>
+                                    <th>Churned</th>
+                                </tr>
+                            </thead>
+                            <tbody id="segmentDetails">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function generateReport(format) {
+            const asOfDate = document.getElementById('asOfDate').value;
+
+            if (!asOfDate) {
+                alert('Please select an analysis date');
+                return;
+            }
+
+            if (format === 'preview') {
+                $.post('@Url.Action("CustomerSegmentation")',
+                    { asOfDate },
+                    function (data) {
+                        if (data && data.result) {
+                            displayReport(data.result);
+                        }
+                    });
+            } else if (format === 'pdf') {
+                window.location.href = `@Url.Action("DownloadCustomerSegmentationPDF")?asOfDate=${asOfDate}`;
+            } else if (format === 'csv') {
+                window.location.href = `@Url.Action("DownloadCustomerSegmentationCSV")?asOfDate=${asOfDate}`;
+            }
+        }
+
+        function displayReport(data) {
+            displaySegmentSummary(data);
+            displaySegmentDetails(data);
+        }
+
+        function displaySegmentSummary(data) {
+            const tbody = document.getElementById('segmentData');
+            tbody.innerHTML = '';
+
+            data.forEach(segment => {
+                const badgeClass = getBadgeClass(segment.segmentName);
+                tbody.innerHTML += `
+                        <tr>
+                            <td>
+                                <span class="badge ${badgeClass}">${segment.segmentName}</span>
+                            </td>
+                            <td>${segment.customerCount.toLocaleString()}</td>
+                            <td>$${segment.totalRevenue.toLocaleString()}</td>
+                            <td>$${segment.averageOrderValue.toLocaleString()}</td>
+                            <td>${segment.purchaseFrequency.toFixed(1)}/month</td>
+                            <td>${((segment.totalRevenue / data.reduce((sum, s) => sum + s.totalRevenue, 0)) * 100).toFixed(1)}%</td>
+                        </tr>
+                    `;
+            });
+        }
+
+        function displaySegmentDetails(data) {
+            const tbody = document.getElementById('segmentDetails');
+            tbody.innerHTML = '';
+
+            data.forEach(segment => {
+                const badgeClass = getBadgeClass(segment.segmentName);
+                const topProducts = segment.topProducts ? segment.topProducts.join(', ') : 'N/A';
+
+                tbody.innerHTML += `
+                        <tr>
+                            <td>
+                                <span class="badge ${badgeClass}">${segment.segmentName}</span>
+                            </td>
+                            <td>${topProducts}</td>
+                            <td>${segment.avgDaysBetweenOrders ? segment.avgDaysBetweenOrders.toFixed(1) : 'N/A'}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <span class="me-2">${segment.activeCustomers}</span>
+                                    <div class="progress flex-grow-1" style="height: 5px;">
+                                        <div class="progress-bar bg-success"
+                                             style="width: ${(segment.activeCustomers / segment.customerCount * 100)}%">
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <span class="me-2">${segment.atRiskCustomers}</span>
+                                    <div class="progress flex-grow-1" style="height: 5px;">
+                                        <div class="progress-bar bg-warning"
+                                             style="width: ${(segment.atRiskCustomers / segment.customerCount * 100)}%">
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <span class="me-2">${segment.churnedCustomers}</span>
+                                    <div class="progress flex-grow-1" style="height: 5px;">
+                                        <div class="progress-bar bg-danger"
+                                             style="width: ${(segment.churnedCustomers / segment.customerCount * 100)}%">
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+            });
+        }
+
+        function getBadgeClass(segmentName) {
+            switch (segmentName) {
+                case 'Premium':
+                    return 'bg-success';
+                case 'High Value':
+                    return 'bg-primary';
+                case 'Medium Value':
+                    return 'bg-info';
+                case 'Low Value':
+                    return 'bg-secondary';
+                default:
+                    return 'bg-secondary';
+            }
+        }
+    </script>
+}

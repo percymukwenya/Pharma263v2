@@ -1,0 +1,984 @@
+@{
+    ViewData["Title"] = "Cash Flow Management Center - Financial Intelligence";
+}
+
+<div class="container-fluid mt-4">
+    <!-- Cash Flow Header -->
+    <div class="cashflow-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="cashflow-title">
+                    <i class="fas fa-water me-3"></i>Cash Flow Management Center
+                </h1>
+                <p class="cashflow-subtitle">Real-time financial intelligence and forecasting dashboard</p>
+            </div>
+            <div class="col-md-4">
+                <div class="d-flex justify-content-end gap-2 flex-wrap">
+                    <button class="btn btn-outline-warning" onclick="generateCashFlowAlert()">
+                        <i class="fas fa-exclamation-circle me-1"></i>Payment Alert
+                    </button>
+                    <button class="btn btn-outline-primary" onclick="exportCashFlowReport()">
+                        <i class="fas fa-file-invoice-dollar me-1"></i>Financial Report
+                    </button>
+                    <a href="@Url.Action("Index", "Report")" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Reports Hub
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Financial KPI Overview -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="financial-card positive">
+                <div class="financial-icon">
+                    <i class="fas fa-piggy-bank"></i>
+                </div>
+                <div class="financial-content">
+                    <h3 id="currentCash">$125,750</h3>
+                    <p class="financial-label">Current Cash</p>
+                    <div class="financial-trend">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>+12.5% vs last month</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="financial-card receivable">
+                <div class="financial-icon">
+                    <i class="fas fa-hand-holding-usd"></i>
+                </div>
+                <div class="financial-content">
+                    <h3 id="totalReceivable">$89,420</h3>
+                    <p class="financial-label">Total Receivable</p>
+                    <div class="financial-trend">
+                        <i class="fas fa-clock"></i>
+                        <span>Avg: 28 days</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="financial-card payable">
+                <div class="financial-icon">
+                    <i class="fas fa-file-invoice"></i>
+                </div>
+                <div class="financial-content">
+                    <h3 id="totalPayable">$67,830</h3>
+                    <p class="financial-label">Total Payable</p>
+                    <div class="financial-trend">
+                        <i class="fas fa-clock"></i>
+                        <span>Avg: 22 days</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="financial-card forecast">
+                <div class="financial-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="financial-content">
+                    <h3 id="netCashFlow">+$21,590</h3>
+                    <p class="financial-label">Net Cash Flow</p>
+                    <div class="financial-trend">
+                        <i class="fas fa-calendar"></i>
+                        <span>Next 30 days</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard Content -->
+    <div class="row mb-4">
+        <!-- Cash Flow Forecast Chart -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-area me-2"></i>Cash Flow Forecast
+                    </h5>
+                    <div class="chart-controls">
+                        <div class="btn-group btn-group-sm" role="group">
+                            <input type="radio" class="btn-check" name="forecastPeriod" id="period30" value="30" checked>
+                            <label class="btn btn-outline-primary" for="period30">30 Days</label>
+                            <input type="radio" class="btn-check" name="forecastPeriod" id="period60" value="60">
+                            <label class="btn btn-outline-primary" for="period60">60 Days</label>
+                            <input type="radio" class="btn-check" name="forecastPeriod" id="period90" value="90">
+                            <label class="btn btn-outline-primary" for="period90">90 Days</label>
+                        </div>
+                        <button class="btn btn-sm btn-outline-secondary ms-2" onclick="refreshForecast()">
+                            <i class="fas fa-sync"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="cashFlowChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Priorities -->
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2 text-warning"></i>Payment Priorities
+                    </h6>
+                    <span class="badge bg-warning" id="urgentPaymentsCount">5</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="payment-priorities-list" id="paymentPrioritiesList">
+                        <!-- Dynamic content -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Analysis Row -->
+    <div class="row mb-4">
+        <!-- Accounts Receivable Aging -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="fas fa-money-bill-wave me-2 text-success"></i>Accounts Receivable Aging
+                    </h6>
+                    <button class="btn btn-sm btn-outline-primary" onclick="viewDetailedAR()">
+                        View Details
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="aging-analysis mb-3">
+                        <div class="aging-item">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="aging-label">Current (0-30 days)</span>
+                                <strong class="text-success">$45,280</strong>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-success" style="width: 51%"></div>
+                            </div>
+                        </div>
+                        <div class="aging-item">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="aging-label">31-60 days</span>
+                                <strong class="text-warning">$28,140</strong>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-warning" style="width: 31%"></div>
+                            </div>
+                        </div>
+                        <div class="aging-item">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="aging-label">61-90 days</span>
+                                <strong class="text-danger">$12,800</strong>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-danger" style="width: 14%"></div>
+                            </div>
+                        </div>
+                        <div class="aging-item">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="aging-label">Over 90 days</span>
+                                <strong class="text-dark">$3,200</strong>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-dark" style="width: 4%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <canvas id="arAgingChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Accounts Payable Aging -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="fas fa-file-invoice me-2 text-warning"></i>Accounts Payable Aging
+                    </h6>
+                    <button class="btn btn-sm btn-outline-primary" onclick="viewDetailedAP()">
+                        View Details
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="aging-analysis mb-3">
+                        <div class="aging-item">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="aging-label">Current (0-30 days)</span>
+                                <strong class="text-success">$42,150</strong>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-success" style="width: 62%"></div>
+                            </div>
+                        </div>
+                        <div class="aging-item">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="aging-label">31-60 days</span>
+                                <strong class="text-warning">$18,680</strong>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-warning" style="width: 28%"></div>
+                            </div>
+                        </div>
+                        <div class="aging-item">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="aging-label">61-90 days</span>
+                                <strong class="text-danger">$5,800</strong>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-danger" style="width: 9%"></div>
+                            </div>
+                        </div>
+                        <div class="aging-item">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="aging-label">Over 90 days</span>
+                                <strong class="text-dark">$1,200</strong>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-dark" style="width: 2%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <canvas id="apAgingChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Items and Insights -->
+    <div class="row">
+        <!-- Cash Flow Actions -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-tasks me-2"></i>Recommended Actions
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="action-item mb-3">
+                        <div class="action-icon text-danger">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </div>
+                        <div class="action-content">
+                            <h6 class="mb-1">Follow up overdue payments</h6>
+                            <p class="mb-1 text-muted">$16,000 in receivables over 60 days</p>
+                            <button class="btn btn-sm btn-outline-danger">Take Action</button>
+                        </div>
+                    </div>
+                    <div class="action-item mb-3">
+                        <div class="action-icon text-warning">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="action-content">
+                            <h6 class="mb-1">Schedule supplier payments</h6>
+                            <p class="mb-1 text-muted">$24,530 due in next 7 days</p>
+                            <button class="btn btn-sm btn-outline-warning">Schedule</button>
+                        </div>
+                    </div>
+                    <div class="action-item">
+                        <div class="action-icon text-success">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="action-content">
+                            <h6 class="mb-1">Optimize payment terms</h6>
+                            <p class="mb-1 text-muted">Negotiate better terms with top suppliers</p>
+                            <button class="btn btn-sm btn-outline-success">Analyze</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Customers by Outstanding Amount -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-users me-2"></i>Top Customer Receivables
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="customer-receivable-item mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-0">MediCare Pharmacy</h6>
+                                <small class="text-muted">Overdue: 45 days</small>
+                            </div>
+                            <div class="text-end">
+                                <strong class="text-danger">$8,450</strong>
+                                <br>
+                                <button class="btn btn-sm btn-outline-primary">Contact</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="customer-receivable-item mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-0">HealthPlus Distribution</h6>
+                                <small class="text-muted">Current</small>
+                            </div>
+                            <div class="text-end">
+                                <strong class="text-success">$12,780</strong>
+                                <br>
+                                <button class="btn btn-sm btn-outline-success">Track</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="customer-receivable-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-0">City Medical Center</h6>
+                                <small class="text-muted">Overdue: 30 days</small>
+                            </div>
+                            <div class="text-end">
+                                <strong class="text-warning">$5,620</strong>
+                                <br>
+                                <button class="btn btn-sm btn-outline-warning">Follow Up</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Suppliers by Payable Amount -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-truck me-2"></i>Top Supplier Payables
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="supplier-payable-item mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-0">PharmaCorp Inc.</h6>
+                                <small class="text-muted">Due: 5 days</small>
+                            </div>
+                            <div class="text-end">
+                                <strong class="text-warning">$15,240</strong>
+                                <br>
+                                <button class="btn btn-sm btn-outline-primary">Pay Now</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="supplier-payable-item mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-0">MedSupply Partners</h6>
+                                <small class="text-muted">Due: 12 days</small>
+                            </div>
+                            <div class="text-end">
+                                <strong class="text-success">$9,680</strong>
+                                <br>
+                                <button class="btn btn-sm btn-outline-success">Schedule</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="supplier-payable-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-0">Global Pharmaceuticals</h6>
+                                <small class="text-muted">Due: 18 days</small>
+                            </div>
+                            <div class="text-end">
+                                <strong class="text-info">$7,450</strong>
+                                <br>
+                                <button class="btn btn-sm btn-outline-info">Review</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        let cashFlowData = {
+            forecast: [],
+            receivables: [],
+            payables: [],
+            paymentPriorities: []
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCashFlowData();
+            initializeCashFlowCharts();
+        });
+
+        // Store cash flow data globally for cross-function access
+        window.cashFlowApiData = null;
+
+        async function loadCashFlowData() {
+            try {
+                // Try to load real data from API, fallback to mock data
+                const response = await fetch('/Report/CashFlowData');
+                if (response.ok) {
+                    const data = await response.json();
+                    window.cashFlowApiData = data;
+                    
+                    // Update KPIs with real data
+                    updateFinancialOverview();
+                    
+                    // Load data with real API data
+                    await Promise.all([
+                        loadForecastData(),
+                        loadAgingData(),
+                        loadPaymentPriorities()
+                    ]);
+                } else {
+                    throw new Error('Failed to fetch cash flow data');
+                }
+            } catch (error) {
+                console.error('Failed to load cash flow data:', error);
+                showCashFlowError('Unable to load financial data. Please check your connection and try again.');
+            }
+        }
+
+        async function loadForecastData() {
+            // Check if real data is available
+            if (!window.cashFlowApiData?.cashFlowForecast) {
+                console.error('Cash flow forecast data not available');
+                return;
+            }
+            
+            cashFlowData.forecast = window.cashFlowApiData.cashFlowForecast.map(item => ({
+                date: new Date(item.date),
+                inflow: item.inflow,
+                outflow: item.outflow,
+                netFlow: item.netFlow,
+                cumulativeCash: item.cumulativeCash
+            }));
+        }
+
+        async function loadAgingData() {
+            // Check if real data is available
+            if (!window.cashFlowApiData?.receivablesAging || !window.cashFlowApiData?.payablesAging) {
+                console.error('AR/AP aging data not available');
+                return;
+            }
+            
+            cashFlowData.receivables = window.cashFlowApiData.receivablesAging;
+            cashFlowData.payables = window.cashFlowApiData.payablesAging;
+        }
+
+        async function loadPaymentPriorities() {
+            // Check if real data is available
+            if (!window.cashFlowApiData?.paymentPriorities) {
+                console.error('Payment priorities data not available');
+                showPaymentPrioritiesError();
+                return;
+            }
+            
+            cashFlowData.paymentPriorities = window.cashFlowApiData.paymentPriorities.map(item => ({
+                supplier: item.supplier,
+                amount: item.amount,
+                dueDate: new Date(item.dueDate),
+                daysUntilDue: item.daysUntilDue,
+                priority: item.priority
+            }));
+
+            renderPaymentPriorities();
+        }
+
+        function renderPaymentPriorities() {
+            const container = document.getElementById('paymentPrioritiesList');
+            let html = '';
+
+            cashFlowData.paymentPriorities.forEach(payment => {
+                const priorityClass = payment.priority === 'high' ? 'danger' : 'warning';
+                const daysUntilDue = Math.ceil((payment.dueDate - new Date()) / (1000 * 60 * 60 * 24));
+
+                html += `
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">${payment.supplier}</h6>
+                            <small class="text-muted">Due in ${daysUntilDue} days</small>
+                        </div>
+                        <div class="text-end">
+                            <strong class="text-${priorityClass}">${reportManager.formatCurrency(payment.amount)}</strong>
+                            <br>
+                            <span class="badge bg-${priorityClass}">${payment.priority.toUpperCase()}</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function initializeCashFlowCharts() {
+            // Cash Flow Forecast Chart
+            const forecastCtx = document.getElementById('cashFlowChart').getContext('2d');
+            new Chart(forecastCtx, {
+                type: 'line',
+                data: {
+                    labels: cashFlowData.forecast.slice(0, 30).map(d => d.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
+                    datasets: [
+                        {
+                            label: 'Cash Inflow',
+                            data: cashFlowData.forecast.slice(0, 30).map(d => d.inflow),
+                            borderColor: '#28a745',
+                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                            fill: false
+                        },
+                        {
+                            label: 'Cash Outflow',
+                            data: cashFlowData.forecast.slice(0, 30).map(d => d.outflow),
+                            borderColor: '#dc3545',
+                            backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                            fill: false
+                        },
+                        {
+                            label: 'Cumulative Cash',
+                            data: cashFlowData.forecast.slice(0, 30).map(d => d.cumulativeCash),
+                            borderColor: '#007bff',
+                            backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                            fill: true,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Daily Cash Flow ($)'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Cumulative Cash ($)'
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + reportManager.formatCurrency(context.parsed.y);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // AR Aging Chart
+            const arCtx = document.getElementById('arAgingChart').getContext('2d');
+            new Chart(arCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: cashFlowData.receivables.map(r => r.period + ' days'),
+                    datasets: [{
+                        data: cashFlowData.receivables.map(r => r.amount),
+                        backgroundColor: ['#28a745', '#ffc107', '#dc3545', '#6c757d']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + reportManager.formatCurrency(context.parsed);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // AP Aging Chart
+            const apCtx = document.getElementById('apAgingChart').getContext('2d');
+            new Chart(apCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: cashFlowData.payables.map(p => p.period + ' days'),
+                    datasets: [{
+                        data: cashFlowData.payables.map(p => p.amount),
+                        backgroundColor: ['#28a745', '#ffc107', '#dc3545', '#6c757d']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + reportManager.formatCurrency(context.parsed);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateFinancialOverview() {
+            // Update KPI cards with real data if available, otherwise calculate from aging data
+            if (window.cashFlowApiData?.kpis) {
+                const kpis = window.cashFlowApiData.kpis;
+                
+                // Update main KPIs with real data
+                document.getElementById('currentCash').textContent = reportManager.formatCurrency(kpis.currentCash);
+                document.getElementById('totalReceivable').textContent = reportManager.formatCurrency(kpis.totalReceivable);
+                document.getElementById('totalPayable').textContent = reportManager.formatCurrency(kpis.totalPayable);
+                document.getElementById('netCashFlow').textContent = 
+                    `${kpis.netCashFlow >= 0 ? '+' : ''}${reportManager.formatCurrency(kpis.netCashFlow)}`;
+                
+                // Update trend indicators in the financial cards
+                const receivableTrend = document.querySelector('#totalReceivable').parentElement.querySelector('.financial-trend span');
+                if (receivableTrend && kpis.avgReceivableDays) {
+                    receivableTrend.textContent = `Avg: ${kpis.avgReceivableDays} days`;
+                }
+                
+                const payableTrend = document.querySelector('#totalPayable').parentElement.querySelector('.financial-trend span');
+                if (payableTrend && kpis.avgPayableDays) {
+                    payableTrend.textContent = `Avg: ${kpis.avgPayableDays} days`;
+                }
+                
+                // Update cash flow trend indicator
+                const cashFlowTrend = document.querySelector('#currentCash').parentElement.querySelector('.financial-trend span');
+                if (cashFlowTrend && kpis.cashFlowPercentage) {
+                    const trendIcon = cashFlowTrend.previousElementSibling;
+                    if (kpis.cashFlowTrend === 'positive') {
+                        trendIcon.className = 'fas fa-arrow-up';
+                        cashFlowTrend.textContent = `+${kpis.cashFlowPercentage}% vs last month`;
+                    } else {
+                        trendIcon.className = 'fas fa-arrow-down';
+                        cashFlowTrend.textContent = `${kpis.cashFlowPercentage}% vs last month`;
+                    }
+                }
+            } else {
+                // Fallback: Update with calculated values from aging data
+                const totalAR = cashFlowData.receivables.reduce((sum, r) => sum + r.amount, 0);
+                const totalAP = cashFlowData.payables.reduce((sum, p) => sum + p.amount, 0);
+                const netCashFlow = totalAR - totalAP;
+
+                document.getElementById('totalReceivable').textContent = reportManager.formatCurrency(totalAR);
+                document.getElementById('totalPayable').textContent = reportManager.formatCurrency(totalAP);
+                document.getElementById('netCashFlow').textContent = 
+                    `${netCashFlow >= 0 ? '+' : ''}${reportManager.formatCurrency(netCashFlow)}`;
+                
+                // Keep default values for other KPIs if elements exist
+                const currentCashEl = document.getElementById('currentCash');
+                if (currentCashEl && !currentCashEl.textContent.includes('$')) {
+                    currentCashEl.textContent = '$125,750';
+                }
+            }
+        }
+
+        // Action functions
+        function refreshForecast() {
+            loadForecastData();
+            reportManager.showToast('Forecast data refreshed', 'success');
+        }
+
+        function generateCashFlowAlert() {
+            reportManager.showToast('Cash flow alert system activated', 'warning');
+        }
+
+        function exportCashFlowReport() {
+            reportManager.showToast('Generating comprehensive cash flow report...', 'info');
+        }
+
+        function viewDetailedAR() {
+            window.location.href = '@Url.Action("Receivable", "Report")';
+        }
+
+        function viewDetailedAP() {
+            window.location.href = '@Url.Action("Payable", "Report")';
+        }
+
+        // Error handling functions
+        function showCashFlowError(message) {
+            // Show error in KPI cards
+            ['currentCash', 'totalReceivable', 'totalPayable', 'netCashFlow'].forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.innerHTML = '<i class="fas fa-exclamation-triangle text-danger"></i> Error';
+                }
+            });
+            
+            // Show error in main chart
+            const chartCanvas = document.getElementById('cashFlowChart');
+            if (chartCanvas) {
+                const parent = chartCanvas.parentElement;
+                parent.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="fas fa-exclamation-triangle text-danger fa-3x mb-3"></i>
+                        <h5 class="text-muted">Unable to load cash flow data</h5>
+                        <p class="text-muted">Financial data is currently unavailable</p>
+                        <button class="btn btn-outline-primary btn-sm mt-2" onclick="window.location.reload()">
+                            <i class="fas fa-refresh me-1"></i>Retry
+                        </button>
+                    </div>
+                `;
+            }
+            
+            // Show error in aging charts
+            const agingCharts = ['receivablesChart', 'payablesChart'];
+            agingCharts.forEach(chartId => {
+                const canvas = document.getElementById(chartId);
+                if (canvas) {
+                    const parent = canvas.parentElement;
+                    parent.innerHTML = `
+                        <div class="text-center py-4">
+                            <i class="fas fa-exclamation-triangle text-danger fa-2x mb-2"></i>
+                            <h6 class="text-muted">Data not available</h6>
+                        </div>
+                    `;
+                }
+            });
+            
+            // Show error toast
+            reportManager.showToast(message, 'danger');
+        }
+
+        function showPaymentPrioritiesError() {
+            const container = document.getElementById('paymentPrioritiesList');
+            if (container) {
+                container.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="fas fa-exclamation-triangle text-danger fa-2x mb-3"></i>
+                        <h6 class="text-muted">Payment priorities not available</h6>
+                        <p class="small text-muted">Unable to load urgent payment information</p>
+                        <button class="btn btn-outline-primary btn-sm mt-2" onclick="window.location.reload()">
+                            <i class="fas fa-refresh me-1"></i>Retry
+                        </button>
+                    </div>
+                `;
+            }
+        }
+    </script>
+}
+
+<style>
+.cashflow-header {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    border-radius: 15px;
+    padding: 2rem;
+}
+
+.cashflow-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.cashflow-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin-bottom: 0;
+}
+
+.financial-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.3s ease;
+    border-left: 4px solid;
+    height: 100%;
+}
+
+.financial-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+}
+
+.financial-card.positive {
+    border-left-color: #28a745;
+}
+
+.financial-card.receivable {
+    border-left-color: #17a2b8;
+}
+
+.financial-card.payable {
+    border-left-color: #ffc107;
+}
+
+.financial-card.forecast {
+    border-left-color: #6f42c1;
+}
+
+.financial-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+}
+
+.financial-card.positive .financial-icon {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+
+.financial-card.receivable .financial-icon {
+    background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);
+}
+
+.financial-card.payable .financial-icon {
+    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+    color: #212529;
+}
+
+.financial-card.forecast .financial-icon {
+    background: linear-gradient(135deg, #6f42c1 0%, #e83e8c 100%);
+}
+
+.financial-content h3 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    color: #2c3e50;
+}
+
+.financial-label {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin: 0;
+    font-weight: 500;
+}
+
+.financial-trend {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.8rem;
+    color: #28a745;
+    margin-top: 0.25rem;
+}
+
+.aging-analysis {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.aging-item {
+    margin-bottom: 1rem;
+}
+
+.aging-item:last-child {
+    margin-bottom: 0;
+}
+
+.aging-label {
+    font-weight: 500;
+    color: #495057;
+}
+
+.payment-priorities-list .list-group-item {
+    border: none;
+    border-bottom: 1px solid #e9ecef;
+    padding: 1rem;
+}
+
+.action-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    background: #f8f9fa;
+}
+
+.action-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.action-content {
+    flex-grow: 1;
+}
+
+.action-content h6 {
+    margin-bottom: 0.5rem;
+    color: #2c3e50;
+}
+
+.customer-receivable-item,
+.supplier-payable-item {
+    padding: 1rem;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    background: white;
+}
+
+@@media (max-width: 768px) {
+    .cashflow-header {
+        text-align: center;
+        padding: 1.5rem;
+    }
+    
+    .cashflow-title {
+        font-size: 1.8rem;
+    }
+    
+    .financial-card {
+        margin-bottom: 1rem;
+    }
+    
+    .chart-controls {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .action-item {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+</style>

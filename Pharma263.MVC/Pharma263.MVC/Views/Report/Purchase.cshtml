@@ -1,0 +1,43 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+
+<style>
+    /* CSS for the links */
+    .nav-link {
+        text-decoration: none; /* Remove underlines */
+        color: #007bff; /* Set the link color (blue in this case) */
+    }
+
+        .nav-link:hover {
+            color: #0056b3; /* Change the link color on hover */
+        }
+
+    /* FontAwesome icons */
+    .fas {
+        margin-right: 8px; /* Add spacing between the icon and text */
+    }
+</style>
+
+<h3 style="margin-top: 100px">Purchases Report</h3>
+<div style="margin-left: 200px">
+    <ul class="list-unstyled">
+        <li>
+            <a href="@Url.Action("PurchaseSummary", "Report")" class="nav-link">
+                <i class="fa fa-cube"></i> Purchase Summary
+            </a>
+        </li>
+        <li>
+            <a href="@Url.Action("PurchaseByProduct", "Report")" class="nav-link">
+                <i class="fa fa-cube"></i> Purchase By Product
+            </a>
+        </li>
+        <li>
+            <a href="@Url.Action("PurchaseBySupplier", "Report")" class="nav-link">
+                <i class="fa fa-cube"></i> Purchase By Supplier
+            </a>
+        </li>
+    </ul>
+</div>

@@ -1,0 +1,58 @@
+﻿@model PurchaseSummaryViewModel
+
+<style>
+    .highlight {
+        color: #007bff; /* Change this to your desired text color */
+        font-weight: bold;
+    }
+</style>
+
+<h5 style="margin-top: 200px">Purchase summary</h5>
+
+<form id="salesSummaryForm">
+    Start Date: <input type="date" id="startDate" />
+    End Date: <input type="date" id="endDate" />
+    <button type="button" id="loadDataButton">Load Data</button>
+</form>
+
+<div id="resultsContainer">
+    <!-- Display the results here -->
+</div>
+
+@section scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Include jQuery UI library -->
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $("#loadDataButton").click(function () {
+                var startDate = new Date($("#startDate").val()).toISOString();
+                var endDate = new Date($("#endDate").val()).toISOString();
+
+                $.ajax({
+                    type: "Post",
+                    url: "@Url.Action("PurchaseSummary", "Report")",
+                    data: { startDate: startDate, endDate: endDate },
+                    dataType: "json",
+                    success: function (data) {
+                        if (data) {
+                            var resultHtml = '<div id="resultsContainer">';
+                            resultHtml += '<h2>Purchase Summary</h2>';
+                            resultHtml += '<div class="sales-data">';
+                            resultHtml += '<p>Total Expenditure: <span class="highlight">' + data.totalExpenditure.toFixed(2) + '</span></p>';
+                            resultHtml += '<p>Total Transactions: <span class="highlight">' + data.totalTransactions + '</span></p>';
+                            resultHtml += '</div></div>';
+
+                            $("#resultsContainer").html(resultHtml);
+                        } else {
+                            $("#resultsContainer").html("No data available.");
+                        }
+                    },
+                    error: function () {
+                        $("#resultsContainer").html("An error occurred while fetching data.");
+                    }
+                });
+            });
+        });
+    </script>
+}

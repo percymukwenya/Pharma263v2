@@ -1,0 +1,171 @@
+@{
+    ViewData["Title"] = "Inventory Reports";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Inventory Reports</h2>
+        <a href="@Url.Action("Index", "Report")" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back to Reports
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- ABC Analysis Card -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-chart-bar text-primary me-2"></i>ABC Analysis
+                    </h5>
+                    <p class="card-text">Categorize inventory by value and importance using ABC classification method.</p>
+                    <a href="@Url.Action("ABCAnalysis", "Report")" class="btn btn-primary">View Report</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stock Summary Card -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-boxes text-success me-2"></i>Stock Summary
+                    </h5>
+                    <p class="card-text">Get a comprehensive overview of current stock levels and reorder points.</p>
+                    <a href="@Url.Action("StockSummary", "Report")" class="btn btn-primary">View Report</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inventory Aging Card -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-clock text-warning me-2"></i>Inventory Aging
+                    </h5>
+                    <p class="card-text">Analyze how long inventory has been in stock to identify slow-moving items.</p>
+                    <a href="@Url.Action("InventoryAging", "Report")" class="btn btn-primary">View Report</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stock Turnover Card -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-sync-alt text-info me-2"></i>Stock Turnover
+                    </h5>
+                    <p class="card-text">Track how quickly inventory is sold and replaced over time.</p>
+                    <a href="@Url.Action("StockTurnover", "Report")" class="btn btn-primary">View Report</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Expiry Tracking Card -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-exclamation-triangle text-danger me-2"></i>Expiry Tracking
+                    </h5>
+                    <p class="card-text">Monitor products approaching expiration dates to minimize waste.</p>
+                    <a href="@Url.Action("ExpiryTracking", "Report")" class="btn btn-primary">View Report</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stock Valuation Card -->
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-dollar-sign text-secondary me-2"></i>Stock Valuation
+                    </h5>
+                    <p class="card-text">Calculate the total value of inventory on hand for financial reporting.</p>
+                    <a href="@Url.Action("StockValuation", "Report")" class="btn btn-primary">View Report</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats Section -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Inventory Quick Stats</h5>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                    <i class="fas fa-cubes fa-lg"></i>
+                                </div>
+                                <h4 class="mt-2 mb-0" id="totalProducts">-</h4>
+                                <small class="text-muted">Total Products</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div class="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                    <i class="fas fa-check-circle fa-lg"></i>
+                                </div>
+                                <h4 class="mt-2 mb-0" id="inStockProducts">-</h4>
+                                <small class="text-muted">In Stock</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div class="bg-warning text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                    <i class="fas fa-exclamation-circle fa-lg"></i>
+                                </div>
+                                <h4 class="mt-2 mb-0" id="lowStockProducts">-</h4>
+                                <small class="text-muted">Low Stock</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div class="bg-danger text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                    <i class="fas fa-times-circle fa-lg"></i>
+                                </div>
+                                <h4 class="mt-2 mb-0" id="outOfStockProducts">-</h4>
+                                <small class="text-muted">Out of Stock</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            loadQuickStats();
+        });
+
+        function loadQuickStats() {
+            $.post('@Url.Action("StockTurnover")', 
+                { 
+                    startDate: new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0],
+                    endDate: new Date().toISOString().split('T')[0]
+                },
+                function(data) {
+                    if (data && data.length > 0) {
+                        const totalProducts = data.length;
+                        const inStock = data.filter(item => item.currentStock > item.reorderLevel).length;
+                        const lowStock = data.filter(item => item.currentStock <= item.reorderLevel && item.currentStock > 0).length;
+                        const outOfStock = data.filter(item => item.currentStock === 0).length;
+
+                        $('#totalProducts').text(totalProducts);
+                        $('#inStockProducts').text(inStock);
+                        $('#lowStockProducts').text(lowStock);
+                        $('#outOfStockProducts').text(outOfStock);
+                    }
+                }
+            );
+        }
+    </script>
+}

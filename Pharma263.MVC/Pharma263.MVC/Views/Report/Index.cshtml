@@ -1,0 +1,958 @@
+﻿@{
+    ViewData["Title"] = "Reports Dashboard - Business Intelligence Hub";
+}
+
+<div class="container-fluid mt-4">
+    <!-- Header Section -->
+    <div class="dashboard-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h1 class="dashboard-title">
+                    Reports Dashboard
+                </h1>
+                <p class="dashboard-subtitle">Analytics and business intelligence</p>
+            </div>
+            <div class="col-md-6">
+                <div class="d-flex justify-content-end gap-2 flex-wrap">
+                    <div class="dropdown">
+                        <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            Quick Actions
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="@Url.Action("SaleSummary", "Report")">
+                                Today's Sales
+                            </a></li>
+                            <li><a class="dropdown-item" href="@Url.Action("ExpiryTracking", "Report")">
+                                Expiry Alerts
+                            </a></li>
+                            <li><a class="dropdown-item" href="@Url.Action("ABCAnalysis", "Report")">
+                                ABC Analysis
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Real-time Statistics -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card primary">
+                <div class="stat-icon">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="totalReports">0</h3>
+                    <p class="stat-label">Available Reports</p>
+                    <div class="stat-trend" id="reportsTrend">
+                        <i class="fas fa-plus"></i>
+                        <span>3 new this week</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card success">
+                <div class="stat-icon">
+                    <i class="fas fa-download"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="reportsGenerated">0</h3>
+                    <p class="stat-label">Generated This Month</p>
+                    <div class="stat-trend" id="generatedTrend">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>15% vs last month</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card warning">
+                <div class="stat-icon">
+                    <i class="fas fa-stopwatch"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="avgGenTime">0.0s</h3>
+                    <p class="stat-label">Avg Generation Time</p>
+                    <div class="stat-trend" id="timeTrend">
+                        <i class="fas fa-arrow-down"></i>
+                        <span>0.5s faster</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card info">
+                <div class="stat-icon">
+                    <i class="fas fa-star"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="favoriteReports">0</h3>
+                    <p class="stat-label">Favorite Reports</p>
+                    <div class="stat-trend" id="favoritesTrend">
+                        <i class="fas fa-heart"></i>
+                        <span>Most used</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter Bar -->
+    <div class="search-filter-bar mb-4">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="search-container">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" class="form-control" id="reportSearch" 
+                               placeholder="Search reports by name, category, or description..." 
+                               onkeyup="filterReports()">
+                        <button class="btn btn-outline-secondary" type="button" onclick="clearSearch()">
+                            Clear
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="filter-container d-flex gap-2">
+                    <select class="form-select" id="categoryFilter" onchange="filterReports()">
+                        <option value="">All Categories</option>
+                        <option value="sales">Sales</option>
+                        <option value="purchase">Purchase</option>
+                        <option value="inventory">Inventory</option>
+                        <option value="financial">Financial</option>
+                        <option value="customer">Customer</option>
+                    </select>
+                    <select class="form-select" id="sortBy" onchange="sortReports()">
+                        <option value="name">Sort by Name</option>
+                        <option value="category">Sort by Category</option>
+                        <option value="usage">Sort by Usage</option>
+                        <option value="recent">Recently Added</option>
+                    </select>
+                    <button class="btn btn-outline-primary" onclick="toggleFavoritesOnly()">
+                        <span id="favoritesIcon">♥</span> Favorites
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reports Grid -->
+    <div class="row mb-4" id="reportsGrid">
+        <div class="col-lg-8">
+            <div class="reports-container">
+                <!-- Reports will be dynamically populated here -->
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="personal-dashboard">
+                <!-- Favorites -->
+                <div class="card mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="fas fa-star me-2 text-warning"></i>Favorite Reports
+                        </h6>
+                        <span class="badge bg-warning" id="favoritesCount">0</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush" id="favoritesList">
+                            <div class="list-group-item text-center text-muted py-3">
+                                <i class="fas fa-heart fa-2x mb-2 opacity-50"></i>
+                                <p class="mb-0">No favorite reports yet</p>
+                                <small>Click the ❤️ icon on any report to add it here</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="fas fa-clock me-2 text-info"></i>Recent Activity
+                        </h6>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="loadRecentActivity()">
+                            <i class="fas fa-refresh"></i>
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush" id="recentActivity">
+                            <!-- Recent activity will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    
+    <script>
+        // Reports data structure
+        let allReports = [
+            // Sales Reports
+            {
+                id: 'sales-summary',
+                name: 'Sales Performance Dashboard',
+                category: 'sales',
+                description: 'Comprehensive sales analytics with KPIs and trends',
+                url: '@Url.Action("SaleSummary", "Report")',
+                icon: 'fas fa-chart-line',
+                color: 'primary',
+                tags: ['popular', 'kpi', 'revenue'],
+                isFavorite: false,
+                usage: 95,
+                isNew: false
+            },
+            {
+                id: 'sales-by-product',
+                name: 'Sales by Product',
+                category: 'sales',
+                description: 'Product-wise sales analysis and performance',
+                url: '@Url.Action("SaleByProduct", "Report")',
+                icon: 'fas fa-pills',
+                color: 'success',
+                tags: ['product', 'analysis'],
+                isFavorite: false,
+                usage: 78,
+                isNew: false
+            },
+            {
+                id: 'sales-by-customer',
+                name: 'Sales by Customer',
+                category: 'sales',
+                description: 'Customer-wise sales breakdown and insights',
+                url: '@Url.Action("SaleByCustomer", "Report")',
+                icon: 'fas fa-user',
+                color: 'warning',
+                tags: ['customer', 'revenue'],
+                isFavorite: false,
+                usage: 65,
+                isNew: false
+            },
+            {
+                id: 'monthly-sales-trends',
+                name: 'Monthly Sales Trends',
+                category: 'sales',
+                description: 'Monthly and seasonal sales trend analysis',
+                url: '@Url.Action("MonthlySalesTrends", "Report")',
+                icon: 'fas fa-chart-bar',
+                color: 'info',
+                tags: ['trends', 'monthly'],
+                isFavorite: false,
+                usage: 42,
+                isNew: true
+            },
+            {
+                id: 'sales-rep-performance',
+                name: 'Sales Rep Performance',
+                category: 'sales',
+                description: 'Individual sales representative performance metrics',
+                url: '@Url.Action("SalesRepPerformance", "Report")',
+                icon: 'fas fa-user-tie',
+                color: 'secondary',
+                tags: ['performance', 'staff'],
+                isFavorite: false,
+                usage: 35,
+                isNew: true
+            },
+            // Inventory Reports
+            {
+                id: 'expiry-tracking',
+                name: 'Medicine Expiry Tracking',
+                category: 'inventory',
+                description: 'Critical compliance dashboard for medication expiry monitoring',
+                url: '@Url.Action("ExpiryTracking", "Report")',
+                icon: 'fas fa-exclamation-triangle',
+                color: 'danger',
+                tags: ['critical', 'compliance', 'expiry'],
+                isFavorite: false,
+                usage: 88,
+                isNew: false
+            },
+            {
+                id: 'abc-analysis',
+                name: 'ABC Analysis',
+                category: 'inventory',
+                description: 'Strategic inventory classification and optimization',
+                url: '@Url.Action("ABCAnalysis", "Report")',
+                icon: 'fas fa-sort-amount-down',
+                color: 'primary',
+                tags: ['strategic', 'classification', 'optimization'],
+                isFavorite: false,
+                usage: 72,
+                isNew: false
+            },
+            {
+                id: 'stock-summary',
+                name: 'Stock Summary',
+                category: 'inventory',
+                description: 'Current stock levels and inventory overview',
+                url: '@Url.Action("StockSummary", "Report")',
+                icon: 'fas fa-cubes',
+                color: 'info',
+                tags: ['stock', 'overview'],
+                isFavorite: false,
+                usage: 85,
+                isNew: false
+            },
+            {
+                id: 'inventory-aging',
+                name: 'Inventory Aging',
+                category: 'inventory',
+                description: 'Age analysis of inventory items and stock rotation',
+                url: '@Url.Action("InventoryAging", "Report")',
+                icon: 'fas fa-hourglass-half',
+                color: 'secondary',
+                tags: ['aging', 'rotation'],
+                isFavorite: false,
+                usage: 58,
+                isNew: false
+            },
+            // Purchase Reports
+            {
+                id: 'purchase-summary',
+                name: 'Purchase Summary',
+                category: 'purchase',
+                description: 'Overview of purchasing activities and spend analysis',
+                url: '@Url.Action("PurchaseSummary", "Report")',
+                icon: 'fas fa-shopping-cart',
+                color: 'success',
+                tags: ['purchasing', 'spend'],
+                isFavorite: false,
+                usage: 67,
+                isNew: false
+            },
+            {
+                id: 'supplier-performance',
+                name: 'Supplier Performance',
+                category: 'purchase',
+                description: 'Supplier evaluation and performance metrics',
+                url: '@Url.Action("SupplierPerformance", "Report")',
+                icon: 'fas fa-truck',
+                color: 'warning',
+                tags: ['supplier', 'performance'],
+                isFavorite: false,
+                usage: 54,
+                isNew: false
+            },
+            // Financial Reports
+            {
+                id: 'accounts-receivable',
+                name: 'Accounts Receivable',
+                category: 'financial',
+                description: 'Outstanding customer payments and AR aging',
+                url: '@Url.Action("Receivable", "Report")',
+                icon: 'fas fa-money-bill-wave',
+                color: 'success',
+                tags: ['receivable', 'payments'],
+                isFavorite: false,
+                usage: 73,
+                isNew: false
+            },
+            {
+                id: 'accounts-payable',
+                name: 'Accounts Payable',
+                category: 'financial',
+                description: 'Outstanding vendor payments and AP aging',
+                url: '@Url.Action("Payable", "Report")',
+                icon: 'fas fa-file-invoice',
+                color: 'warning',
+                tags: ['payable', 'vendors'],
+                isFavorite: false,
+                usage: 69,
+                isNew: false
+            },
+            // Customer Reports
+            {
+                id: 'customer-lifetime-value',
+                name: 'Customer Lifetime Value',
+                category: 'customer',
+                description: 'Advanced customer value analysis and segmentation',
+                url: '@Url.Action("CustomerLifetimeValue", "Report")',
+                icon: 'fas fa-heart',
+                color: 'danger',
+                tags: ['strategic', 'lifetime-value'],
+                isFavorite: false,
+                usage: 61,
+                isNew: false
+            },
+            {
+                id: 'customer-segmentation',
+                name: 'Customer Segmentation',
+                category: 'customer',
+                description: 'Customer classification and behavioral analysis',
+                url: '@Url.Action("CustomerSegmentation", "Report")',
+                icon: 'fas fa-users-cog',
+                color: 'info',
+                tags: ['segmentation', 'behavior'],
+                isFavorite: false,
+                usage: 48,
+                isNew: false
+            }
+        ];
+
+        let filteredReports = [...allReports];
+        let favoritesOnly = false;
+        let userFavorites = JSON.parse(localStorage.getItem('reportFavorites') || '[]');
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDashboard();
+            loadDashboardStats();
+            loadRecentActivity();
+            renderReports();
+            updateFavoritesDisplay();
+        });
+
+        function initializeDashboard() {
+            // Load user preferences
+            allReports.forEach(report => {
+                report.isFavorite = userFavorites.includes(report.id);
+            });
+        }
+
+        async function loadDashboardStats() {
+            try {
+                // Simulate API call - replace with actual endpoint
+                const stats = {
+                    totalReports: allReports.length,
+                    reportsGenerated: 127,
+                    avgGenTime: 2.3,
+                    favoriteReports: userFavorites.length
+                };
+
+                document.getElementById('totalReports').textContent = stats.totalReports;
+                document.getElementById('reportsGenerated').textContent = stats.reportsGenerated;
+                document.getElementById('avgGenTime').textContent = stats.avgGenTime + 's';
+                document.getElementById('favoriteReports').textContent = stats.favoriteReports;
+
+            } catch (error) {
+                console.error('Error loading dashboard stats:', error);
+            }
+        }
+
+        function renderReports() {
+            const container = document.querySelector('.reports-container');
+            const reportsToShow = favoritesOnly ? 
+                filteredReports.filter(r => r.isFavorite) : 
+                filteredReports;
+
+            if (reportsToShow.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No reports found</h5>
+                        <p class="text-muted">Try adjusting your search criteria or filters.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '<div class="row">';
+            
+            reportsToShow.forEach(report => {
+                html += `
+                    <div class="col-md-6 col-lg-4 mb-4 report-item" data-category="${report.category}" data-name="${report.name.toLowerCase()}">
+                        <div class="report-card" data-report-id="${report.id}">
+                            <div class="report-header ${report.color}">
+                                <div class="report-icon">
+                                    <i class="${report.icon}"></i>
+                                </div>
+                                <div class="report-actions">
+                                    <button class="btn btn-sm btn-light favorite-btn ${report.isFavorite ? 'active' : ''}" 
+                                            onclick="toggleFavorite('${report.id}')" 
+                                            title="${report.isFavorite ? 'Remove from favorites' : 'Add to favorites'}">
+                                        <i class="fas fa-heart"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="report-body">
+                                <h5 class="report-title">${report.name}</h5>
+                                <p class="report-description">${report.description}</p>
+                                <div class="report-meta">
+                                    <div class="usage-bar">
+                                        <div class="usage-fill" style="width: ${report.usage}%"></div>
+                                    </div>
+                                    <small class="text-muted">${report.usage}% usage</small>
+                                    ${report.isNew ? '<span class="badge bg-success ms-2">New</span>' : ''}
+                                    ${report.tags.includes('critical') ? '<span class="badge bg-danger ms-1">Critical</span>' : ''}
+                                    ${report.tags.includes('strategic') ? '<span class="badge bg-warning ms-1">Strategic</span>' : ''}
+                                </div>
+                            </div>
+                            <div class="report-footer">
+                                <a href="${report.url}" class="btn btn-primary btn-sm">
+                                    Open Report
+                                </a>
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="${report.url}?format=pdf">
+                                            Export PDF
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="${report.url}?format=excel">
+                                            Export Excel
+                                        </a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="#" onclick="scheduleReport('${report.id}')">
+                                            Schedule
+                                        </a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function filterReports() {
+            const searchTerm = document.getElementById('reportSearch').value.toLowerCase();
+            const categoryFilter = document.getElementById('categoryFilter').value;
+
+            filteredReports = allReports.filter(report => {
+                const matchesSearch = report.name.toLowerCase().includes(searchTerm) ||
+                                    report.description.toLowerCase().includes(searchTerm) ||
+                                    report.tags.some(tag => tag.includes(searchTerm));
+                
+                const matchesCategory = !categoryFilter || report.category === categoryFilter;
+
+                return matchesSearch && matchesCategory;
+            });
+
+            renderReports();
+        }
+
+        function sortReports() {
+            const sortBy = document.getElementById('sortBy').value;
+
+            filteredReports.sort((a, b) => {
+                switch (sortBy) {
+                    case 'name':
+                        return a.name.localeCompare(b.name);
+                    case 'category':
+                        return a.category.localeCompare(b.category);
+                    case 'usage':
+                        return b.usage - a.usage;
+                    case 'recent':
+                        return b.isNew - a.isNew;
+                    default:
+                        return 0;
+                }
+            });
+
+            renderReports();
+        }
+
+        function clearSearch() {
+            document.getElementById('reportSearch').value = '';
+            document.getElementById('categoryFilter').value = '';
+            filteredReports = [...allReports];
+            renderReports();
+        }
+
+        function toggleFavoritesOnly() {
+            favoritesOnly = !favoritesOnly;
+            const icon = document.getElementById('favoritesIcon');
+            
+            if (favoritesOnly) {
+                icon.classList.add('text-danger');
+                icon.parentElement.classList.add('active');
+            } else {
+                icon.classList.remove('text-danger');
+                icon.parentElement.classList.remove('active');
+            }
+
+            renderReports();
+        }
+
+        function toggleFavorite(reportId) {
+            const report = allReports.find(r => r.id === reportId);
+            report.isFavorite = !report.isFavorite;
+
+            if (report.isFavorite) {
+                userFavorites.push(reportId);
+            } else {
+                userFavorites = userFavorites.filter(id => id !== reportId);
+            }
+
+            localStorage.setItem('reportFavorites', JSON.stringify(userFavorites));
+            updateFavoritesDisplay();
+            renderReports();
+            loadDashboardStats();
+        }
+
+        function updateFavoritesDisplay() {
+            const favoritesList = document.getElementById('favoritesList');
+            const favoritesCount = document.getElementById('favoritesCount');
+            const favorites = allReports.filter(r => r.isFavorite);
+
+            favoritesCount.textContent = favorites.length;
+
+            if (favorites.length === 0) {
+                favoritesList.innerHTML = `
+                    <div class="list-group-item text-center text-muted py-3">
+                        <i class="fas fa-heart fa-2x mb-2 opacity-50"></i>
+                        <p class="mb-0">No favorite reports yet</p>
+                        <small>Click the ❤️ icon on any report to add it here</small>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            favorites.forEach(report => {
+                html += `
+                    <a href="${report.url}" class="list-group-item list-group-item-action d-flex align-items-center">
+                        <i class="${report.icon} me-3 text-${report.color}"></i>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">${report.name}</div>
+                            <small class="text-muted">${report.category}</small>
+                        </div>
+                        <button class="btn btn-sm btn-outline-danger ms-2" onclick="toggleFavorite('${report.id}')" title="Remove from favorites">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </a>
+                `;
+            });
+
+            favoritesList.innerHTML = html;
+        }
+
+        function loadRecentActivity() {
+            // Simulate recent activity - replace with actual API call
+            const activities = [
+                { report: 'Sales Summary', time: '2 minutes ago', user: 'Current User', status: 'completed' },
+                { report: 'Expiry Tracking', time: '15 minutes ago', user: 'Current User', status: 'completed' },
+                { report: 'ABC Analysis', time: '1 hour ago', user: 'Current User', status: 'completed' },
+                { report: 'Customer LTV', time: '3 hours ago', user: 'Current User', status: 'completed' }
+            ];
+
+            const container = document.getElementById('recentActivity');
+            let html = '';
+
+            activities.forEach(activity => {
+                html += `
+                    <div class="list-group-item d-flex align-items-center">
+                        <i class="fas fa-file-alt me-3 text-primary"></i>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">${activity.report}</div>
+                            <small class="text-muted">${activity.time}</small>
+                        </div>
+                        <span class="badge bg-success">
+                            <i class="fas fa-check"></i>
+                        </span>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Action functions - kept for future implementation
+    </script>
+}
+
+<style>
+.dashboard-header {
+    background: #3a4a87;
+    color: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.dashboard-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin-bottom: 0;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.3s ease;
+    border-left: 4px solid;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+}
+
+.stat-card.primary {
+    border-left-color: #3a4a87;
+}
+
+.stat-card.success {
+    border-left-color: #28a745;
+}
+
+.stat-card.warning {
+    border-left-color: #ffc107;
+}
+
+.stat-card.info {
+    border-left-color: #17a2b8;
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+}
+
+.stat-card.primary .stat-icon {
+    background: #3a4a87;
+}
+
+.stat-card.success .stat-icon {
+    background: #28a745;
+}
+
+.stat-card.warning .stat-icon {
+    background: #ffc107;
+    color: #212529;
+}
+
+.stat-card.info .stat-icon {
+    background: #17a2b8;
+}
+
+.stat-content h3 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    color: #2c3e50;
+}
+
+.stat-label {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin: 0;
+    font-weight: 500;
+}
+
+.stat-trend {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.8rem;
+    color: #28a745;
+    margin-top: 0.25rem;
+}
+
+.search-filter-bar {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 1.5rem;
+}
+
+.search-container .input-group {
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.report-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.report-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.report-header {
+    padding: 1rem;
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    color: white;
+    position: relative;
+}
+
+.report-header.primary {
+    background: #3a4a87;
+}
+
+.report-header.success {
+    background: #28a745;
+}
+
+.report-header.warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+.report-header.danger {
+    background: #dc3545;
+}
+
+.report-header.info {
+    background: #17a2b8;
+}
+
+.report-header.secondary {
+    background: #6c757d;
+}
+
+.report-icon {
+    font-size: 2rem;
+}
+
+.report-actions {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+}
+
+.favorite-btn {
+    opacity: 0.7;
+    transition: all 0.3s ease;
+}
+
+.favorite-btn:hover,
+.favorite-btn.active {
+    opacity: 1;
+    background: rgba(255,255,255,0.2) !important;
+    color: #ff6b6b !important;
+}
+
+.report-body {
+    padding: 1.5rem;
+    flex-grow: 1;
+}
+
+.report-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #2c3e50;
+}
+
+.report-description {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    line-height: 1.4;
+}
+
+.report-meta {
+    margin-top: auto;
+}
+
+.usage-bar {
+    height: 4px;
+    background: #e9ecef;
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.usage-fill {
+    height: 100%;
+    background: #28a745;
+    transition: width 0.3s ease;
+}
+
+.report-footer {
+    padding: 1rem 1.5rem;
+    background: #f8f9fa;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.personal-dashboard .card {
+    border: 1px solid #e9ecef;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.personal-dashboard .card-header {
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+@@media (max-width: 768px) {
+    .dashboard-header {
+        text-align: center;
+        padding: 1.5rem;
+    }
+    
+    .dashboard-title {
+        font-size: 1.8rem;
+    }
+    
+    .filter-container {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+    }
+    
+    .filter-container > * {
+        width: 100% !important;
+    }
+    
+    .search-filter-bar {
+        padding: 1rem;
+    }
+    
+    .stat-card {
+        margin-bottom: 1rem;
+    }
+    
+    .report-card {
+        margin-bottom: 1.5rem;
+    }
+}
+
+@@media (max-width: 576px) {
+    .dashboard-header .d-flex {
+        flex-direction: column !important;
+        gap: 1rem;
+    }
+    
+    .report-footer {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .report-footer .btn {
+        width: 100%;
+    }
+}
+</style>

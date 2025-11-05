@@ -1,0 +1,103 @@
+﻿@model IEnumerable<Pharma263.MVC.DTOs.AccountsPayable.GetAccountsPayableListDto>
+@{
+    ViewBag.Title = "Accounts Payable List";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="wraper container-fluid">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title"> Accounts Payable List </h3>
+
+                </div>
+                <div class="panel-body">
+                    <div class="row">
+                        <div class="col-md-12 col-sm-12 col-xs-12">
+                            <table class="table table-hover" id="datatable">
+                                <thead>
+                                    <tr>
+                                        <th>
+                                            @Html.DisplayNameFor(model => model.Supplier)
+                                        </th>
+                                        <th>
+                                            @Html.DisplayNameFor(model => model.AmountOwed)
+                                        </th>
+                                        <th>
+                                            @Html.DisplayNameFor(model => model.AmountPaid)
+                                        </th>
+                                        <th>
+                                            @Html.DisplayNameFor(model => model.BalanceOwed)
+                                        </th>
+                                        <th>
+                                            @Html.DisplayNameFor(model => model.DueDate)
+                                        </th>
+
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model)
+                                    {
+
+                                        <tr>
+                                            <td>
+                                                @Html.DisplayFor(modelItem => item.Supplier)
+                                            </td>
+                                            <td>
+                                                @Html.DisplayFor(modelItem => item.AmountOwed)
+                                            </td>
+                                            <td>
+                                                @Html.DisplayFor(modelItem => item.AmountPaid)
+                                            </td>
+                                            <td>
+                                                @Html.DisplayFor(modelItem => item.BalanceOwed)
+                                            </td>
+                                            <td>
+                                                @Html.DisplayFor(modelItem => item.DueDate)
+                                            </td>
+
+                                            <td>
+                                                <div class="btn-group">
+                                                    <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                        Actions <span class="caret"></span>
+                                                    </button>
+                                                    <ul class="dropdown-menu">
+                                                        <li>
+                                                            <a href="@Url.Action("CapturePayment", "AccountsPayable", new {accountPayableId = item.Id})">
+                                                                <i class="fa fa-money"></i> Make Payment
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="@Url.Action("SupplierStatement", "Statement", new {supplierId = item.SupplierId})">
+                                                                <i class="fa fa-file-text-o"></i> View Statement
+                                                            </a>
+                                                        </li>
+                                                        <li class="divider"></li>
+                                                        <li>
+                                                            <a href="@Url.Action("Details", "AccountsPayable", new {id = item.Id})">
+                                                                <i class="fa fa-eye"></i> View Details
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="@Url.Action("CapturePayment", "AccountsReceivable", new {accountReceivableId = item.Id})">
+                                                                <i class="fa fa-money"></i> Record Payment
+                                                            </a>
+                                                        </li>                                                        
+                                                    </ul>
+                                                </div>
+                                            </td>
+
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

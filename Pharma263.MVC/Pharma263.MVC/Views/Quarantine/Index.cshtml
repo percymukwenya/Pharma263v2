@@ -1,0 +1,85 @@
+@{
+    ViewBag.Title = "Quarantine Stock List";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="wraper container-fluid">
+    <div class="page-title">
+        <a href="@Url.Action("Process", "Return")" class="btn btn-primary pull-left">Make New Purchase </a>
+        <br />
+    </div>
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title"> Quarantine Stock List </h3>
+
+                </div>
+                <div class="panel-body">
+                    <div class="row">
+                        <div class="col-md-12 col-sm-12 col-xs-12">
+                            <table class="table table-hover table-bordered" id="quarantineDataTable">
+                                <thead>
+                                    <tr>
+                                        <th>Medicine Name</th>
+                                        <th>Batch No</th>
+                                        <th>Total Quantity</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <link rel="stylesheet" href="~/Content/adminFront/assets/plugins/datatables/jquery.dataTables.min.css">
+    <script src="~/Content/adminFront/assets/plugins/datatables/jquery.dataTables.min.js"></script>
+    
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#quarantineDataTable').DataTable({
+                "processing": true,
+                "serverSide": true,
+                "ajax": {
+                    "url": "@Url.Action("GetQuarantineDataTable", "Quarantine")",
+                    "type": "POST",
+                    "contentType": "application/json",
+                    "data": function (d) {
+                        return JSON.stringify(d);
+                    },
+                    "dataSrc": function (json) {
+                        if (json.error) {
+                            console.error('DataTable Error:', json.error);
+                            toastr.error('Failed to load quarantine stock: ' + json.error);
+                        }
+                        return json.data;
+                    }
+                },
+                "columns": [
+                    { "data": "medicineName" },
+                    { "data": "batchNo" },
+                    { "data": "totalQuantity" }
+                ],
+                "pageLength": 25,
+                "lengthMenu": [[10, 25, 50, 100], [10, 25, 50, 100]],
+                "searching": true,
+                "ordering": true,
+                "info": true,
+                "autoWidth": false,
+                "language": {
+                    "searchPlaceholder": "Search quarantine stock...",
+                    "processing": '<i class="fa fa-spinner fa-spin fa-3x fa-fw"></i><span class="sr-only">Loading...</span>',
+                    "emptyTable": "No quarantine stock found",
+                    "zeroRecords": "No matching quarantine stock found"
+                }
+            });
+        });
+    </script>
+}

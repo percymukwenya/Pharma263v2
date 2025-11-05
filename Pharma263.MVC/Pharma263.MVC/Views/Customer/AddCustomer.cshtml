@@ -1,0 +1,141 @@
+﻿@using Pharma263.MVC.Enums;
+@using System.ComponentModel;
+@model Pharma263.Integration.Api.Models.Request.CreateCustomerRequest
+@{
+    ViewBag.Title = "AddCustomer";
+}
+
+<div class="wraper container-fluid">
+    <div class="page-title">
+        <h3 class="title">Customer </h3>
+    </div>
+    <div class="row">
+        <div class="col-lg-10 col-md-offset-1">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">New Customer</h3>
+                </div>
+                <div class="panel-body">
+                    @using (Html.BeginForm("AddCustomer", "Customer", FormMethod.Post, new { @class = "ajax-form", data_ajax = "true", data_ajax_options = "{\"showSuccess\": true, \"resetForm\": true, \"redirect\": \"/Customer/CustomerList\"}" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <div class="form-group">
+                            @Html.LabelFor(x => x.Name)
+                            @Html.TextBoxFor(x => x.Name, null, new { @class = "form-control", @placeholder = "Enter Name", @required = "required" })
+                            @Html.ValidationMessageFor(x => x.Name, "", new { @class = "text-danger" })
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-6 col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(x => x.Email)
+                                    @Html.TextBoxFor(x => x.Email, null, new { @class = "form-control", @placeholder = "Enter Email", @type = "email" })
+                                    @Html.ValidationMessageFor(x => x.Email, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(x => x.Phone)
+                                    @Html.TextBoxFor(x => x.Phone, null, new { @class = "form-control", @placeholder = "Enter Phone Number", @required = "required", data_rule_phone = "true" })
+                                    @Html.ValidationMessageFor(x => x.Phone, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(x => x.PhysicalAddress)
+                            @Html.TextAreaFor(x => x.PhysicalAddress, new { @class = "form-control", @rows = "3", @placeholder = "Address" })
+                            @Html.ValidationMessageFor(x => x.PhysicalAddress, "", new { @class = "text-danger" })
+                        </div>
+                        <div class="form-group">
+                            @Html.LabelFor(x => x.DeliveryAddress)
+                            @Html.TextAreaFor(x => x.DeliveryAddress, new { @class = "form-control", @rows = "3", @placeholder = "Delivery Address" })
+                            @Html.ValidationMessageFor(x => x.DeliveryAddress, "", new { @class = "text-danger" })
+                        </div>
+
+                        <div class="row">
+                            <div class="col-lg-6 col-md-6">
+                                <div class="form-group">
+                                    <label for="CustomerType"> Customer Type : </label>
+                                    <select id="CustomerType" name="CustomerTypeId" class="form-control">
+                                        <option value="">Select Customer Type</option>
+                                    </select>
+                                    <small id="error_CustomerType" class="form-text error_msg">Select Customer Type</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-lg-6 col-md-6">
+                                <div class="form-group" id="MCAZLicenceGroup">
+                                    @Html.LabelFor(x => x.MCAZLicence)
+                                    @Html.TextBoxFor(x => x.MCAZLicence, null, new { @class = "form-control", @placeholder = "MCAZ Number", data_rule_mcaz = "true" })
+                                    @Html.ValidationMessageFor(x => x.MCAZLicence, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-md-6">
+                                <div class="form-group" id="HPALicenseGroup">
+                                    @Html.LabelFor(x => x.HPALicense)
+                                    @Html.TextBoxFor(x => x.HPALicense, null, new { @class = "form-control", @placeholder = "HPA License" })
+                                    @Html.ValidationMessageFor(x => x.HPALicense, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-lg-6 col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(x => x.VATNumber)
+                                    @Html.TextBoxFor(x => x.VATNumber, null, new { @class = "form-control", @placeholder = "VAT Number", data_rule_vat = "true" })
+                                    @Html.ValidationMessageFor(x => x.VATNumber, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-purple btn-lg">
+                                <i class="fas fa-save"></i> Add Customer
+                            </button>
+                            <a href="@Url.Action("CustomerList", "Customer")" class="btn btn-default btn-lg">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+@section scripts {
+    <script src="~/Scripts/App/customer.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            // Enable real-time validation
+            if (window.Pharma263) {
+                window.Pharma263.enableRealtimeValidation($('.ajax-form'));
+            }
+
+            // Handle customer type specific fields
+            $('#CustomerType').on('change', function() {
+                const selectedType = $(this).val();
+                
+                // Show/hide MCAZ and HPA license fields based on customer type
+                if (selectedType === '1' || selectedType === '2') { // Assuming pharmacy/medical facility
+                    $('#MCAZLicenceGroup, #HPALicenseGroup').show();
+                } else {
+                    $('#MCAZLicenceGroup, #HPALicenseGroup').hide();
+                }
+            });
+
+            // Trigger initial state
+            $('#CustomerType').trigger('change');
+
+            // Success callback for form submission
+            $(document).on('ajaxSuccess', '.ajax-form', function(event, xhr, settings) {
+                if (settings.url.includes('AddCustomer')) {
+                    console.log('Customer added successfully');
+                }
+            });
+        });
+    </script>
+}

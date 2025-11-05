@@ -1,0 +1,920 @@
+@{
+    ViewData["Title"] = "Regulatory Compliance Dashboard - Pharmaceutical Operations";
+}
+
+<div class="container-fluid mt-4">
+    <!-- Compliance Header -->
+    <div class="compliance-header mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="compliance-title">
+                    <i class="fas fa-shield-check me-3"></i>Regulatory Compliance Center
+                </h1>
+                <p class="compliance-subtitle">Comprehensive pharmaceutical compliance monitoring and reporting</p>
+            </div>
+            <div class="col-md-4">
+                <div class="d-flex justify-content-end gap-2 flex-wrap">
+                    <button class="btn btn-outline-danger" onclick="generateComplianceAlert()">
+                        <i class="fas fa-exclamation-triangle me-1"></i>Generate Alert
+                    </button>
+                    <button class="btn btn-outline-primary" onclick="exportComplianceReport()">
+                        <i class="fas fa-file-shield me-1"></i>Compliance Report
+                    </button>
+                    <a href="@Url.Action("Index", "Report")" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>Reports Hub
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Compliance Status Overview -->
+    <div class="row mb-4">
+        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+            <div class="compliance-card excellent">
+                <div class="compliance-icon">
+                    <i class="fas fa-check-double"></i>
+                </div>
+                <div class="compliance-content">
+                    <h3 id="overallScore">98.5%</h3>
+                    <p class="compliance-label">Overall Score</p>
+                    <div class="compliance-status">Excellent</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+            <div class="compliance-card critical">
+                <div class="compliance-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="compliance-content">
+                    <h3 id="criticalIssues">2</h3>
+                    <p class="compliance-label">Critical Issues</p>
+                    <div class="compliance-status">Immediate Action</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+            <div class="compliance-card warning">
+                <div class="compliance-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="compliance-content">
+                    <h3 id="expiringSoon">15</h3>
+                    <p class="compliance-label">Expiring Soon</p>
+                    <div class="compliance-status">30 Days</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+            <div class="compliance-card info">
+                <div class="compliance-icon">
+                    <i class="fas fa-vial"></i>
+                </div>
+                <div class="compliance-content">
+                    <h3 id="activeBatches">1,247</h3>
+                    <p class="compliance-label">Active Batches</p>
+                    <div class="compliance-status">Tracked</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+            <div class="compliance-card success">
+                <div class="compliance-icon">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="compliance-content">
+                    <h3 id="lastAudit">5</h3>
+                    <p class="compliance-label">Days Since</p>
+                    <div class="compliance-status">Last Audit</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+            <div class="compliance-card secondary">
+                <div class="compliance-icon">
+                    <i class="fas fa-file-contract"></i>
+                </div>
+                <div class="compliance-content">
+                    <h3 id="openActions">7</h3>
+                    <p class="compliance-label">Open Actions</p>
+                    <div class="compliance-status">Pending</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="compliance-nav mb-4">
+        <nav>
+            <div class="nav nav-tabs nav-fill" id="complianceNav" role="tablist">
+                <button class="nav-link active" id="expiry-tab" data-bs-toggle="tab" data-bs-target="#expiry-panel" type="button" role="tab">
+                    <i class="fas fa-calendar-times me-2"></i>Expiry Management
+                </button>
+                <button class="nav-link" id="batch-tab" data-bs-toggle="tab" data-bs-target="#batch-panel" type="button" role="tab">
+                    <i class="fas fa-boxes me-2"></i>Batch Tracking
+                </button>
+                <button class="nav-link" id="audit-tab" data-bs-toggle="tab" data-bs-target="#audit-panel" type="button" role="tab">
+                    <i class="fas fa-search me-2"></i>Audit Trail
+                </button>
+                <button class="nav-link" id="regulatory-tab" data-bs-toggle="tab" data-bs-target="#regulatory-panel" type="button" role="tab">
+                    <i class="fas fa-gavel me-2"></i>Regulatory Reports
+                </button>
+                <button class="nav-link" id="actions-tab" data-bs-toggle="tab" data-bs-target="#actions-panel" type="button" role="tab">
+                    <i class="fas fa-tasks me-2"></i>Action Items
+                </button>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="complianceTabContent">
+        <!-- Expiry Management Panel -->
+        <div class="tab-pane fade show active" id="expiry-panel" role="tabpanel">
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="fas fa-exclamation-triangle me-2 text-danger"></i>Critical Expiry Alerts
+                            </h5>
+                            <button class="btn btn-sm btn-outline-primary" onclick="refreshExpiryData()">
+                                <i class="fas fa-sync me-1"></i>Refresh
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Priority</th>
+                                            <th>Product</th>
+                                            <th>Batch</th>
+                                            <th>Expiry Date</th>
+                                            <th>Days Left</th>
+                                            <th>Stock</th>
+                                            <th>Value at Risk</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="expiryAlertsTable">
+                                        <!-- Dynamic content -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-chart-pie me-2"></i>Expiry Timeline
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="expiryTimelineChart" height="200"></canvas>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-dollar-sign me-2"></i>Value at Risk
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="value-risk-item mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-danger">Critical (≤7 days)</span>
+                                    <strong id="criticalValue">$12,450</strong>
+                                </div>
+                                <div class="progress mt-1">
+                                    <div class="progress-bar bg-danger" style="width: 35%"></div>
+                                </div>
+                            </div>
+                            <div class="value-risk-item mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-warning">Warning (8-30 days)</span>
+                                    <strong id="warningValue">$28,790</strong>
+                                </div>
+                                <div class="progress mt-1">
+                                    <div class="progress-bar bg-warning" style="width: 65%"></div>
+                                </div>
+                            </div>
+                            <div class="value-risk-item">
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-info">Watch (31-90 days)</span>
+                                    <strong id="watchValue">$45,320</strong>
+                                </div>
+                                <div class="progress mt-1">
+                                    <div class="progress-bar bg-info" style="width: 45%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Batch Tracking Panel -->
+        <div class="tab-pane fade" id="batch-panel" role="tabpanel">
+            <div class="row">
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-search me-2"></i>Batch Lookup
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Batch Number</label>
+                                <input type="text" class="form-control" id="batchSearch" placeholder="Enter batch number...">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Product</label>
+                                <select class="form-select" id="productFilter">
+                                    <option value="">All Products</option>
+                                    <!-- Dynamic options -->
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Date Range</label>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <input type="date" class="form-control" id="batchDateFrom">
+                                    </div>
+                                    <div class="col-6">
+                                        <input type="date" class="form-control" id="batchDateTo">
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="btn btn-primary w-100" onclick="searchBatches()">
+                                <i class="fas fa-search me-1"></i>Search Batches
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-list me-2"></i>Batch Search Results
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div id="batchResults">
+                                <div class="text-center py-4 text-muted">
+                                    <i class="fas fa-vial fa-3x mb-3"></i>
+                                    <p>Enter search criteria to view batch information</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Audit Trail Panel -->
+        <div class="tab-pane fade" id="audit-panel" role="tabpanel">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="fas fa-history me-2"></i>Compliance Audit Trail
+                    </h6>
+                    <div>
+                        <select class="form-select form-select-sm me-2" id="auditFilter" onchange="filterAuditLog()">
+                            <option value="">All Activities</option>
+                            <option value="expiry">Expiry Actions</option>
+                            <option value="batch">Batch Changes</option>
+                            <option value="disposal">Disposals</option>
+                            <option value="returns">Returns</option>
+                        </select>
+                        <button class="btn btn-sm btn-outline-primary" onclick="exportAuditLog()">
+                            <i class="fas fa-download me-1"></i>Export
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="audit-timeline" id="auditTimeline">
+                        <!-- Dynamic audit entries -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Regulatory Reports Panel -->
+        <div class="tab-pane fade" id="regulatory-panel" role="tabpanel">
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-file-medical me-2"></i>Regulatory Reports
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="regulatory-report-item mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">FDA Compliance Report</h6>
+                                        <small class="text-muted">Monthly regulatory compliance summary</small>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="generateRegulatoryReport('fda')">
+                                        Generate
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="regulatory-report-item mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">Batch Disposition Report</h6>
+                                        <small class="text-muted">Complete batch lifecycle tracking</small>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="generateRegulatoryReport('batch')">
+                                        Generate
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="regulatory-report-item mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">Expiry Management Report</h6>
+                                        <small class="text-muted">Detailed expiry tracking and actions</small>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="generateRegulatoryReport('expiry')">
+                                        Generate
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-chart-line me-2"></i>Compliance Trends
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="complianceTrendsChart" height="250"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Items Panel -->
+        <div class="tab-pane fade" id="actions-panel" role="tabpanel">
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">
+                                <i class="fas fa-tasks me-2"></i>Open Action Items
+                            </h6>
+                            <button class="btn btn-sm btn-success" onclick="addActionItem()">
+                                <i class="fas fa-plus me-1"></i>Add Action
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div id="actionItemsList">
+                                <!-- Dynamic action items -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-chart-doughnut me-2"></i>Actions by Priority
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="actionsPriorityChart" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        let complianceData = {
+            expiry: [],
+            batches: [],
+            auditLog: [],
+            actionItems: []
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadComplianceData();
+            initializeCharts();
+        });
+
+        async function loadComplianceData() {
+            try {
+                // Load all compliance data
+                await Promise.all([
+                    loadExpiryAlerts(),
+                    loadBatchData(),
+                    loadAuditLog(),
+                    loadActionItems()
+                ]);
+
+                updateComplianceOverview();
+            } catch (error) {
+                console.error('Error loading compliance data:', error);
+                reportManager.showToast('Error loading compliance data', 'error');
+            }
+        }
+
+        async function loadExpiryAlerts() {
+            // Simulate API call
+            const mockData = [
+                {
+                    priority: 'critical',
+                    product: 'Amoxicillin 500mg',
+                    batch: 'AMX500-2024-003',
+                    expiryDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+                    daysLeft: 5,
+                    stock: 250,
+                    value: 4250.00
+                },
+                {
+                    priority: 'warning',
+                    product: 'Ibuprofen 200mg',
+                    batch: 'IBU200-2024-015',
+                    expiryDate: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000),
+                    daysLeft: 25,
+                    stock: 180,
+                    value: 1890.00
+                }
+            ];
+
+            complianceData.expiry = mockData;
+            renderExpiryAlerts();
+        }
+
+        function renderExpiryAlerts() {
+            const tbody = document.getElementById('expiryAlertsTable');
+            let html = '';
+
+            complianceData.expiry.forEach(item => {
+                const priorityClass = item.priority === 'critical' ? 'bg-danger' : 'bg-warning';
+                const priorityIcon = item.priority === 'critical' ? 'skull-crossbones' : 'exclamation-triangle';
+
+                html += `
+                    <tr class="${item.priority === 'critical' ? 'table-danger' : 'table-warning'}">
+                        <td>
+                            <span class="badge ${priorityClass}">
+                                <i class="fas fa-${priorityIcon} me-1"></i>
+                                ${item.priority.toUpperCase()}
+                            </span>
+                        </td>
+                        <td><strong>${item.product}</strong></td>
+                        <td><code>${item.batch}</code></td>
+                        <td>${item.expiryDate.toLocaleDateString()}</td>
+                        <td>
+                            <span class="badge ${item.daysLeft <= 7 ? 'bg-danger' : 'bg-warning'}">
+                                ${item.daysLeft} days
+                            </span>
+                        </td>
+                        <td>${item.stock} units</td>
+                        <td><strong>${reportManager.formatCurrency(item.value)}</strong></td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary" onclick="handleExpiry('${item.batch}', 'return')" title="Return to Supplier">
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                                <button class="btn btn-outline-warning" onclick="handleExpiry('${item.batch}', 'discount')" title="Discount Sale">
+                                    <i class="fas fa-percentage"></i>
+                                </button>
+                                <button class="btn btn-outline-danger" onclick="handleExpiry('${item.batch}', 'dispose')" title="Dispose">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        function initializeCharts() {
+            // Expiry Timeline Chart
+            const expiryCtx = document.getElementById('expiryTimelineChart').getContext('2d');
+            new Chart(expiryCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Critical (≤7 days)', 'Warning (8-30 days)', 'Watch (31-90 days)', 'Safe (>90 days)'],
+                    datasets: [{
+                        data: [5, 15, 45, 185],
+                        backgroundColor: ['#dc3545', '#ffc107', '#17a2b8', '#28a745']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // Compliance Trends Chart
+            const trendsCtx = document.getElementById('complianceTrendsChart').getContext('2d');
+            new Chart(trendsCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                    datasets: [{
+                        label: 'Compliance Score',
+                        data: [95.2, 96.8, 98.1, 97.5, 98.5, 98.8],
+                        borderColor: '#28a745',
+                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: 90,
+                            max: 100
+                        }
+                    }
+                }
+            });
+
+            // Actions Priority Chart
+            const actionsCtx = document.getElementById('actionsPriorityChart').getContext('2d');
+            new Chart(actionsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['High Priority', 'Medium Priority', 'Low Priority'],
+                    datasets: [{
+                        data: [3, 4, 8],
+                        backgroundColor: ['#dc3545', '#ffc107', '#28a745']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        async function loadBatchData() {
+            // Simulate batch data loading
+            complianceData.batches = [];
+        }
+
+        async function loadAuditLog() {
+            // Simulate audit log
+            const mockAudit = [
+                {
+                    timestamp: new Date(),
+                    user: 'Current User',
+                    action: 'Expiry Alert Generated',
+                    details: 'Critical expiry alert for batch AMX500-2024-003',
+                    type: 'expiry'
+                }
+            ];
+
+            complianceData.auditLog = mockAudit;
+            renderAuditLog();
+        }
+
+        function renderAuditLog() {
+            const container = document.getElementById('auditTimeline');
+            let html = '';
+
+            complianceData.auditLog.forEach(entry => {
+                html += `
+                    <div class="audit-entry">
+                        <div class="audit-timestamp">
+                            <i class="fas fa-clock me-2"></i>
+                            ${entry.timestamp.toLocaleString()}
+                        </div>
+                        <div class="audit-content">
+                            <strong>${entry.action}</strong>
+                            <p class="mb-1">${entry.details}</p>
+                            <small class="text-muted">By: ${entry.user}</small>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        async function loadActionItems() {
+            // Simulate action items
+            const mockActions = [
+                {
+                    id: 1,
+                    title: 'Review Amoxicillin batch expiry',
+                    priority: 'high',
+                    dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+                    assignee: 'Quality Manager',
+                    status: 'open'
+                }
+            ];
+
+            complianceData.actionItems = mockActions;
+            renderActionItems();
+        }
+
+        function renderActionItems() {
+            const container = document.getElementById('actionItemsList');
+            let html = '';
+
+            complianceData.actionItems.forEach(action => {
+                const priorityClass = action.priority === 'high' ? 'danger' : action.priority === 'medium' ? 'warning' : 'info';
+
+                html += `
+                    <div class="action-item mb-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">${action.title}</h6>
+                                <p class="mb-1 text-muted">Assigned to: ${action.assignee}</p>
+                                <small class="text-muted">Due: ${action.dueDate.toLocaleDateString()}</small>
+                            </div>
+                            <div>
+                                <span class="badge bg-${priorityClass}">${action.priority.toUpperCase()}</span>
+                                <button class="btn btn-sm btn-outline-success ms-2" onclick="completeAction(${action.id})">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function updateComplianceOverview() {
+            // Update overview cards with real data
+            document.getElementById('criticalIssues').textContent = complianceData.expiry.filter(e => e.priority === 'critical').length;
+            document.getElementById('expiringSoon').textContent = complianceData.expiry.length;
+        }
+
+        // Action functions
+        function handleExpiry(batch, action) {
+            reportManager.showToast(`${action} action initiated for batch ${batch}`, 'info');
+        }
+
+        function searchBatches() {
+            reportManager.showToast('Searching batches...', 'info');
+        }
+
+        function filterAuditLog() {
+            renderAuditLog();
+        }
+
+        function exportAuditLog() {
+            reportManager.showToast('Exporting audit log...', 'info');
+        }
+
+        function generateRegulatoryReport(type) {
+            reportManager.showToast(`Generating ${type} regulatory report...`, 'info');
+        }
+
+        function addActionItem() {
+            reportManager.showToast('Action item creation panel would open here', 'info');
+        }
+
+        function completeAction(actionId) {
+            reportManager.showToast(`Action ${actionId} marked as completed`, 'success');
+        }
+
+        function generateComplianceAlert() {
+            reportManager.showToast('Compliance alert system activated', 'warning');
+        }
+
+        function exportComplianceReport() {
+            reportManager.showToast('Generating comprehensive compliance report...', 'info');
+        }
+
+        function refreshExpiryData() {
+            loadExpiryAlerts();
+        }
+    </script>
+}
+
+<style>
+.compliance-header {
+    background: linear-gradient(135deg, #dc3545 0%, #6f42c1 100%);
+    color: white;
+    border-radius: 15px;
+    padding: 2rem;
+}
+
+.compliance-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.compliance-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin-bottom: 0;
+}
+
+.compliance-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: all 0.3s ease;
+    border-left: 4px solid;
+    height: 100%;
+}
+
+.compliance-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+}
+
+.compliance-card.excellent {
+    border-left-color: #28a745;
+}
+
+.compliance-card.critical {
+    border-left-color: #dc3545;
+}
+
+.compliance-card.warning {
+    border-left-color: #ffc107;
+}
+
+.compliance-card.info {
+    border-left-color: #17a2b8;
+}
+
+.compliance-card.success {
+    border-left-color: #28a745;
+}
+
+.compliance-card.secondary {
+    border-left-color: #6c757d;
+}
+
+.compliance-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: white;
+    margin-bottom: 1rem;
+}
+
+.compliance-card.excellent .compliance-icon {
+    background: #28a745;
+}
+
+.compliance-card.critical .compliance-icon {
+    background: #dc3545;
+}
+
+.compliance-card.warning .compliance-icon {
+    background: #ffc107;
+    color: #212529;
+}
+
+.compliance-card.info .compliance-icon {
+    background: #17a2b8;
+}
+
+.compliance-card.success .compliance-icon {
+    background: #28a745;
+}
+
+.compliance-card.secondary .compliance-icon {
+    background: #6c757d;
+}
+
+.compliance-content h3 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin: 0;
+    color: #2c3e50;
+}
+
+.compliance-label {
+    color: #6c757d;
+    font-size: 0.85rem;
+    margin: 0;
+    font-weight: 500;
+}
+
+.compliance-status {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #495057;
+    margin-top: 0.25rem;
+}
+
+.compliance-nav .nav-tabs {
+    border: none;
+}
+
+.compliance-nav .nav-link {
+    border: none;
+    color: #6c757d;
+    font-weight: 500;
+    padding: 1rem 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.compliance-nav .nav-link:hover {
+    color: #495057;
+    background: #f8f9fa;
+}
+
+.compliance-nav .nav-link.active {
+    color: #dc3545;
+    background: white;
+    border-bottom: 3px solid #dc3545;
+}
+
+.value-risk-item {
+    padding: 0.75rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.audit-entry {
+    border-left: 3px solid #dc3545;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background: #f8f9fa;
+    border-radius: 0 8px 8px 0;
+}
+
+.audit-timestamp {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+}
+
+.audit-content {
+    font-size: 0.9rem;
+}
+
+.regulatory-report-item {
+    padding: 1rem;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    background: #f8f9fa;
+}
+
+.action-item {
+    padding: 1rem;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    background: white;
+}
+
+@@media (max-width: 768px) {
+    .compliance-header {
+        text-align: center;
+        padding: 1.5rem;
+    }
+    
+    .compliance-title {
+        font-size: 1.8rem;
+    }
+    
+    .compliance-card {
+        margin-bottom: 1rem;
+    }
+    
+    .tab-content {
+        padding: 0.5rem;
+    }
+}
+</style>

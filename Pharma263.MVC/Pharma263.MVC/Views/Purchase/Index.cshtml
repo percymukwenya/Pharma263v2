@@ -1,0 +1,138 @@
+﻿@model IEnumerable<Pharma263.Integration.Api.Models.Response.PurchasesResponse>
+@{
+    ViewBag.Title = "Purchase List";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="wraper container-fluid">
+    <div class="page-title">
+        <a href="@Url.Action("Purchase", "Purchase")" class="btn btn-primary pull-left">New Purchase </a>
+        <br />
+    </div>
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title"> Purchase List </h3>
+                </div>
+                <div class="panel-body">
+                    <div class="row">
+                        <div class="col-md-12 col-sm-12 col-xs-12">
+                            <table class="table table-hover table-bordered table-responsive" id="purchasedatatable">
+                                <thead>
+                                    <tr>
+                                        <th>
+                                            #
+                                        </th>                                        
+                                        <th>
+                                            @Html.DisplayNameFor(model => model.Supplier)
+                                        </th>
+                                        <th>
+                                            Purchase Date
+                                        </th>
+                                        <th>
+                                            @Html.DisplayNameFor(model => model.PaymentMethod)
+                                        </th>
+                                        <th>
+                                            @Html.DisplayNameFor(model => model.GrandTotal)
+                                        </th>
+                                        <th>
+                                            @Html.DisplayNameFor(model => model.PurchaseStatus)
+                                        </th>
+
+                                        <th>action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model)
+                                    {
+
+                                        <tr>
+                                            <td>
+                                                @Html.DisplayFor(modelItem => item.Id)
+                                            </td>
+                                            <td>
+                                                @Html.DisplayFor(modelItem => item.Supplier)
+                                            </td>
+                                            <td>
+                                                @Html.DisplayFor(modelItem => item.PurchaseDate)
+                                            </td>
+                                            <td>
+                                                @Html.DisplayFor(modelItem => item.PaymentMethod)
+                                            </td>
+                                            <td>
+                                                @Html.DisplayFor(modelItem => item.GrandTotal)
+                                            </td>
+                                            <td>
+                                                @Html.DisplayFor(modelItem => item.PurchaseStatus)
+                                            </td>
+
+                                            <td>
+
+
+                                                <div class="btn-group">
+                                                    <button type="button" class="btn btn-purple dropdown-toggle btn-xs" data-toggle="dropdown" aria-expanded="true">
+                                                        action <span class="caret"></span>
+                                                    </button>
+                                                    <ul class="dropdown-menu" role="menu">
+                                                        <li>
+                                                            <a href="@Url.Action("Details", "Purchase", new { id = item.Id })"><i class="fa fa-eye"></i> View Details</a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="@Url.Action("EditPurchase", "Purchase", new {purchaseId = item.Id})"><i class="fa fa-edit"></i> Edit</a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="@Url.Action("DeletePurchase", "Purchase", new { purchaseId = item.Id })" onclick="return confirm('Are you sure you want to Remove this Purchase ?')"> <i class="fa fa-remove"></i> Delete</a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="@Url.Action("PurchaseInvoice","Purchase", new {purchaseId = item.Id})" target="_blank"><i class="fa fa-print"></i> Purchase Order</a>
+                                                        </li>
+                                                        @*<li>
+                                                    <a href="@Url.Action("PurchaseInvoice","Admin", new {purchaseId = item.Id,style=2})"><i class="fa fa-print"> </i> Purchase Order 2</a>
+                                                    </li>*@
+                                                    </ul>
+                                                </div>
+
+
+                                                @*<a href="@Url.Action("EditPurchase", "Admin", new {purchaseId = item.Id})" class="btn btn-icon btn-warning btn-xs m-b-5">
+                                            <i class="fa fa-edit"></i>
+                                            </a>
+                                            <a href="@Url.Action("DeletePurcahse", "Admin", new {purchaseId = item.Id})" onclick="return confirm('Are you sure you want to Remove this Purchase ?')" class="btn btn-icon btn-danger btn-xs m-b-5">
+                                            <i class="fa fa-remove"></i>
+                                            </a>*@
+                                            </td>
+                                        </tr>
+
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+@section scripts {
+    <script type="text/javascript">
+        $(document).ready(function () {
+
+            $('#purchasedatatable').DataTable({
+                "paging": true,
+                "lengthChange": false,
+                "searching": true,
+                "info": false,
+                "autoWidth": false,
+                "dom": '<lf<t>ip>',
+                language: {
+                    searchPlaceholder: "Search anything"
+                },
+                order: [[0, 'desc']]
+            });
+        });
+
+    </script>
+}

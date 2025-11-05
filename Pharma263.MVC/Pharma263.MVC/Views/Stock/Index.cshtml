@@ -1,0 +1,122 @@
+@{
+    ViewBag.Title = "Stock List";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="wraper container-fluid">
+    <div class="page-title">
+        <a href="@Url.Action("Purchase", "Purchase")" class="btn btn-primary pull-left">Make New Purchase </a>
+        <a href="@Url.Action("AddStock", "Stock")" class="btn btn-primary pull-left m-l-10">Update Stock </a>
+        <a href="@Url.Action("ImportStock", "Stock")" class="btn btn-primary pull-left m-l-10">Import Excel Stock </a>
+        <br />
+    </div>
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title"> Stock List </h3>
+
+                </div>
+                <div class="panel-body">
+                    <div class="row">
+                        <div class="col-md-12 col-sm-12 col-xs-12">
+                            <table class="table table-hover table-bordered" id="stockDataTable">
+                                <thead>
+                                    <tr>
+                                        <th>Medicine Name</th>
+                                        <th>Batch No</th>
+                                        <th>Expiry Date</th>
+                                        <th>Buying Price</th>
+                                        <th>Selling Price</th>
+                                        <th>Total Quantity</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <link rel="stylesheet" href="~/Content/adminFront/assets/plugins/datatables/jquery.dataTables.min.css">
+    <script src="~/Content/adminFront/assets/plugins/datatables/jquery.dataTables.min.js"></script>
+    
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#stockDataTable').DataTable({
+                "processing": true,
+                "serverSide": true,
+                "ajax": {
+                    "url": "@Url.Action("GetStocksDataTable", "Stock")",
+                    "type": "POST",
+                    "contentType": "application/json",
+                    "data": function (d) {
+                        return JSON.stringify(d);
+                    },
+                    "dataSrc": function (json) {
+                        if (json.error) {
+                            console.error('DataTable Error:', json.error);
+                            toastr.error('Failed to load stock: ' + json.error);
+                        }
+                        return json.data;
+                    }
+                },
+                "columns": [
+                    { "data": "medicineName" },
+                    { "data": "batchNo" },
+                    { 
+                        "data": "expiryDate",
+                        "render": function(data, type, row) {
+                            if (data) {
+                                var date = new Date(data);
+                                return date.toLocaleDateString();
+                            }
+                            return "";
+                        }
+                    },
+                    { 
+                        "data": "buyingPrice",
+                        "render": function(data, type, row) {
+                            return "$" + parseFloat(data).toFixed(2);
+                        }
+                    },
+                    { 
+                        "data": "sellingPrice",
+                        "render": function(data, type, row) {
+                            return "$" + parseFloat(data).toFixed(2);
+                        }
+                    },
+                    { "data": "totalQuantity" },
+                    {
+                        "data": null,
+                        "orderable": false,
+                        "render": function (data, type, row) {
+                            var editUrl = '@Url.Action("EditStock", "Stock")' + '?stockId=' + row.id;
+                            return '<a href="' + editUrl + '" class="btn btn-icon btn-warning btn-xs m-b-5">' +
+                                   '<i class="fa fa-edit"></i></a>';
+                        }
+                    }
+                ],
+                "pageLength": 25,
+                "lengthMenu": [[10, 25, 50, 100], [10, 25, 50, 100]],
+                "searching": true,
+                "ordering": true,
+                "info": true,
+                "autoWidth": false,
+                "language": {
+                    "searchPlaceholder": "Search stock...",
+                    "processing": '<i class="fa fa-spinner fa-spin fa-3x fa-fw"></i><span class="sr-only">Loading...</span>',
+                    "emptyTable": "No stock found",
+                    "zeroRecords": "No matching stock found"
+                }
+            });
+        });
+    </script>
+}

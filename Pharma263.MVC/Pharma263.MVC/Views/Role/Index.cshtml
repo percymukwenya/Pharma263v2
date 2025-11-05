@@ -1,0 +1,112 @@
+﻿@model IEnumerable<string>
+@{
+    ViewBag.Title = "Role Management";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="wraper container-fluid">
+    <div class="page-title">
+
+        @if (TempData["Msg"] != null)
+        {
+            <div class="alert alert-danger alert-dismissable">
+                <button type="button" class="close" data-dismiss="alert" aria-hidden="true">
+                    ×
+                </button>
+                @TempData["Msg"].ToString()
+            </div>
+            <br />
+        }
+
+        <a href="@Url.Action("CreateRole", "Role")" class="btn btn-primary pull-left">Create New Role</a>
+        <br />
+        <br />
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Role Management</h3>
+                </div>
+                <div class="panel-body">
+                    <div class="row">
+                        <div class="col-md-12 col-sm-12 col-xs-12">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Role Name</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model != null && Model.Any())
+                                    {
+                                        @foreach (var role in Model)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <strong>@role</strong>
+                                                    @if (role == "Administrator")
+                                                    {
+                                                        <span class="label label-danger">System Admin</span>
+                                                    }
+                                                    else if (role == "SuperUser")
+                                                    {
+                                                        <span class="label label-warning">Super User</span>
+                                                    }
+                                                    else if (role == "Supervisor")
+                                                    {
+                                                        <span class="label label-info">Supervisor</span>
+                                                    }
+                                                    else if (role == "Sales")
+                                                    {
+                                                        <span class="label label-success">Sales</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="label label-default">Custom</span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <a href="@Url.Action("RoleDetails", "Role", new { roleName = role })" 
+                                                       class="btn btn-icon btn-info btn-xs m-b-5" title="View Users in Role">
+                                                        <i class="fa fa-users"></i>
+                                                    </a>
+                                                    <a href="@Url.Action("EditRole", "Role", new { roleName = role })" 
+                                                       class="btn btn-icon btn-warning btn-xs m-b-5" title="Edit Role">
+                                                        <i class="fa fa-edit"></i>
+                                                    </a>
+                                                    @if (role != "Administrator") // Don't allow deleting Administrator role
+                                                    {
+                                                        <form asp-action="DeleteRole" method="post" style="display: inline;">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="roleName" value="@role" />
+                                                            <button type="submit" 
+                                                                    onclick="return confirm('Are you sure you want to delete the @role role? This action cannot be undone.')"
+                                                                    class="btn btn-icon btn-danger btn-xs m-b-5" title="Delete Role">
+                                                                <i class="fa fa-remove"></i>
+                                                            </button>
+                                                        </form>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr>
+                                            <td colspan="2" class="text-center text-muted">
+                                                <em>No roles found</em>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

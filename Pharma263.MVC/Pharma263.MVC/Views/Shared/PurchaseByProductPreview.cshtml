@@ -1,0 +1,34 @@
+﻿@model IEnumerable<Pharma263.MVC.Models.PurchaseByProductReportViewModel>
+@using System.Globalization;
+<style>
+    /* Define CSS styles for the table and table cells */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        padding: 8px; /* Adjust the padding as needed */
+        text-align: left;
+    }
+
+    tr:nth-child(even) {
+        background-color: #f2f2f2; /* Alternate row background color */
+    }
+
+    /* Additional styling as needed */
+</style>
+
+<h2>Purchase by Product Report</h2>
+
+<table>
+    <tr><th>Medicine Name</th><th>Total Purchase Cost</th><th>Total Transactions</th></tr>
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>@item.MedicineName</td>
+            <td>@item.TotalPurchaseCost.ToString("### ###0.00", CultureInfo.InvariantCulture)</td>
+            <td>@item.TotalTransactions</td>
+        </tr>
+    }
+</table>

@@ -1,0 +1,598 @@
+﻿@{
+    ViewData["Title"] = "Sales Performance Dashboard";
+}
+
+@Html.AntiForgeryToken()
+
+<div class="container-fluid mt-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="fas fa-chart-line me-2 text-primary"></i>Sales Performance Dashboard</h2>
+            <p class="text-muted mb-0">Real-time sales analytics and performance insights</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-primary" onclick="exportSalesReport('pdf')">
+                <i class="fas fa-file-pdf me-1"></i>Export PDF
+            </button>
+            <a href="@Url.Action("Index", "Report")" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Back to Reports
+            </a>
+        </div>
+    </div>
+
+    <!-- Parameters Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="row align-items-end">
+                        <div class="col-md-3">
+                            <label for="startDate" class="form-label fw-semibold">Start Date</label>
+                            <input type="date" class="form-control" id="startDate" name="startDate" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="endDate" class="form-label fw-semibold">End Date</label>
+                            <input type="date" class="form-control" id="endDate" name="endDate" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="comparisonPeriod" class="form-label fw-semibold">Compare With</label>
+                            <select class="form-control" id="comparisonPeriod">
+                                <option value="previous">Previous Period</option>
+                                <option value="lastYear">Same Period Last Year</option>
+                                <option value="none">No Comparison</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="button" class="btn btn-primary w-100" onclick="loadSalesData()">
+                                <i class="fas fa-search me-1"></i>Generate Report
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loading-salesSummary" class="d-none">
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3 text-muted">Loading sales summary data...</p>
+        </div>
+    </div>
+
+    <!-- Error State -->
+    <div id="error-salesSummary" class="d-none">
+        <div class="alert alert-danger" role="alert">
+            <h4 class="alert-heading">Error Loading Data</h4>
+            <p class="error-message">Unable to load sales summary data. Please try again.</p>
+            <button class="btn btn-outline-danger" onclick="loadSalesData()">
+                <i class="fas fa-redo me-1"></i>Retry
+            </button>
+        </div>
+    </div>
+
+    <!-- Content Container -->
+    <div id="content-salesSummary">
+
+    <!-- KPI Cards Row -->
+    <div class="row mb-4" id="kpiCards">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="kpi-card">
+                <div class="kpi-icon">
+                    <i class="fas fa-dollar-sign"></i>
+                </div>
+                <div class="kpi-content">
+                    <h3 id="totalRevenue">$0.00</h3>
+                    <p class="kpi-label">Total Revenue</p>
+                    <div class="kpi-trend" id="revenueTrend">
+                        <i class="fas fa-minus"></i>
+                        <span>0.0%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="kpi-card">
+                <div class="kpi-icon">
+                    <i class="fas fa-receipt"></i>
+                </div>
+                <div class="kpi-content">
+                    <h3 id="totalTransactions">0</h3>
+                    <p class="kpi-label">Total Transactions</p>
+                    <div class="kpi-trend" id="transactionsTrend">
+                        <i class="fas fa-minus"></i>
+                        <span>0.0%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="kpi-card">
+                <div class="kpi-icon">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+                <div class="kpi-content">
+                    <h3 id="averageOrderValue">$0.00</h3>
+                    <p class="kpi-label">Average Order Value</p>
+                    <div class="kpi-trend" id="aovTrend">
+                        <i class="fas fa-minus"></i>
+                        <span>0.0%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="kpi-card">
+                <div class="kpi-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="kpi-content">
+                    <h3 id="uniqueCustomers">0</h3>
+                    <p class="kpi-label">Unique Customers</p>
+                    <div class="kpi-trend" id="customersTrend">
+                        <i class="fas fa-minus"></i>
+                        <span>0.0%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-gradient-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-chart-line me-2"></i>Sales Performance Trends
+                        </h5>
+                        <small class="last-updated">
+                            <i class="fas fa-clock me-1"></i>
+                            <span id="last-updated-salesTrends">Just now</span>
+                        </small>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Loading State -->
+                    <div class="loading-state d-none" id="loading-salesTrends">
+                        <div class="d-flex justify-content-center align-items-center" style="min-height: 200px;">
+                            <div class="spinner-border spinner-border-lg text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <span class="ms-3 text-muted">Generating chart...</span>
+                        </div>
+                    </div>
+
+                    <!-- Chart Container -->
+                    <div class="chart-container" id="content-salesTrends">
+                        <canvas id="salesTrendChart" height="400"></canvas>
+                    </div>
+                </div>
+                <div class="card-footer bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="chart-controls">
+                            <div class="btn-group btn-group-sm" role="group">
+                                <input type="radio" class="btn-check" name="chartType-salesTrends" id="line-salesTrends" value="line" checked>
+                                <label class="btn btn-outline-primary" for="line-salesTrends">
+                                    <i class="fas fa-chart-line me-1"></i>Line
+                                </label>
+                                <input type="radio" class="btn-check" name="chartType-salesTrends" id="bar-salesTrends" value="bar">
+                                <label class="btn btn-outline-primary" for="bar-salesTrends">
+                                    <i class="fas fa-chart-bar me-1"></i>Bar
+                                </label>
+                            </div>
+                        </div>
+                        <div class="export-actions">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="refreshSalesChart()">
+                                <i class="fas fa-sync-alt me-1"></i>Refresh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-gradient-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-trophy me-2"></i>Top Performers</h5>
+                </div>
+                <div class="card-body">
+                    <div class="top-performers-list" id="topPerformers">
+                        <!-- Top performers will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Insights Row -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Daily Breakdown</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="dailyBreakdown">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Revenue</th>
+                                    <th>Transactions</th>
+                                    <th>Avg Order</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Daily data will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-user-tie me-2"></i>Sales Rep Performance</h5>
+                </div>
+                <div class="card-body">
+                    <div id="salesRepChart" style="height: 300px;">
+                        <canvas id="salesRepCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </div> <!-- End content-salesSummary -->
+</div>
+
+@section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        let salesChart = null;
+        let salesRepChart = null;
+
+        // reportManager is already defined in reports.js
+
+        // Function definitions (hoisted for onclick handlers)
+        function initializeDateInputs() {
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setMonth(startDate.getMonth() - 1);
+
+            document.getElementById('startDate').value = startDate.toISOString().split('T')[0];
+            document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
+        }
+
+        function loadDefaultData() {
+            loadSalesData();
+        }
+
+        window.loadSalesData = async function() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const comparisonPeriod = document.getElementById('comparisonPeriod').value;
+
+            if (!startDate || !endDate) {
+                reportManager.showToast('Please select both start and end dates', 'warning');
+                return;
+            }
+
+            try {
+                const params = {
+                    startDate: startDate,
+                    endDate: endDate,
+                    comparisonPeriod: comparisonPeriod
+                };
+
+                console.log('Loading sales data with params:', params);
+
+                const data = await reportManager.loadReportData(
+                    'salesSummary',
+                    '@Url.Action("SaleSummaryData", "Report")',
+                    params
+                );
+
+                console.log('Received data:', data);
+
+                if (data && data.summary) {
+                    updateKPICards(data.summary);
+                }
+                if (data && data.trends) {
+                    updateSalesTrendChart(data.trends);
+                }
+                if (data && data.topProducts) {
+                    updateTopPerformers(data.topProducts);
+                }
+                if (data && data.dailyData) {
+                    updateDailyBreakdown(data.dailyData);
+                }
+                if (data && data.salesReps) {
+                    updateSalesRepChart(data.salesReps);
+                }
+
+            } catch (error) {
+                console.error('Error loading sales data:', error);
+                reportManager.showError('salesSummary', `Failed to load sales data: ${error.message}`);
+            }
+        }
+
+        function updateKPICards(summary) {
+            // Update revenue
+            document.getElementById('totalRevenue').textContent = 
+                reportManager.formatCurrency(summary.totalRevenue);
+            updateTrendIndicator('revenueTrend', summary.revenueTrend);
+
+            // Update transactions
+            document.getElementById('totalTransactions').textContent = 
+                reportManager.formatNumber(summary.totalTransactions);
+            updateTrendIndicator('transactionsTrend', summary.transactionsTrend);
+
+            // Update average order value
+            document.getElementById('averageOrderValue').textContent = 
+                reportManager.formatCurrency(summary.averageOrderValue);
+            updateTrendIndicator('aovTrend', summary.aovTrend);
+
+            // Update unique customers
+            document.getElementById('uniqueCustomers').textContent = 
+                reportManager.formatNumber(summary.uniqueCustomers);
+            updateTrendIndicator('customersTrend', summary.customersTrend);
+        }
+
+        function updateTrendIndicator(elementId, trendValue) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+            
+            const icon = element.querySelector('i');
+            const span = element.querySelector('span');
+            
+            if (!icon || !span) return;
+
+            // Handle numeric trend value
+            const numericTrend = parseFloat(trendValue) || 0;
+
+            if (numericTrend > 0) {
+                icon.className = 'fas fa-arrow-up';
+                element.className = 'kpi-trend text-success';
+            } else if (numericTrend < 0) {
+                icon.className = 'fas fa-arrow-down';
+                element.className = 'kpi-trend text-danger';
+            } else {
+                icon.className = 'fas fa-minus';
+                element.className = 'kpi-trend text-muted';
+            }
+
+            span.textContent = Math.abs(numericTrend).toFixed(1) + '%';
+        }
+
+        function updateSalesTrendChart(trendsData) {
+            const chartData = {
+                labels: trendsData.labels,
+                datasets: [{
+                    label: 'Sales Revenue',
+                    data: trendsData.revenue,
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4
+                }]
+            };
+
+            const options = {
+                type: 'line',
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Revenue: ' + reportManager.formatCurrency(context.parsed.y);
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            salesChart = reportManager.createChart('salesTrendChart', chartData, options);
+        }
+
+        function updateTopPerformers(topProducts) {
+            const container = document.getElementById('topPerformers');
+            let html = '';
+
+            topProducts.forEach((product, index) => {
+                html += `
+                    <div class="performer-item d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex align-items-center">
+                            <span class="rank-badge ${index < 3 ? 'top-rank' : ''}">${index + 1}</span>
+                            <div class="ms-3">
+                                <h6 class="mb-0">${product.name}</h6>
+                                <small class="text-muted">${product.quantity} units sold</small>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <strong class="text-primary">${reportManager.formatCurrency(product.revenue)}</strong>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function updateDailyBreakdown(dailyData) {
+            const tbody = document.querySelector('#dailyBreakdown tbody');
+            let html = '';
+
+            dailyData.forEach(day => {
+                html += `
+                    <tr>
+                        <td>${new Date(day.date).toLocaleDateString()}</td>
+                        <td>${reportManager.formatCurrency(day.revenue)}</td>
+                        <td>${reportManager.formatNumber(day.transactions)}</td>
+                        <td>${reportManager.formatCurrency(day.averageOrder)}</td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        function updateSalesRepChart(salesRepsData) {
+            const chartData = {
+                labels: salesRepsData.map(rep => rep.name),
+                datasets: [{
+                    label: 'Sales Revenue',
+                    data: salesRepsData.map(rep => rep.revenue),
+                    backgroundColor: [
+                        '#667eea', '#764ba2', '#f093fb', '#f5576c', 
+                        '#4facfe', '#00f2fe', '#43e97b', '#38f9d7'
+                    ]
+                }]
+            };
+
+            const options = {
+                type: 'doughnut',
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + reportManager.formatCurrency(context.parsed);
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            salesRepChart = reportManager.createChart('salesRepCanvas', chartData, options);
+        }
+
+        function exportSalesReport(format) {
+            const params = {
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value,
+                format: format
+            };
+
+            reportManager.exportReport('salesSummary', format, '@Url.Action("ExportSalesSummary", "Report")', params);
+        }
+
+        function refreshSalesChart() {
+            loadSalesData();
+        }
+
+        // Initialize the page when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDateInputs();
+            loadDefaultData();
+        });
+    </script>
+}
+
+<style>
+.kpi-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    border-left: 4px solid #667eea;
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+.kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+}
+
+.kpi-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+}
+
+.kpi-icon i {
+    font-size: 24px;
+    color: white;
+}
+
+.kpi-content h3 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    color: #2c3e50;
+}
+
+.kpi-label {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin: 0;
+    font-weight: 500;
+}
+
+.kpi-trend {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-top: 0.25rem;
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.performer-item {
+    padding: 0.75rem;
+    border-radius: 8px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+}
+
+.rank-badge {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #6c757d;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+.rank-badge.top-rank {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    background: #f8f9fa;
+}
+</style>

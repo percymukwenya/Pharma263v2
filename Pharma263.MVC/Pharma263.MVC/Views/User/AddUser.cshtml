@@ -1,0 +1,207 @@
+﻿@model Pharma263.MVC.DTOs.User.AddUserDto
+@{
+    ViewBag.Title = "Add User";
+}
+
+<div class="wraper container-fluid">
+    <div class="page-title">
+        <h3 class="title">User </h3>
+    </div>
+    <div class="row">
+        <div class="col-lg-10 col-md-offset-1">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">New User</h3>
+                </div>
+                <div class="panel-body">
+                    @using (Html.BeginForm("AddUser", "User", FormMethod.Post, new { @class = "ajax-form", data_ajax = "true", data_ajax_options = "{\"showSuccess\": true, \"resetForm\": true, \"redirect\": \"/User/UserList\"}" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        
+                        <div class="row">
+                            <div class="col-lg-6 col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(x => x.Firstname)
+                                    @Html.TextBoxFor(x => x.Firstname, null, new { @class = "form-control", @placeholder = "Enter First Name", @required = "required" })
+                                    @Html.ValidationMessageFor(x => x.Firstname, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(x => x.Lastname)
+                                    @Html.TextBoxFor(x => x.Lastname, null, new { @class = "form-control", @placeholder = "Enter Last Name", @required = "required" })
+                                    @Html.ValidationMessageFor(x => x.Lastname, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-6 col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(x => x.Email)
+                                    @Html.TextBoxFor(x => x.Email, null, new { @class = "form-control", @placeholder = "Enter Email", @type = "email", @required = "required" })
+                                    @Html.ValidationMessageFor(x => x.Email, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(x => x.Phone)
+                                    @Html.TextBoxFor(x => x.Phone, null, new { @class = "form-control", @placeholder = "Enter Phone Number", data_rule_phone = "true" })
+                                    @Html.ValidationMessageFor(x => x.Phone, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-lg-6 col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(x => x.UserName)
+                                    @Html.TextBoxFor(x => x.UserName, null, new { @class = "form-control", @placeholder = "Enter Username", @required = "required", @minlength = "3" })
+                                    @Html.ValidationMessageFor(x => x.UserName, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(x => x.Password)
+                                    @Html.PasswordFor(x => x.Password, new { @class = "form-control", @placeholder = "Enter Password", @required = "required", @minlength = "6" })
+                                    @Html.ValidationMessageFor(x => x.Password, "", new { @class = "text-danger" })
+                                    <small class="form-text text-muted">Password must be at least 6 characters long</small>
+                                </div>
+                            </div>                            
+                        </div>
+
+                        <div class="row">
+                            <div class="col-lg-6 col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(x => x.Role)
+                                    @Html.DropDownListFor(x => x.Role, Model.Roles, "Select Role", new { @class = "form-control", @required = "required" })
+                                    @Html.ValidationMessageFor(x => x.Role, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-purple btn-lg">
+                                <i class="fas fa-user-plus"></i> Add User
+                            </button>
+                            <a href="@Url.Action("UserList", "User")" class="btn btn-default btn-lg">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section scripts {
+    <script type="text/javascript">
+        $(document).ready(function() {
+            // Enable real-time validation
+            if (window.Pharma263) {
+                window.Pharma263.enableRealtimeValidation($('.ajax-form'));
+            }
+
+            // Auto-format names to title case
+            $('#Firstname, #Lastname').on('blur', function() {
+                const value = $(this).val();
+                if (value) {
+                    $(this).val(value.toLowerCase().replace(/\b\w/g, l => l.toUpperCase()));
+                }
+            });
+
+            // Username validation - no spaces, lowercase
+            $('#UserName').on('input', function() {
+                let value = $(this).val();
+                // Remove spaces and convert to lowercase
+                value = value.replace(/\s+/g, '').toLowerCase();
+                $(this).val(value);
+            });
+
+            // Username availability check (debounced)
+            let usernameTimeout;
+            $('#UserName').on('input', function() {
+                const username = $(this).val();
+                if (username.length >= 3) {
+                    clearTimeout(usernameTimeout);
+                    usernameTimeout = setTimeout(() => {
+                        checkUsernameAvailability(username);
+                    }, 500);
+                }
+            });
+
+            function checkUsernameAvailability(username) {
+                $.ajax({
+                    url: '/User/CheckUsername',
+                    type: 'GET',
+                    data: { username: username },
+                    success: function(response) {
+                        const $usernameField = $('#UserName');
+                        if (response.isAvailable) {
+                            $usernameField.removeClass('is-invalid').addClass('is-valid');
+                            $usernameField.siblings('.invalid-feedback').remove();
+                        } else {
+                            $usernameField.removeClass('is-valid').addClass('is-invalid');
+                            $usernameField.siblings('.invalid-feedback').remove();
+                            $usernameField.after('<div class="invalid-feedback">Username is already taken</div>');
+                        }
+                    },
+                    error: function() {
+                        console.log('Could not check username availability');
+                    }
+                });
+            }
+
+            // Password strength indicator
+            $('#Password').on('input', function() {
+                const password = $(this).val();
+                const strength = getPasswordStrength(password);
+                showPasswordStrength(strength);
+            });
+
+            function getPasswordStrength(password) {
+                let score = 0;
+                if (password.length >= 6) score++;
+                if (password.length >= 8) score++;
+                if (/[a-z]/.test(password)) score++;
+                if (/[A-Z]/.test(password)) score++;
+                if (/[0-9]/.test(password)) score++;
+                if (/[^A-Za-z0-9]/.test(password)) score++;
+
+                if (score < 3) return { level: 'weak', color: 'danger' };
+                if (score < 5) return { level: 'medium', color: 'warning' };
+                return { level: 'strong', color: 'success' };
+            }
+
+            function showPasswordStrength(strength) {
+                const $passwordField = $('#Password');
+                let $indicator = $passwordField.siblings('.password-strength');
+                
+                if ($indicator.length === 0) {
+                    $indicator = $('<small class="password-strength form-text"></small>');
+                    $passwordField.after($indicator);
+                }
+
+                $indicator.removeClass('text-danger text-warning text-success')
+                          .addClass(`text-${strength.color}`)
+                          .text(`Password strength: ${strength.level}`);
+            }
+
+            // Role selection styling
+            $('#Role').on('change', function() {
+                const selectedRole = $(this).val();
+                if (selectedRole) {
+                    $(this).removeClass('is-invalid').addClass('is-valid');
+                }
+            });
+
+            // Success callback
+            $(document).on('ajaxSuccess', '.ajax-form', function(event, xhr, settings) {
+                if (settings.url.includes('AddUser')) {
+                    console.log('User added successfully');
+                }
+            });
+        });
+    </script>
+}

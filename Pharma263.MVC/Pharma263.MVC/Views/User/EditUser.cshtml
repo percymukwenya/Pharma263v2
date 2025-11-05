@@ -1,0 +1,85 @@
+﻿@model Pharma263.MVC.DTOs.User.UpdateUserDto
+@{
+    ViewBag.Title = "Edit Customer";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+
+<div class="wraper container-fluid">
+    <div class="page-title">
+        <h3 class="title">Edit System User </h3>
+    </div>
+    <div class="row">
+        <div class="col-lg-10 col-md-offset-1">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Update Customer</h3>
+                </div>
+                <div class="panel-body">
+                    @using (Html.BeginForm("EditUser", "User", FormMethod.Post))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(x => x.Id)
+
+                        <div class="row">
+                            <div class="col-lg-6 col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(x => x.Firstname)
+                                    @Html.TextBoxFor(x => x.Firstname, null, new { @class = "form-control", @placeholder = "Enter First Name " })
+                                    @Html.ValidationMessageFor(x => x.Firstname, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6 col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(x => x.Lastname)
+                                    @Html.TextBoxFor(x => x.Lastname, null, new { @class = "form-control", @placeholder = "Enter Last Name " })
+                                    @Html.ValidationMessageFor(x => x.Lastname, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-lg-6 col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(x => x.Email)
+                                    @Html.TextBoxFor(x => x.Email, null, new { @class = "form-control", @placeholder = "Enter Email " })
+                                    @Html.ValidationMessageFor(x => x.Email, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(x => x.Phone)
+                                    @Html.TextBoxFor(x => x.Phone, null, new { @class = "form-control", @placeholder = "Enter Phone Number " })
+                                    @Html.ValidationMessageFor(x => x.Phone, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-lg-6 col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(x => x.Role)
+                                    <select asp-for="Role" asp-items="Model.Roles" class="form-control"></select>
+                                    @Html.ValidationMessageFor(x => x.Role, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(x => x.UserName)
+                                    @Html.TextBoxFor(x => x.UserName, null, new { @class = "form-control", @rows = "5", @placeholder = "Role" })
+                                    @Html.ValidationMessageFor(x => x.UserName, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-purple">
+                            Update
+                        </button>
+                        <a asp-action="UserList" class="btn btn-secondary">Back to List</a>
+                    }
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

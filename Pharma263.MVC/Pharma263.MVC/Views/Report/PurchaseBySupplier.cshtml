@@ -1,0 +1,89 @@
+﻿@model IEnumerable<Pharma263.MVC.Models.PurchaseBySupplierViewModel>
+
+<style>
+    .highlight {
+        color: #007bff; /* Change this to your desired text color */
+        font-weight: bold;
+    }
+</style>
+
+<h5 style="margin-top: 200px">Sale By Customer</h5>
+
+<form id="purchaseBySupplierForm">
+    <div class="col-md-4">
+        <div class="form-group">
+            <label for="Name">Supplier : </label>
+            <select id="SupplierId" class="form-control">
+                <option value="">Select Supplier</option>
+            </select>
+        </div>
+    </div>
+    <br>
+    <label><input type="radio" name="exportOption" value="preview" checked> Preview</label>
+    <label><input type="radio" name="exportOption" value="pdf"> PDF Export</label>
+    <br>
+    <button type="submit">Generate Report</button>
+    <a id="downloadPdfButton" style="display: none;" href="#">Download PDF</a>
+</form>
+
+<div style="margin-left: 30px;" id="purchaseBySupplierResults">
+    <!-- The report preview or download link will be displayed here -->
+</div>
+
+@section scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            $.ajax({
+                type: "GET",
+                url: "@Url.Action("GetSupplier", "Supplier")",
+                datatype: "Json",
+                success: function (data) {
+                    // Clear existing options from select element
+                    $('#SupplierId').empty();
+                    // Add empty option as first option
+                    $('#SupplierId').append($('<option>').text('Select Supplier').attr('value', ''));
+                    $.each(data, function (index, value) {
+                        $('#SupplierId').append($('<option>').text(value.name).attr('value', value.id));
+                        //$("#Customer").append('<option value="' + value.Id + '">' + value.Name + "</option>");
+                    });
+                    // Initialize Select2 plugin on select element
+                    //$('#CustomerId').select2();
+                },
+            });
+
+            $("#purchaseBySupplierForm").submit(function (event) {
+                event.preventDefault();
+
+                var supplierId = $("#SupplierId").val();
+                var selectedExportOption = $("input[name='exportOption']:checked").val();
+
+                $.ajax({
+                    type: "POST",
+                    url: "@Url.Action("PurchaseBySupplier", "Report")",
+                    data: { supplierId: supplierId, exportFormat: selectedExportOption },
+                    dataType: "html",
+                    success: function (data) {
+                        console.log(data);
+                        if (selectedExportOption === "preview") {
+                            $("#purchaseBySupplierResults").html(data);
+                        } else if (selectedExportOption === "pdf") {
+                            // Show the download button for PDF
+                            $("#downloadPdfButton").show();
+                            // Set the button's href attribute for PDF download
+                            var pdfDownloadUrl = "@Url.Action("DownloadPurchaseBySupplierPDF", "Report")" + "?supplierId=" + supplierId;
+                            $("#downloadPdfButton").attr("href", pdfDownloadUrl);
+                        }
+                    },
+                    error: function () {
+                        $("#purchaseBySupplierResults").html("An error occurred while fetching data.");
+                    }
+                });
+            });
+
+        });
+    </script>
+}

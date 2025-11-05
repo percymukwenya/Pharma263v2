@@ -1,0 +1,70 @@
+﻿@{
+    ViewData["Title"] = "Sales Reports";
+}
+<style>
+    /* CSS for the links */
+    .nav-link {
+        text-decoration: none; /* Remove underlines */
+        color: #007bff; /* Set the link color (blue in this case) */
+    }
+
+        .nav-link:hover {
+            color: #0056b3; /* Change the link color on hover */
+        }
+
+    /* FontAwesome icons */
+    .fas {
+        margin-right: 8px; /* Add spacing between the icon and text */
+    }
+
+    .card {
+        transition: transform 0.3s;
+    }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+    .deshboard-container{
+        width: 100%;
+        padding: 5px 10px;
+    }
+</style>
+
+<h3 style="margin-top: 100px"></h3>
+
+<div class="deshboard-container">
+    <h2 class="text-center mb-4">Sales Reports Dashboard</h2>
+    <div class="row">
+        <div class="col-md-4 col-sm-3">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Sales Summary</h5>
+                    <p class="card-text">Get a snapshot of your sales performance.</p>
+                    <a href="@Url.Action("SaleSummary", "Report")" class="btn btn-primary">View Report</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 col-sm-3">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Sales By Product</h5>
+                    <p class="card-text">Analyze your sales trends over the past months.</p>
+                    <a href="@Url.Action("SaleByProduct", "Report")" class="btn btn-primary">View Report</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 col-sm-3">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Sales By Customer</h5>
+                    <p class="card-text">Identify your best-performing sales with customer.</p>
+                    <a href="@Url.Action("SaleByCustomer", "Report")" class="btn btn-primary">View Report</a>
+                </div>
+            </div>
+        </div>
+        <!-- Add more report cards as needed -->
+    </div>
+</div>
+
+
