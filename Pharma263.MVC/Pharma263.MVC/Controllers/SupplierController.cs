@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Pharma263.MVC.Controllers
 {
-    public class SupplierController : Controller
+    public class SupplierController : BaseController
     {
         private readonly ISupplierService _supplierService;
         private readonly ISelectionsService _selectionsService;

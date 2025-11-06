@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Pharma263.MVC.Controllers
 {
-    public class CustomerController : Controller
+    public class CustomerController : BaseController
     {
         private readonly ICustomerService _customerService;
         private readonly ISelectionsService _selectionsService;

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Pharma263.MVC.Controllers
 {
-    public class AdminController : Controller
+    public class AdminController : BaseController
     {
         private readonly ISupplierService _supplierService;
         private readonly IPaymentMethodService _paymentMethodService;

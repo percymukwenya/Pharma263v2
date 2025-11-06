@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Pharma263.MVC.Controllers
 {
-    public class StoreSettingsController : Controller
+    public class StoreSettingsController : BaseController
     {
         private readonly IStoreSettingService _storeSettingService;
 

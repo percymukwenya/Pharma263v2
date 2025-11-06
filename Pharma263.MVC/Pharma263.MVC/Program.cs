@@ -115,7 +115,7 @@ builder.Services.AddDistributedMemoryCache();
 
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.IdleTimeout = TimeSpan.FromMinutes(90); // Aligned with cookie auth timeout
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });

@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace Pharma263.MVC.Controllers
 {
-    public class ReturnController : Controller
+    public class ReturnController : BaseController
     {
         private readonly IReturnService _returnService;
         private readonly IReturnReasonService _returnReasonService;

@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace Pharma263.MVC.Controllers
 {
-    public class StockController : Controller
+    public class StockController : BaseController
     {
         private readonly IStockService _stockService;
         private readonly IMapper _mapper;

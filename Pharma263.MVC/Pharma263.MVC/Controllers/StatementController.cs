@@ -5,7 +5,7 @@ using System;
 
 namespace Pharma263.MVC.Controllers
 {
-    public class StatementController : Controller
+    public class StatementController : BaseController
     {
         private readonly IStatementService _statementService;
         private readonly IAccountsReceivableService _accountsReceivableService;

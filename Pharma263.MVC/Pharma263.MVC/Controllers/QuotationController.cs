@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Pharma263.MVC.Controllers
 {
-    public class QuotationController : Controller
+    public class QuotationController : BaseController
     {
         private readonly IQuotationService _quotationService;
         private readonly ISaleService _saleService;
