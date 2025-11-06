@@ -2,10 +2,10 @@ using Pharma263.Api.Models.Purchase.Request;
 using Pharma263.Api.Models.Quotation.Request;
 using Pharma263.Api.Models.Return.Request;
 using Pharma263.Api.Models.Sales.Request;
-using Pharma263.Application.Models;
+using Pharma263.Api.Models.Validation;
 using System.Threading.Tasks;
 
-namespace Pharma263.Application.Contracts.Services
+namespace Pharma263.Api.Contracts
 {
     /// <summary>
     /// Service for centralized validation logic across all business operations

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Pharma263.Application.Models
+namespace Pharma263.Api.Models.Validation
 {
     /// <summary>
     /// Represents the result of a validation operation

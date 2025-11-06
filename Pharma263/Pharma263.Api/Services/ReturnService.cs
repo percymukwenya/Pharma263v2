@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Pharma263.Api.Contracts;
 using Pharma263.Api.Models.Returns.Request;
 using Pharma263.Api.Models.Returns.Response;
 using Pharma263.Api.Shared.Contracts;
