@@ -21,16 +21,19 @@ namespace Pharma263.Api.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IStockManagementService _stockManagementService;
+        private readonly IValidationService _validationService;
         private readonly IAppLogger<ReturnService> _logger;
         private readonly IMemoryCache _memoryCache;
         private const string ReturnsCacheKey = "returns_list";
         private const string ReturnDetailsCacheKeyPrefix = "return_details_";
         private readonly TimeSpan CacheExpiry = TimeSpan.FromMinutes(5);
 
-        public ReturnService(IUnitOfWork unitOfWork, IStockManagementService stockManagementService, IAppLogger<ReturnService> logger, IMemoryCache memoryCache)
+        public ReturnService(IUnitOfWork unitOfWork, IStockManagementService stockManagementService,
+            IValidationService validationService, IAppLogger<ReturnService> logger, IMemoryCache memoryCache)
         {
             _unitOfWork = unitOfWork;
             _stockManagementService = stockManagementService;
+            _validationService = validationService;
             _logger = logger;
             _memoryCache = memoryCache;
         }
@@ -133,6 +136,15 @@ namespace Pharma263.Api.Services
 
         public async Task<ApiResponse<int>> AddReturn(ProcessReturnRequest request)
         {
+            // Validate request using ValidationService
+            var requestValidation = await _validationService.ValidateReturnRequestAsync(request);
+            if (!requestValidation.IsValid)
+            {
+                _logger.LogWarning("Return request validation failed: SaleId={SaleId}, Errors={Errors}",
+                    request.SaleId, string.Join(", ", requestValidation.Errors));
+                return ApiResponse<int>.CreateFailure("Return request validation failed", 400, requestValidation.Errors);
+            }
+
             try
             {
                 // Verify sale exists before transaction

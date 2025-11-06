@@ -22,14 +22,17 @@ namespace Pharma263.Api.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IQuotationRepository _quotationRepository;
         private readonly IStockManagementService _stockManagementService;
+        private readonly IValidationService _validationService;
         private readonly IAppLogger<QuotationService> _logger;
 
         public QuotationService(IUnitOfWork unitOfWork, IQuotationRepository quotationRepository,
-            IStockManagementService stockManagementService, IAppLogger<QuotationService> logger)
+            IStockManagementService stockManagementService, IValidationService validationService,
+            IAppLogger<QuotationService> logger)
         {
             _unitOfWork = unitOfWork;
             _quotationRepository = quotationRepository;
             _stockManagementService = stockManagementService;
+            _validationService = validationService;
             _logger = logger;
         }
 
@@ -190,6 +193,14 @@ namespace Pharma263.Api.Services
 
         public async Task<ApiResponse<bool>> AddQuotation(AddQuotationRequest request)
         {
+            // Validate request using ValidationService
+            var requestValidation = await _validationService.ValidateQuotationRequestAsync(request);
+            if (!requestValidation.IsValid)
+            {
+                _logger.LogWarning("Quotation request validation failed: {Errors}", string.Join(", ", requestValidation.Errors));
+                return ApiResponse<bool>.CreateFailure("Quotation request validation failed", 400, requestValidation.Errors);
+            }
+
             try
             {
                 var quoteToCreate = new Quotation
@@ -201,25 +212,15 @@ namespace Pharma263.Api.Services
                     Discount = request.Discount,
                     GrandTotal = request.GrandTotal,
                     QuoteExpiryDate = DateTime.UtcNow.AddHours(2).AddDays(2),
-                    QuoteStatusId = request.QuoteStatusId,
+                    QuoteStatusId = 5, // Default status
+                    Items = new List<QuotationItems>()
                 };
 
-                quoteToCreate.Items = new List<QuotationItems>();
-
-                quoteToCreate.QuoteStatusId = 5;
-
-                var errors = new List<string>();
-
+                // Process items (validation already done by ValidationService)
                 foreach (var item in request.Items)
                 {
-                    // Calculate the net amount: (Price * Quantity) - Discount.
                     decimal netAmount = (item.Price * item.Quantity) - item.Discount;
-                    if (netAmount < 0)
-                    {
-                        errors.Add($"The discount on an item cannot exceed its line total: {netAmount}.");
-                    }
 
-                    // Create a new quotation item and add it to the Quotation entity
                     var quotationItem = new QuotationItems
                     {
                         Price = item.Price,
@@ -230,11 +231,6 @@ namespace Pharma263.Api.Services
                     };
 
                     quoteToCreate.Items.Add(quotationItem);
-                }
-
-                if (errors.Count != 0)
-                {
-                    return ApiResponse<bool>.CreateFailure("Error adding quotation items", 400, errors);
                 }
 
                 await _unitOfWork.Repository<Quotation>().AddAsync(quoteToCreate);
@@ -259,6 +255,15 @@ namespace Pharma263.Api.Services
 
         public async Task<ApiResponse<bool>> UpdateQuotation(UpdateQuotationRequest request)
         {
+            // Validate request using ValidationService
+            var requestValidation = await _validationService.ValidateUpdateQuotationRequestAsync(request);
+            if (!requestValidation.IsValid)
+            {
+                _logger.LogWarning("Quotation update validation failed: QuotationId={QuotationId}, Errors={Errors}",
+                    request.Id, string.Join(", ", requestValidation.Errors));
+                return ApiResponse<bool>.CreateFailure("Quotation update validation failed", 400, requestValidation.Errors);
+            }
+
             try
             {
                 var quoteToUpdate = await _unitOfWork.Repository<Quotation>()
@@ -285,12 +290,10 @@ namespace Pharma263.Api.Services
                 quoteToUpdate.GrandTotal = request.GrandTotal;
                 quoteToUpdate.Notes = request.Notes;
 
-                var errors = new List<string>();
+                // Process items (validation already done by ValidationService)
                 foreach (var item in request.Items)
                 {
                     decimal netAmount = (item.Price * item.Quantity) - item.Discount;
-                    if (netAmount < 0)
-                        errors.Add($"The discount {item.Discount} on an item cannot exceed its line total.");
 
                     quoteToUpdate.Items.Add(new QuotationItems
                     {
@@ -303,10 +306,6 @@ namespace Pharma263.Api.Services
                 }
 
                 _unitOfWork.Repository<Quotation>().Update(quoteToUpdate);
-                if (errors.Count != 0)
-                {
-                    return ApiResponse<bool>.CreateFailure("Error updating quotation items", 400, errors);
-                }
 
                 var result = await _unitOfWork.SaveChangesAsync();
 
