@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using Pharma263.Application.Configurations;
 using Pharma263.Application.Contracts.Caching;
 using Pharma263.Application.Contracts.Identity;
+using Pharma263.Application.Contracts.Services;
 using Pharma263.Application.Services;
 using Pharma263.Application.Services.Caching;
 using Pharma263.Application.Services.Identity;
@@ -23,6 +24,7 @@ namespace Pharma263.Application
         {
             services.AddScoped<IReportService, ReportService>();
             services.AddScoped<IReportAnalyticsService, ReportAnalyticsService>();
+            services.AddScoped<IStockManagementService, StockManagementService>();
 
             services.AddTransient<MemoryCacheService>();
             services.AddTransient<RedisCacheService>();

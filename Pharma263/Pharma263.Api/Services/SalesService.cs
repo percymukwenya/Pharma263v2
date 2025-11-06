@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Pharma263.Api.Models.Sales.Request;
 using Pharma263.Api.Models.Sales.Response;
 using Pharma263.Api.Shared.Contracts;
+using Pharma263.Application.Contracts.Services;
 using Pharma263.Application.Models;
 using Pharma263.Application.Services.Printing;
 using Pharma263.Domain.Common;
@@ -23,7 +24,7 @@ namespace Pharma263.Api.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ISalesRepository _salesRepository;
-        private readonly IStockRepository _stockRepository;
+        private readonly IStockManagementService _stockManagementService;
         private readonly ILogger<SalesService> _logger;
         private readonly IMemoryCache _memoryCache;
         private const string SalesCacheKey = "sales_list";
@@ -31,11 +32,11 @@ namespace Pharma263.Api.Services
         private readonly TimeSpan CacheExpiry = TimeSpan.FromMinutes(5);
 
         public SalesService(IUnitOfWork unitOfWork, ISalesRepository salesRepository,
-            IStockRepository stockRepository, ILogger<SalesService> logger, IMemoryCache memoryCache)
+            IStockManagementService stockManagementService, ILogger<SalesService> logger, IMemoryCache memoryCache)
         {
             _unitOfWork = unitOfWork;
             _salesRepository = salesRepository;
-            _stockRepository = stockRepository;
+            _stockManagementService = stockManagementService;
             _logger = logger;
             _memoryCache = memoryCache;
         }
@@ -280,7 +281,8 @@ namespace Pharma263.Api.Services
 
         public async Task<ApiResponse<int>> AddSale(AddSaleRequest request)
         {
-            var saleToCreate = new Sales
+            // Validate request
+            var isDuplicate = await _salesRepository.IsDuplicate(new Sales
             {
                 CustomerId = request.CustomerId,
                 SaleStatusId = request.SaleStatusId,
@@ -288,101 +290,135 @@ namespace Pharma263.Api.Services
                 Notes = request.Notes,
                 SalesDate = DateTime.Now,
                 Discount = request.Discount
-            };
-
-            saleToCreate.Items = new List<SalesItems>();
-
-            var isDuplicate = await _salesRepository.IsDuplicate(saleToCreate);
+            });
 
             if (isDuplicate)
                 return ApiResponse<int>.CreateFailure("Duplicate sale detected", 400);
 
-            DateTime now = DateTime.Now;
-            string transactionDate = now.ToString("yyyyMMddHHmm");
-
-            var transactionId = $"{transactionDate}";
-
+            // Calculate payment due date based on sale status
             var dayDue = request.SaleStatusId switch
             {
-                4 => 7,
-                5 => 14,
-                6 => 30,
-                _ => 0
+                4 => 7,   // 7 days
+                5 => 14,  // 14 days
+                6 => 30,  // 30 days
+                _ => 0    // Cash sale (no due date)
             };
-
-            saleToCreate.PaymentDueDate = DateTime.Now.AddDays(dayDue);
-
-            saleToCreate.Total = 0;
-            saleToCreate.GrandTotal = 0;
 
             try
             {
-                var errors = new List<string>();
-                foreach (var itemReq in request.Items)
+                // Wrap entire operation in transaction for data integrity
+                return await _unitOfWork.ExecuteTransactionAsync(async () =>
                 {
-                    // Use the existing items directly without duplicating
-                    var saleItem = new SalesItems
+                    var saleToCreate = new Sales
                     {
-                        Price = itemReq.Price,
-                        Quantity = itemReq.Quantity,
-                        Discount = itemReq.Discount,
-                        Amount = (itemReq.Price * itemReq.Quantity) - itemReq.Discount,
-                        StockId = itemReq.StockId
+                        CustomerId = request.CustomerId,
+                        SaleStatusId = request.SaleStatusId,
+                        PaymentMethodId = request.PaymentMethodId,
+                        Notes = request.Notes,
+                        SalesDate = DateTime.Now,
+                        Discount = request.Discount,
+                        PaymentDueDate = DateTime.Now.AddDays(dayDue),
+                        Total = 0,
+                        GrandTotal = 0,
+                        Items = new List<SalesItems>()
                     };
 
-                    if (saleItem.Amount < 0)
-                        errors.Add($"Item discount {itemReq.Discount} cannot exceed the total item price.");
+                    var errors = new List<string>();
 
-                    // Add the sale item to the sale entity
-                    saleToCreate.Items.Add(saleItem);
-
-                    // Update stock by deducting sold quantities
-                    var stock = await _unitOfWork.Repository<Stock>().FirstOrDefaultAsync(
-                        x => x.Id == itemReq.StockId); // StockId is already in the request
-                    if (stock == null)
-                        throw new InvalidOperationException($"Stock not found for Medicine ID: {itemReq.MedicineId}, Batch No: {itemReq.BatchNo}");
-
-                    await _stockRepository.SubQuantity(saleItem.Quantity, stock.Id);
-
-                    // Update totals
-                    saleToCreate.Total += itemReq.Price * itemReq.Quantity; // Gross total
-                    saleToCreate.GrandTotal += saleItem.Amount;            // Net total after discounts
-                }
-
-                if (errors.Any())
-                {
-                    return ApiResponse<int>.CreateFailure("Error adding sales items", 400, errors);
-                }
-
-                await _unitOfWork.Repository<Sales>().AddAsync(saleToCreate);
-
-                await _unitOfWork.SaveChangesAsync();
-
-                if (request.SaleStatusId != 3)
-                {
-                    var obj = new AccountsReceivable
+                    // Process each sale item
+                    foreach (var itemReq in request.Items)
                     {
-                        CustomerId = saleToCreate.CustomerId,
-                        AmountDue = saleToCreate.GrandTotal,
-                        AmountPaid = 0,
-                        DueDate = (DateTime)saleToCreate.PaymentDueDate,
-                        BalanceDue = saleToCreate.GrandTotal,
-                        AccountsReceivableStatusId = 1
-                    };
+                        // Validate stock availability
+                        var isAvailable = await _stockManagementService.IsStockAvailableAsync(
+                            itemReq.StockId, itemReq.Quantity);
 
-                    await _unitOfWork.Repository<AccountsReceivable>().AddAsync(obj);
+                        if (!isAvailable)
+                        {
+                            errors.Add($"Insufficient stock for StockId: {itemReq.StockId}");
+                            continue;
+                        }
 
+                        // Create sale item
+                        var saleItem = new SalesItems
+                        {
+                            Price = itemReq.Price,
+                            Quantity = itemReq.Quantity,
+                            Discount = itemReq.Discount,
+                            Amount = (itemReq.Price * itemReq.Quantity) - itemReq.Discount,
+                            StockId = itemReq.StockId
+                        };
+
+                        // Validate item amount
+                        if (saleItem.Amount < 0)
+                        {
+                            errors.Add($"Item discount {itemReq.Discount} cannot exceed the total item price.");
+                            continue;
+                        }
+
+                        // Add item to sale
+                        saleToCreate.Items.Add(saleItem);
+
+                        // Deduct stock with business logic validation
+                        var stockResult = await _stockManagementService.DeductStockAsync(
+                            itemReq.StockId,
+                            itemReq.Quantity,
+                            $"Sale for Customer ID: {request.CustomerId}");
+
+                        if (!stockResult.Success)
+                        {
+                            errors.Add($"Failed to deduct stock: {stockResult.Message}");
+                            continue;
+                        }
+
+                        // Update sale totals
+                        saleToCreate.Total += itemReq.Price * itemReq.Quantity; // Gross total
+                        saleToCreate.GrandTotal += saleItem.Amount;              // Net total after discounts
+                    }
+
+                    // Return validation errors if any
+                    if (errors.Any())
+                    {
+                        return ApiResponse<int>.CreateFailure("Error adding sales items", 400, errors);
+                    }
+
+                    // Save the sale
+                    await _unitOfWork.Repository<Sales>().AddAsync(saleToCreate);
+
+                    // Create Accounts Receivable for non-cash sales
+                    if (request.SaleStatusId != 3)
+                    {
+                        var accountsReceivable = new AccountsReceivable
+                        {
+                            CustomerId = saleToCreate.CustomerId,
+                            AmountDue = saleToCreate.GrandTotal,
+                            AmountPaid = 0,
+                            DueDate = (DateTime)saleToCreate.PaymentDueDate,
+                            BalanceDue = saleToCreate.GrandTotal,
+                            AccountsReceivableStatusId = 1
+                        };
+
+                        await _unitOfWork.Repository<AccountsReceivable>().AddAsync(accountsReceivable);
+                    }
+
+                    // Save all changes within transaction
                     await _unitOfWork.SaveChangesAsync();
-                }
 
-                InvalidateSalesCache();
+                    // Invalidate cache after successful transaction
+                    InvalidateSalesCache();
 
-                return ApiResponse<int>.CreateSuccess(saleToCreate.Id);
+                    _logger.LogInformation(
+                        "Sale created successfully: SaleId={SaleId}, CustomerId={CustomerId}, Items={ItemCount}, Total={Total}",
+                        saleToCreate.Id, saleToCreate.CustomerId, saleToCreate.Items.Count, saleToCreate.GrandTotal);
+
+                    return ApiResponse<int>.CreateSuccess(
+                        saleToCreate.Id,
+                        "Sale created successfully",
+                        200);
+                });
             }
             catch (Exception ex)
             {
-                _logger.LogError($"An error occurred while adding the sale: {ex.Message}", ex);
-
+                _logger.LogError(ex, "Error occurred while adding sale for Customer ID: {CustomerId}", request.CustomerId);
                 return ApiResponse<int>.CreateFailure($"An error occurred while adding the sale: {ex.Message}", 500);
             }
         }
@@ -391,84 +427,108 @@ namespace Pharma263.Api.Services
         {
             try
             {
-                // Get existing sale items
-                var existingItems = await _unitOfWork.Repository<SalesItems>().FindAsync(x => x.SaleId == request.Id);
-
-                // Add back quantities to stock for existing items
-                foreach (var item in existingItems)
+                // Wrap entire operation in transaction
+                return await _unitOfWork.ExecuteTransactionAsync(async () =>
                 {
-                    var stock = await _unitOfWork.Repository<Stock>().GetByIdAsync(item.StockId);
-                    if (stock != null)
+                    // Get existing sale
+                    var saleToUpdate = await _unitOfWork.Repository<Sales>().GetByIdAsync(request.Id);
+                    if (saleToUpdate == null)
                     {
-                        await _stockRepository.AddQuantity(item.Quantity, stock.Id);
-                    }
-                }
-
-                // Remove existing sale items
-                foreach (var item in existingItems)
-                {
-                    _unitOfWork.Repository<SalesItems>().Delete(item);
-                }
-
-                // Update sale details
-                var saleToUpdate = await _unitOfWork.Repository<Sales>().GetByIdAsync(request.Id);
-
-                if (saleToUpdate == null)
-                {
-                    throw new InvalidOperationException($"Sale with ID {request.Id} not found");
-                }
-
-                saleToUpdate.Notes = request.Notes;
-                saleToUpdate.SaleStatusId = request.SaleStatusId;
-                saleToUpdate.PaymentMethodId = request.PaymentMethodId;
-                saleToUpdate.CustomerId = request.CustomerId;
-                saleToUpdate.Total = request.Total;
-                saleToUpdate.SalesDate = request.SalesDate;
-                saleToUpdate.Discount = request.Discount;
-                saleToUpdate.GrandTotal = request.GrandTotal;
-
-                // Clear existing items and add new ones
-                saleToUpdate.Items.Clear();
-
-                var errors = new List<string>();
-                foreach (var item in request.Items)
-                {
-                    var stock = await _unitOfWork.Repository<Stock>().GetByIdAsync(item.StockId);
-
-                    if (stock == null)
-                    {
-                        errors.Add($"Stock item with ID {item.StockId} not found");
+                        return ApiResponse<bool>.CreateFailure($"Sale with ID {request.Id} not found", 404);
                     }
 
-                    if (stock.TotalQuantity < item.Quantity)
+                    // Get existing sale items
+                    var existingItems = await _unitOfWork.Repository<SalesItems>().FindAsync(x => x.SaleId == request.Id);
+
+                    // Restore stock quantities for existing items
+                    foreach (var item in existingItems)
                     {
-                        errors.Add($"Insufficient stock for item with ID {item.StockId}. Available: {stock.TotalQuantity}, Requested: {item.Quantity}");
+                        var stockResult = await _stockManagementService.AddStockAsync(
+                            item.StockId,
+                            item.Quantity,
+                            $"Sale update rollback for Sale ID: {request.Id}");
+
+                        if (!stockResult.Success)
+                        {
+                            _logger.LogWarning("Failed to restore stock during sale update: {Message}", stockResult.Message);
+                        }
                     }
 
-                    saleToUpdate.Items.Add(new SalesItems
+                    // Remove existing sale items
+                    foreach (var item in existingItems)
                     {
-                        Price = item.Price,
-                        Amount = item.Amount,
-                        Quantity = item.Quantity,
-                        StockId = item.StockId
-                    });
+                        _unitOfWork.Repository<SalesItems>().Delete(item);
+                    }
 
-                    // Subtract quantity from stock
-                    await _stockRepository.SubQuantity(item.Quantity, stock.Id);
-                }
+                    // Update sale details
+                    saleToUpdate.Notes = request.Notes;
+                    saleToUpdate.SaleStatusId = request.SaleStatusId;
+                    saleToUpdate.PaymentMethodId = request.PaymentMethodId;
+                    saleToUpdate.CustomerId = request.CustomerId;
+                    saleToUpdate.Total = request.Total;
+                    saleToUpdate.SalesDate = request.SalesDate;
+                    saleToUpdate.Discount = request.Discount;
+                    saleToUpdate.GrandTotal = request.GrandTotal;
 
-                _unitOfWork.Repository<Sales>().Update(saleToUpdate);
+                    // Clear and add new items
+                    saleToUpdate.Items.Clear();
 
-                await _unitOfWork.SaveChangesAsync();
+                    var errors = new List<string>();
+                    foreach (var item in request.Items)
+                    {
+                        // Validate stock availability
+                        var isAvailable = await _stockManagementService.IsStockAvailableAsync(
+                            item.StockId, item.Quantity);
 
-                InvalidateSalesCache();
+                        if (!isAvailable)
+                        {
+                            errors.Add($"Insufficient stock for item with ID {item.StockId}");
+                            continue;
+                        }
 
-                return ApiResponse<bool>.CreateSuccess(true, "Sale updated successfully");
+                        // Add new sale item
+                        saleToUpdate.Items.Add(new SalesItems
+                        {
+                            Price = item.Price,
+                            Amount = item.Amount,
+                            Quantity = item.Quantity,
+                            StockId = item.StockId
+                        });
+
+                        // Deduct stock with business logic
+                        var stockResult = await _stockManagementService.DeductStockAsync(
+                            item.StockId,
+                            item.Quantity,
+                            $"Sale update for Sale ID: {request.Id}");
+
+                        if (!stockResult.Success)
+                        {
+                            errors.Add($"Failed to deduct stock: {stockResult.Message}");
+                        }
+                    }
+
+                    if (errors.Any())
+                    {
+                        return ApiResponse<bool>.CreateFailure("Error updating sales items", 400, errors);
+                    }
+
+                    // Update sale
+                    _unitOfWork.Repository<Sales>().Update(saleToUpdate);
+
+                    // Save all changes within transaction
+                    await _unitOfWork.SaveChangesAsync();
+
+                    // Invalidate cache after successful transaction
+                    InvalidateSalesCache();
+
+                    _logger.LogInformation("Sale updated successfully: SaleId={SaleId}", request.Id);
+
+                    return ApiResponse<bool>.CreateSuccess(true, "Sale updated successfully");
+                });
             }
             catch (Exception ex)
             {
-                // Log the exception or handle it as needed
-
+                _logger.LogError(ex, "Error occurred while updating sale: {SaleId}", request.Id);
                 return ApiResponse<bool>.CreateFailure($"An error occurred while updating the sale: {ex.Message}", 500);
             }
         }
@@ -477,38 +537,55 @@ namespace Pharma263.Api.Services
         {
             try
             {
-                var saleToDelete = await _unitOfWork.Repository<Sales>().GetByIdAsync(id);
-
-                if (saleToDelete == null) return ApiResponse<bool>.CreateFailure("Sale not found", 404);
-
-                var items = await _unitOfWork.Repository<SalesItems>().FindAsync(x => x.SaleId == id);
-
-                if (items.Any())
-                { //add stock quantity
-                    foreach (var item in items)
+                // Wrap entire operation in transaction
+                return await _unitOfWork.ExecuteTransactionAsync(async () =>
+                {
+                    var saleToDelete = await _unitOfWork.Repository<Sales>().GetByIdAsync(id);
+                    if (saleToDelete == null)
                     {
-                        var stock = await _unitOfWork.Repository<Stock>().GetByIdAsync(item.StockId);
-
-                        if (stock != null)
-                            await _stockRepository.AddQuantity(item.Quantity, stock.Id);
+                        return ApiResponse<bool>.CreateFailure("Sale not found", 404);
                     }
-                }
 
-                _unitOfWork.Repository<Sales>().Delete(saleToDelete);
+                    // Get sale items
+                    var items = await _unitOfWork.Repository<SalesItems>().FindAsync(x => x.SaleId == id);
 
-                await _unitOfWork.SaveChangesAsync();
+                    // Restore stock quantities for all items
+                    if (items.Any())
+                    {
+                        foreach (var item in items)
+                        {
+                            var stockResult = await _stockManagementService.AddStockAsync(
+                                item.StockId,
+                                item.Quantity,
+                                $"Sale deletion for Sale ID: {id}");
 
-                InvalidateSalesCache();
+                            if (!stockResult.Success)
+                            {
+                                _logger.LogWarning("Failed to restore stock during sale deletion: {Message}", stockResult.Message);
+                            }
+                        }
+                    }
 
-                return ApiResponse<bool>.CreateSuccess(true, "Sale deleted successfully");
+                    // Delete the sale (cascade will delete items)
+                    _unitOfWork.Repository<Sales>().Delete(saleToDelete);
+
+                    // Save all changes within transaction
+                    await _unitOfWork.SaveChangesAsync();
+
+                    // Invalidate cache after successful transaction
+                    InvalidateSalesCache();
+
+                    _logger.LogInformation("Sale deleted successfully: SaleId={SaleId}, ItemsRestored={ItemCount}",
+                        id, items.Count());
+
+                    return ApiResponse<bool>.CreateSuccess(true, "Sale deleted successfully");
+                });
             }
             catch (Exception ex)
             {
-                _logger.LogError($"An error occurred while deleting the sale: {ex.Message}", ex);
-
+                _logger.LogError(ex, "Error occurred while deleting sale: {SaleId}", id);
                 return ApiResponse<bool>.CreateFailure($"An error occurred while deleting the sale: {ex.Message}", 500);
             }
-
         }
 
         private void InvalidateSalesCache()
