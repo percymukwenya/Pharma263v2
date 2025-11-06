@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Pharma263.Api.Extensions;
@@ -9,6 +10,7 @@ using Pharma263.Application;
 using Pharma263.Infrastructure;
 using Pharma263.Persistence;
 using Serilog;
+using System;
 
 var builder = WebApplication.CreateBuilder(args);
 
