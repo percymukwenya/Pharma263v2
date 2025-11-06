@@ -194,10 +194,10 @@ if (!validation.IsValid) {
 - ✅ Improved testability
 
 **Integrated Into:**
-- ✅ SalesService - `AddSale()` now uses ValidationService (40 lines removed)
-- 🔜 PurchaseService - ready to integrate
-- 🔜 QuotationService - ready to integrate
-- 🔜 ReturnService - ready to integrate
+- ✅ SalesService - `AddSale()`, `UpdateSale()` now use ValidationService (40 lines removed)
+- ✅ PurchaseService - `AddPurchase()`, `UpdatePurchase()` now use ValidationService (30 lines removed)
+- ✅ QuotationService - `AddQuotation()`, `UpdateQuotation()` now use ValidationService (25 lines removed)
+- ✅ ReturnService - `AddReturn()` now uses ValidationService (comprehensive validation)
 
 ---
 
@@ -291,10 +291,12 @@ if (!validation.IsValid) {
 4. `16313cd` - Add transaction handling to QuotationService with StockManagementService
 5. `3eb0aa1` - Fix N+1 query problems in invoice generation
 
-### Phase 2 (1 commit):
+### Phase 2 (3 commits):
 6. `031adbf` - Implement Validation Service for centralized business logic validation
+7. `2d3e3a8` - Add comprehensive PR description
+8. `d8a94a3` - Complete ValidationService integration into all services
 
-**Total:** 6 commits, ~1,500 lines added, 9 files modified
+**Total:** 8 commits, ~1,600 lines added, 11 files modified
 
 ---
 
