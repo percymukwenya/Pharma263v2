@@ -4,6 +4,7 @@ using Pharma263.Api.Models.Returns.Request;
 using Pharma263.Api.Models.Returns.Response;
 using Pharma263.Api.Shared.Contracts;
 using Pharma263.Application.Contracts.Logging;
+using Pharma263.Application.Contracts.Services;
 using Pharma263.Domain.Common;
 using Pharma263.Domain.Entities;
 using Pharma263.Domain.Interfaces.Repository;
@@ -19,17 +20,17 @@ namespace Pharma263.Api.Services
     public class ReturnService : IScopedInjectedService
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IStockRepository _stockRepository;
+        private readonly IStockManagementService _stockManagementService;
         private readonly IAppLogger<ReturnService> _logger;
         private readonly IMemoryCache _memoryCache;
         private const string ReturnsCacheKey = "returns_list";
         private const string ReturnDetailsCacheKeyPrefix = "return_details_";
         private readonly TimeSpan CacheExpiry = TimeSpan.FromMinutes(5);
 
-        public ReturnService(IUnitOfWork unitOfWork, IStockRepository stockRepository, IAppLogger<ReturnService> logger, IMemoryCache memoryCache)
+        public ReturnService(IUnitOfWork unitOfWork, IStockManagementService stockManagementService, IAppLogger<ReturnService> logger, IMemoryCache memoryCache)
         {
             _unitOfWork = unitOfWork;
-            _stockRepository = stockRepository;
+            _stockManagementService = stockManagementService;
             _logger = logger;
             _memoryCache = memoryCache;
         }
@@ -134,6 +135,7 @@ namespace Pharma263.Api.Services
         {
             try
             {
+                // Verify sale exists before transaction
                 var sale = await _unitOfWork.Repository<Sales>().FirstOrDefaultAsync(
                     x => x.Id == request.SaleId,
                     query => query.Include(s => s.Items)
@@ -146,86 +148,97 @@ namespace Pharma263.Api.Services
                     return ApiResponse<int>.CreateFailure("Sale not found.");
                 }
 
-                // Count of successfully processed return items
-                int successfulReturns = 0;
-                List<string> errors = new List<string>();
-
-                // Process each return item
-                foreach (var saleItemToReturn in request.SaleItemsToReturn)
+                // Wrap entire operation in transaction for data integrity
+                return await _unitOfWork.ExecuteTransactionAsync(async () =>
                 {
-                    // Find the sale item
-                    var saleItem = await _unitOfWork.Repository<SalesItems>().GetByIdWithIncludesAsync(saleItemToReturn.SaleItemId, q => q.Include(x => x.Stock).ThenInclude(m => m.Medicine));
+                    // Count of successfully processed return items
+                    int successfulReturns = 0;
+                    List<string> errors = new List<string>();
 
-                    if (saleItem == null)
+                    // Process each return item
+                    foreach (var saleItemToReturn in request.SaleItemsToReturn)
                     {
-                        errors.Add($"Sale item with ID {saleItemToReturn.SaleItemId} not found.");
-                        continue;
+                        // Find the sale item
+                        var saleItem = await _unitOfWork.Repository<SalesItems>().GetByIdWithIncludesAsync(
+                            saleItemToReturn.SaleItemId, q => q.Include(x => x.Stock).ThenInclude(m => m.Medicine));
+
+                        if (saleItem == null)
+                        {
+                            errors.Add($"Sale item with ID {saleItemToReturn.SaleItemId} not found.");
+                            continue;
+                        }
+
+                        // Check if the item is eligible for return
+                        if (!IsEligibleForReturn(saleItemToReturn, saleItem))
+                        {
+                            // Determine the reason for ineligibility
+                            if (saleItemToReturn.Quantity <= 0)
+                            {
+                                errors.Add($"Return quantity must be greater than 0 for item {saleItem.Stock.Medicine.Name}.");
+                            }
+                            else if (saleItemToReturn.Quantity > saleItem.Quantity)
+                            {
+                                errors.Add($"Return quantity cannot exceed original quantity for item {saleItem.Stock.Medicine.Name}.");
+                            }
+                            else if (saleItemToReturn.ReturnReasonId == 3 && DateTimeOffset.Now.Subtract(saleItem.CreatedDate).Days > 7)
+                            {
+                                errors.Add($"Item {saleItem.Stock.Medicine.Name} cannot be returned after 7 days for the selected reason.");
+                            }
+                            else
+                            {
+                                errors.Add($"Item {saleItem.Stock.Medicine.Name} is not eligible for return.");
+                            }
+                            continue;
+                        }
+
+                        try
+                        {
+                            // Process the return for this item
+                            int returnId = await ProcessSaleItemReturn(saleItemToReturn, saleItem);
+                            if (returnId > 0)
+                            {
+                                successfulReturns++;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            errors.Add($"Error processing return for item {saleItem.Stock.Medicine.Name}: {ex.Message}");
+                        }
                     }
 
-                    // Check if the item is eligible for return
-                    if (!IsEligibleForReturn(saleItemToReturn, saleItem))
+                    // Return appropriate response based on results
+                    if (successfulReturns > 0)
                     {
-                        // Determine the reason for ineligibility
-                        if (saleItemToReturn.Quantity <= 0)
-                        {
-                            errors.Add($"Return quantity must be greater than 0 for item {saleItem.Stock.Medicine.Name}.");
-                        }
-                        else if (saleItemToReturn.Quantity > saleItem.Quantity)
-                        {
-                            errors.Add($"Return quantity cannot exceed original quantity for item {saleItem.Stock.Medicine.Name}.");
-                        }
-                        else if (saleItemToReturn.ReturnReasonId == 3 && DateTimeOffset.Now.Subtract(saleItem.CreatedDate).Days > 7)
-                        {
-                            errors.Add($"Item {saleItem.Stock.Medicine.Name} cannot be returned after 7 days for the selected reason.");
-                        }
-                        else
-                        {
-                            errors.Add($"Item {saleItem.Stock.Medicine.Name} is not eligible for return.");
-                        }
-                        continue;
-                    }
+                        // Save all changes within transaction
+                        await _unitOfWork.SaveChangesAsync();
 
-                    try
+                        // Invalidate cache after successful transaction
+                        InvalidateReturnCache();
+
+                        var message = successfulReturns == request.SaleItemsToReturn.Count
+                            ? "All returns processed successfully."
+                            : $"{successfulReturns} of {request.SaleItemsToReturn.Count} returns processed successfully.";
+
+                        if (errors.Any())
+                        {
+                            message += " Errors: " + string.Join(" ", errors);
+                        }
+
+                        _logger.LogInformation(
+                            "Returns processed successfully: SaleId={SaleId}, ReturnsProcessed={ReturnsProcessed}/{TotalRequested}",
+                            request.SaleId, successfulReturns, request.SaleItemsToReturn.Count);
+
+                        return ApiResponse<int>.CreateSuccess(successfulReturns, message);
+                    }
+                    else
                     {
-                        // Process the return for this item
-                        int returnId = await ProcessSaleItemReturn(saleItemToReturn, saleItem);
-                        if (returnId > 0)
-                        {
-                            successfulReturns++;
-                        }
+                        return ApiResponse<int>.CreateFailure("Failed to process any returns. " + string.Join(" ", errors));
                     }
-                    catch (Exception ex)
-                    {
-                        errors.Add($"Error processing return for item {saleItem.Stock.Medicine.Name}: {ex.Message}");
-                    }
-                }
-
-                // Save all changes
-                await _unitOfWork.SaveChangesAsync();
-
-                // Return appropriate response based on results
-                if (successfulReturns > 0)
-                {
-                    InvalidateReturnCache();
-                    
-                    var message = successfulReturns == request.SaleItemsToReturn.Count
-                        ? "All returns processed successfully."
-                        : $"{successfulReturns} of {request.SaleItemsToReturn.Count} returns processed successfully.";
-
-                    if (errors.Any())
-                    {
-                        message += " Errors: " + string.Join(" ", errors);
-                    }
-
-                    return ApiResponse<int>.CreateSuccess(successfulReturns, message);
-                }
-                else
-                {
-                    return ApiResponse<int>.CreateFailure("Failed to process any returns. " + string.Join(" ", errors));
-                }
+                });
             }
             catch (Exception ex)
             {
+                _logger.LogWarning($"An error occurred while processing returns: {ex.Message}", ex);
                 return ApiResponse<int>.CreateFailure($"An error occurred: {ex.Message}");
             }
         }
@@ -243,6 +256,7 @@ namespace Pharma263.Api.Services
 
         private async Task<int> ProcessSaleItemReturn(SaleItemToReturnModel saleItemToReturn, SalesItems salesItem)
         {
+            // Create return entity
             var returnEntity = new Returns
             {
                 SaleId = salesItem.SaleId,
@@ -250,7 +264,7 @@ namespace Pharma263.Api.Services
                 Quantity = saleItemToReturn.Quantity,
                 ReturnReasonId = saleItemToReturn.ReturnReasonId,
                 ReturnDestinationId = saleItemToReturn.ReturnDestinationId,
-                ReturnStatusId = 1, // Assuming 1 is "Completed"
+                ReturnStatusId = 1, // Completed
                 DateReturned = DateTime.Now
             };
 
@@ -263,8 +277,16 @@ namespace Pharma263.Api.Services
                 // Return reason 1: Return to Stock
                 if (saleItemToReturn.ReturnReasonId == 1)
                 {
-                    // Increase stock quantity
-                    await _stockRepository.AddQuantity(saleItemToReturn.Quantity, stock.Id);
+                    // Increase stock quantity with business logic validation
+                    var stockResult = await _stockManagementService.AddStockAsync(
+                        stock.Id,
+                        saleItemToReturn.Quantity,
+                        $"Return to stock for Sale ID: {salesItem.SaleId}");
+
+                    if (!stockResult.Success)
+                    {
+                        _logger.LogWarning($"Failed to add stock during return: {stockResult.Message}");
+                    }
                 }
                 // Return reason 2 or 3: Defective/Expired items go to quarantine
                 else if (saleItemToReturn.ReturnReasonId == 2 || saleItemToReturn.ReturnReasonId == 3)
@@ -280,8 +302,11 @@ namespace Pharma263.Api.Services
                     };
 
                     await _unitOfWork.Repository<Quarantine>().AddAsync(quarantineEntity);
+
+                    _logger.LogInformation(
+                        "Item moved to quarantine: MedicineId={MedicineId}, BatchNo={BatchNo}, Quantity={Quantity}, Reason={ReasonId}",
+                        stock.MedicineId, stock.BatchNo, saleItemToReturn.Quantity, saleItemToReturn.ReturnReasonId);
                 }
-                // Other return reasons can be handled here
             }
 
             // If all items are returned, update the sale status if needed
@@ -296,16 +321,15 @@ namespace Pharma263.Api.Services
                     var sale = await _unitOfWork.Repository<Sales>().GetByIdAsync(salesItem.SaleId);
                     if (sale != null)
                     {
-                        // Assuming status ID 3 is for "Fully Returned"
+                        // Update to "Fully Returned" status
                         sale.SaleStatusId = 3;
                         _unitOfWork.Repository<Sales>().Update(sale);
                     }
                 }
             }
 
-            // Force Save to get the ID
-            await _unitOfWork.SaveChangesAsync();
-
+            // Note: SaveChangesAsync is called by the transaction wrapper in ProcessReturn
+            // Return entity ID will be generated after save
             return returnEntity.Id;
         }
 
