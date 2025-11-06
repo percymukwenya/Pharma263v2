@@ -67,5 +67,21 @@ namespace Pharma263.Api.Controllers
 
             return Ok(currentUser);
         }
+
+        [HttpPost("refresh-token")]
+        [AllowAnonymous]
+        public async Task<ActionResult<ApiResponse<AuthResponse>>> RefreshToken([FromBody] RefreshTokenRequest request)
+        {
+            var result = await _authService.RefreshTokenAsync(request.RefreshToken);
+            return StatusCode(result.StatusCode, result);
+        }
+
+        [HttpPost("revoke-token")]
+        [Authorize]
+        public async Task<ActionResult<ApiResponse<bool>>> RevokeToken([FromBody] RefreshTokenRequest request)
+        {
+            var result = await _authService.RevokeTokenAsync(request.RefreshToken);
+            return StatusCode(result.StatusCode, result);
+        }
     }
 }

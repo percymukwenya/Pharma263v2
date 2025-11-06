@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -15,6 +16,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Net;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -26,15 +28,22 @@ namespace Pharma263.Application.Services.Identity
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IEmailSender _emailSender;
         private readonly JWTOptions _jwtSettings;
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
         public AuthService(UserManager<ApplicationUser> userManager,
             IOptions<JWTOptions> jwtSettings,
-            SignInManager<ApplicationUser> signInManager, IEmailSender emailSender)
+            SignInManager<ApplicationUser> signInManager,
+            IEmailSender emailSender,
+            IUnitOfWork unitOfWork,
+            IHttpContextAccessor httpContextAccessor)
         {
             _userManager = userManager;
             _jwtSettings = jwtSettings.Value;
             _signInManager = signInManager;
             _emailSender = emailSender;
+            _unitOfWork = unitOfWork;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<ApiResponse<AuthResponse>> Login(AuthRequest request)
@@ -56,14 +65,20 @@ namespace Pharma263.Application.Services.Identity
                 }
                 else
                 {
+                    // Generate JWT access token
                     JwtSecurityToken jwtSecurityToken = await GenerateToken(user);
+
+                    // Generate refresh token
+                    var refreshToken = await CreateRefreshToken(user.Id);
 
                     var data = new AuthResponse
                     {
                         Id = user.Id,
                         Token = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken),
                         Email = user.Email,
-                        UserName = user.UserName
+                        UserName = user.UserName,
+                        RefreshToken = refreshToken.Token,
+                        RefreshTokenExpiry = refreshToken.ExpiryDate
                     };
 
                     return ApiResponse<AuthResponse>.CreateSuccess(data, "Login successful", (int)HttpStatusCode.OK);
@@ -177,6 +192,111 @@ namespace Pharma263.Application.Services.Identity
                expires: DateTime.Now.AddMinutes(_jwtSettings.DurationInMinutes),
                signingCredentials: signingCredentials);
             return jwtSecurityToken;
+        }
+
+        // Refresh Token Helper Methods
+        private string GenerateRefreshToken()
+        {
+            var randomNumber = new byte[64];
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(randomNumber);
+            return Convert.ToBase64String(randomNumber);
+        }
+
+        private string GetIpAddress()
+        {
+            if (_httpContextAccessor.HttpContext.Request.Headers.ContainsKey("X-Forwarded-For"))
+                return _httpContextAccessor.HttpContext.Request.Headers["X-Forwarded-For"];
+            else
+                return _httpContextAccessor.HttpContext.Connection.RemoteIpAddress?.MapToIPv4().ToString();
+        }
+
+        private async Task<RefreshToken> CreateRefreshToken(string userId)
+        {
+            var refreshToken = new RefreshToken
+            {
+                Token = GenerateRefreshToken(),
+                UserId = userId,
+                ExpiryDate = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenDurationInDays),
+                CreatedByIp = GetIpAddress()
+            };
+
+            await _unitOfWork.Repository<RefreshToken>().AddAsync(refreshToken);
+            await _unitOfWork.SaveChangesAsync();
+
+            return refreshToken;
+        }
+
+        // Refresh Token Methods
+        public async Task<ApiResponse<AuthResponse>> RefreshTokenAsync(string token)
+        {
+            var refreshToken = await _unitOfWork.Repository<RefreshToken>()
+                .FirstOrDefaultAsync(rt => rt.Token == token);
+
+            if (refreshToken == null)
+            {
+                return ApiResponse<AuthResponse>.CreateFailure("Invalid refresh token", (int)HttpStatusCode.BadRequest);
+            }
+
+            if (!refreshToken.IsActive)
+            {
+                return ApiResponse<AuthResponse>.CreateFailure("Refresh token expired or revoked", (int)HttpStatusCode.BadRequest);
+            }
+
+            // Get user
+            var user = await _userManager.FindByIdAsync(refreshToken.UserId);
+            if (user == null)
+            {
+                return ApiResponse<AuthResponse>.CreateFailure("User not found", (int)HttpStatusCode.NotFound);
+            }
+
+            // Revoke old refresh token
+            refreshToken.IsRevoked = true;
+            refreshToken.RevokedDate = DateTime.UtcNow;
+            refreshToken.RevokedByIp = GetIpAddress();
+
+            // Generate new tokens
+            var jwtSecurityToken = await GenerateToken(user);
+            var newRefreshToken = await CreateRefreshToken(user.Id);
+
+            // Store replacement chain
+            refreshToken.ReplacedByToken = newRefreshToken.Token;
+
+            _unitOfWork.Repository<RefreshToken>().Update(refreshToken);
+            await _unitOfWork.SaveChangesAsync();
+
+            var data = new AuthResponse
+            {
+                Id = user.Id,
+                Token = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken),
+                Email = user.Email,
+                UserName = user.UserName,
+                RefreshToken = newRefreshToken.Token,
+                RefreshTokenExpiry = newRefreshToken.ExpiryDate
+            };
+
+            return ApiResponse<AuthResponse>.CreateSuccess(data, "Token refreshed successfully", (int)HttpStatusCode.OK);
+        }
+
+        public async Task<ApiResponse<bool>> RevokeTokenAsync(string token)
+        {
+            var refreshToken = await _unitOfWork.Repository<RefreshToken>()
+                .FirstOrDefaultAsync(rt => rt.Token == token);
+
+            if (refreshToken == null || !refreshToken.IsActive)
+            {
+                return ApiResponse<bool>.CreateFailure("Invalid refresh token", (int)HttpStatusCode.BadRequest);
+            }
+
+            // Revoke token
+            refreshToken.IsRevoked = true;
+            refreshToken.RevokedDate = DateTime.UtcNow;
+            refreshToken.RevokedByIp = GetIpAddress();
+
+            _unitOfWork.Repository<RefreshToken>().Update(refreshToken);
+            await _unitOfWork.SaveChangesAsync();
+
+            return ApiResponse<bool>.CreateSuccess(true, "Token revoked successfully", (int)HttpStatusCode.OK);
         }
     }
 }

@@ -13,5 +13,7 @@ namespace Pharma263.Application.Contracts.Identity
         Task ForgotPassword(ForgotPasswordRequest model);
         Task<ApiResponse<string>> ResetPassword(ResetPasswordRequest model);
         Task<AuthResponse> GetCurrentUser(ApplicationUser user);
+        Task<ApiResponse<AuthResponse>> RefreshTokenAsync(string token);
+        Task<ApiResponse<bool>> RevokeTokenAsync(string token);
     }
 }
