@@ -1,11 +1,12 @@
 using Microsoft.EntityFrameworkCore;
+using Pharma263.Api.Contracts;
 using Pharma263.Api.Models.Purchase.Request;
 using Pharma263.Api.Models.Quotation.Request;
 using Pharma263.Api.Models.Return.Request;
 using Pharma263.Api.Models.Sales.Request;
+using Pharma263.Api.Models.Validation;
+using Pharma263.Api.Shared.Contracts;
 using Pharma263.Application.Contracts.Logging;
-using Pharma263.Application.Contracts.Services;
-using Pharma263.Application.Models;
 using Pharma263.Domain.Common;
 using Pharma263.Domain.Entities;
 using Pharma263.Domain.Interfaces.Repository;
@@ -13,9 +14,9 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Pharma263.Application.Services
+namespace Pharma263.Api.Services
 {
-    public class ValidationService : IValidationService
+    public class ValidationService : IValidationService, IScopedInjectedService
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IAppLogger<ValidationService> _logger;

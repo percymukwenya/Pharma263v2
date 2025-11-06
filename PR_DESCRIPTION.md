@@ -291,12 +291,14 @@ if (!validation.IsValid) {
 4. `16313cd` - Add transaction handling to QuotationService with StockManagementService
 5. `3eb0aa1` - Fix N+1 query problems in invoice generation
 
-### Phase 2 (3 commits):
+### Phase 2 (4 commits):
 6. `031adbf` - Implement Validation Service for centralized business logic validation
 7. `2d3e3a8` - Add comprehensive PR description
 8. `d8a94a3` - Complete ValidationService integration into all services
+9. `8917127` - Update PR description to reflect complete Phase 2 integration
+10. `2071846` - Fix: Move ValidationService to API layer to resolve layering violation
 
-**Total:** 8 commits, ~1,600 lines added, 11 files modified
+**Total:** 10 commits, ~1,600 lines added, 11 files modified
 
 ---
 
@@ -311,7 +313,7 @@ if (!validation.IsValid) {
 After merging this PR:
 
 ### Phase 2 Remaining:
-- [ ] Integrate ValidationService into PurchaseService, QuotationService, ReturnService
+- [x] Integrate ValidationService into all services (COMPLETED)
 - [ ] Implement caching strategy for reference data (50-70% query reduction expected)
 - [ ] Error handling standardization with custom exceptions
 - [ ] Additional N+1 query audits for list operations
@@ -338,6 +340,7 @@ After merging this PR:
 - [x] Validation logic centralized in ValidationService
 - [x] No hardcoded business rules in repositories
 - [x] Comprehensive audit trail for stock operations
+- [x] **Layering violations resolved** - ValidationService moved to API layer
 
 ---
 
