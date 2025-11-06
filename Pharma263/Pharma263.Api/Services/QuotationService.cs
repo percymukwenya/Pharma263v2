@@ -3,6 +3,7 @@ using Pharma263.Api.Models.Quotation.Request;
 using Pharma263.Api.Models.Quotation.Response;
 using Pharma263.Api.Shared.Contracts;
 using Pharma263.Application.Contracts.Logging;
+using Pharma263.Application.Contracts.Services;
 using Pharma263.Application.Models;
 using Pharma263.Application.Services.Printing;
 using Pharma263.Domain.Common;
@@ -20,15 +21,15 @@ namespace Pharma263.Api.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IQuotationRepository _quotationRepository;
-        private readonly IStockRepository _stockRepository;
+        private readonly IStockManagementService _stockManagementService;
         private readonly IAppLogger<QuotationService> _logger;
 
         public QuotationService(IUnitOfWork unitOfWork, IQuotationRepository quotationRepository,
-            IStockRepository stockRepository, IAppLogger<QuotationService> logger)
+            IStockManagementService stockManagementService, IAppLogger<QuotationService> logger)
         {
             _unitOfWork = unitOfWork;
             _quotationRepository = quotationRepository;
-            _stockRepository = stockRepository;
+            _stockManagementService = stockManagementService;
             _logger = logger;
         }
 
@@ -329,71 +330,104 @@ namespace Pharma263.Api.Services
         {
             try
             {
-                // Retrieve the quotation including its items.
+                // Retrieve the quotation including its items - outside transaction for early validation
                 var quotation = await _unitOfWork.Repository<Quotation>()
                                         .GetByIdWithIncludesAsync(quotationId, query => query.Include(q => q.Items));
                 if (quotation == null)
-                    throw new Exception("Quotation not found.");
+                    return ApiResponse<bool>.CreateFailure("Quotation not found.", 404);
 
-                // Create a new Sale entity and map details from the quotation.
-                var sale = new Sales
+                // Wrap entire operation in transaction for data integrity
+                return await _unitOfWork.ExecuteTransactionAsync(async () =>
                 {
-                    CustomerId = quotation.CustomerId,
-                    SalesDate = DateTime.Now,
-                    Notes = quotation.Notes,
-                    Total = quotation.Total,
-                    Discount = quotation.Discount,
-                    GrandTotal = quotation.GrandTotal,
-                    SaleStatusId = 1, // e.g., Pending or Finalized
-                    Items = new List<SalesItems>()
-                };
-
-                // Process each quotation item
-                foreach (var quoteItem in quotation.Items)
-                {
-                    decimal netAmount = (quoteItem.Price * quoteItem.Quantity) - quoteItem.Discount;
-                    if (netAmount < 0)
-                        throw new Exception("Invalid discount calculation.");
-
-                    var saleItem = new SalesItems
+                    // Create a new Sale entity and map details from the quotation
+                    var sale = new Sales
                     {
-                        StockId = quoteItem.StockId,
-                        Price = quoteItem.Price,
-                        Quantity = quoteItem.Quantity,
-                        Discount = quoteItem.Discount,
-                        Amount = netAmount
+                        CustomerId = quotation.CustomerId,
+                        SalesDate = DateTime.Now,
+                        Notes = quotation.Notes,
+                        Total = quotation.Total,
+                        Discount = quotation.Discount,
+                        GrandTotal = quotation.GrandTotal,
+                        SaleStatusId = 1, // e.g., Pending or Finalized
+                        Items = new List<SalesItems>()
                     };
 
-                    sale.Items.Add(saleItem);
+                    var errors = new List<string>();
 
-                    // Update stock: deduct sold quantity
-                    var stock = await _unitOfWork.Repository<Stock>().FirstOrDefaultAsync(x => x.Id == quoteItem.StockId);
-                    if (stock != null)
+                    // Process each quotation item
+                    foreach (var quoteItem in quotation.Items)
                     {
-                        await _stockRepository.SubQuantity(quoteItem.Quantity, stock.Id);
+                        decimal netAmount = (quoteItem.Price * quoteItem.Quantity) - quoteItem.Discount;
+                        if (netAmount < 0)
+                        {
+                            errors.Add($"Invalid discount calculation for item StockId {quoteItem.StockId}: {netAmount}");
+                            continue;
+                        }
+
+                        // Validate stock availability before deduction
+                        var isAvailable = await _stockManagementService.IsStockAvailableAsync(
+                            quoteItem.StockId, quoteItem.Quantity);
+                        if (!isAvailable)
+                        {
+                            errors.Add($"Insufficient stock for StockId: {quoteItem.StockId}");
+                            continue;
+                        }
+
+                        // Deduct stock with business logic validation
+                        var stockResult = await _stockManagementService.DeductStockAsync(
+                            quoteItem.StockId, quoteItem.Quantity,
+                            $"Quotation {quotationId} finalized to sale for Customer ID: {quotation.CustomerId}");
+
+                        if (!stockResult.Success)
+                        {
+                            errors.Add($"Failed to deduct stock for StockId {quoteItem.StockId}: {stockResult.Message}");
+                            continue;
+                        }
+
+                        var saleItem = new SalesItems
+                        {
+                            StockId = quoteItem.StockId,
+                            Price = quoteItem.Price,
+                            Quantity = quoteItem.Quantity,
+                            Discount = quoteItem.Discount,
+                            Amount = netAmount
+                        };
+
+                        sale.Items.Add(saleItem);
                     }
-                    else
+
+                    if (errors.Any())
                     {
-                        throw new Exception($"Stock not found for StockId {quoteItem.StockId}");
+                        return ApiResponse<bool>.CreateFailure("Error finalizing quotation to sale", 400, errors);
                     }
-                }
 
-                // Save the new sale
-                await _unitOfWork.Repository<Sales>().AddAsync(sale);
-                await _unitOfWork.SaveChangesAsync();
+                    if (!sale.Items.Any())
+                    {
+                        return ApiResponse<bool>.CreateFailure("No valid items to convert to sale", 400);
+                    }
 
-                // Optionally update the quotation to mark it as finalized
-                //quotation.QuoteStatusId = /* A status value representing 'Converted' */;
-                _unitOfWork.Repository<Quotation>().Update(quotation);
-                await _unitOfWork.SaveChangesAsync();
+                    // Save the new sale and update quotation status atomically
+                    await _unitOfWork.Repository<Sales>().AddAsync(sale);
 
-                return ApiResponse<bool>.CreateSuccess(true);
+                    // Mark quotation as converted (if you have a status for this)
+                    // quotation.QuoteStatusId = /* Converted status ID */;
+                    _unitOfWork.Repository<Quotation>().Update(quotation);
+
+                    // Single SaveChangesAsync - commits or rolls back ALL changes
+                    await _unitOfWork.SaveChangesAsync();
+
+                    _logger.LogInformation("Quotation finalized to sale: QuotationId={QuotationId}, SaleId={SaleId}, Items={ItemCount}",
+                        quotationId, sale.Id, sale.Items.Count);
+
+                    return ApiResponse<bool>.CreateSuccess(true, "Quotation successfully converted to sale", 200);
+                });
             }
             catch (Exception ex)
             {
-                _logger.LogWarning($"An error occurred while finalizing quotation to sale. {ex.Message}", ex);
+                _logger.LogWarning("Error finalizing quotation to sale: QuotationId={QuotationId}, Error={Error}",
+                    quotationId, ex.Message, ex);
 
-                return ApiResponse<bool>.CreateFailure($"An error occurred while finalizing quotation to sale. {ex.Message}", 500);
+                return ApiResponse<bool>.CreateFailure($"An error occurred while finalizing quotation to sale: {ex.Message}", 500);
             }
         }
 
