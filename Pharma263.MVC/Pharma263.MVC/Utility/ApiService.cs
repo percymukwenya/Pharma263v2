@@ -33,8 +33,16 @@ namespace Pharma263.MVC.Utility
             try
             {
                 using var client = CreateClient();
-
                 var response = await client.GetAsync(endpoint);
+
+                // Handle authentication failures gracefully - BaseController will redirect
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
+                    response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                {
+                    _logger.LogWarning("Authentication failed for GET {Endpoint}. Status: {StatusCode}",
+                        endpoint, response.StatusCode);
+                    return default; // Return default instead of throwing
+                }
 
                 response.EnsureSuccessStatusCode();
 
@@ -47,7 +55,6 @@ namespace Pharma263.MVC.Utility
             catch (HttpRequestException ex)
             {
                 _logger.LogError(ex, "Error in GetAsync for endpoint {Endpoint}", endpoint);
-
                 throw;
             }
         }
@@ -58,6 +65,15 @@ namespace Pharma263.MVC.Utility
             {
                 using var client = CreateClient();
                 var response = await client.GetAsync(endpoint);
+
+                // Handle authentication failures gracefully - BaseController will redirect
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
+                    response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                {
+                    _logger.LogWarning("Authentication failed for GET {Endpoint}. Status: {StatusCode}",
+                        endpoint, response.StatusCode);
+                    return default;
+                }
 
                 response.EnsureSuccessStatusCode();
 
@@ -87,6 +103,15 @@ namespace Pharma263.MVC.Utility
 
                 var response = await client.PostAsync(endpoint, jsonContent);
 
+                // Handle authentication failures gracefully - BaseController will redirect
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
+                    response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                {
+                    _logger.LogWarning("Authentication failed for POST {Endpoint}. Status: {StatusCode}",
+                        endpoint, response.StatusCode);
+                    return default;
+                }
+
                 response.EnsureSuccessStatusCode();
 
                 var content = await response.Content.ReadAsStringAsync();
@@ -114,6 +139,15 @@ namespace Pharma263.MVC.Utility
 
                 var response = await client.PutAsync(endpoint, jsonContent);
 
+                // Handle authentication failures gracefully - BaseController will redirect
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
+                    response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                {
+                    _logger.LogWarning("Authentication failed for PUT {Endpoint}. Status: {StatusCode}",
+                        endpoint, response.StatusCode);
+                    return default;
+                }
+
                 response.EnsureSuccessStatusCode();
 
                 var content = await response.Content.ReadAsStringAsync();
@@ -135,6 +169,15 @@ namespace Pharma263.MVC.Utility
             {
                 using var client = CreateClient();
                 var response = await client.DeleteAsync(endpoint);
+
+                // Handle authentication failures gracefully - BaseController will redirect
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized ||
+                    response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                {
+                    _logger.LogWarning("Authentication failed for DELETE {Endpoint}. Status: {StatusCode}",
+                        endpoint, response.StatusCode);
+                    return false;
+                }
 
                 response.EnsureSuccessStatusCode();
 
