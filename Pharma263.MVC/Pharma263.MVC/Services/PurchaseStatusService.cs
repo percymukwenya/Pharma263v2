@@ -1,31 +1,29 @@
-﻿using Microsoft.Extensions.Configuration;
-using Pharma263.MVC.DTOs;
+using Pharma263.Integration.Api.Common;
 using Pharma263.MVC.Services.IService;
 using Pharma263.MVC.Utility;
-using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace Pharma263.MVC.Services
 {
-    public class PurchaseStatusService : BaseService, IPurchaseStatusService
+    /// <summary>
+    /// Service for fetching purchase status lookup data.
+    /// Migrated from BaseService to IApiService for better performance and consistency.
+    /// </summary>
+    public class PurchaseStatusService : IPurchaseStatusService
     {
-        private readonly IHttpClientFactory _clientFactory;
-        private string pharmaUrl;
+        private readonly IApiService _apiService;
 
-        public PurchaseStatusService(IHttpClientFactory clientFactory, IConfiguration configuration) : base(clientFactory)
+        public PurchaseStatusService(IApiService apiService)
         {
-            _clientFactory = clientFactory;
-            pharmaUrl = configuration.GetValue<string>("ServiceUrls:PharmaApi");
+            _apiService = apiService;
         }
 
-        public Task<T> GetAllAsync<T>(string token)
+        public async Task<T> GetAllAsync<T>(string token)
         {
-            return SendAsync<T>(new ApiRequest()
-            {
-                ApiType = StaticDetails.ApiType.GET,
-                Url = pharmaUrl + "/api/Selection/GetPurchaseStatuses",
-                Token = token
-            });
+            // Note: Token parameter kept for interface compatibility but not used
+            // IApiService automatically injects token via ITokenService
+            var response = await _apiService.GetApiResponseAsync<T>("/api/Selection/GetPurchaseStatuses");
+            return response.Data;
         }
     }
 }

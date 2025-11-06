@@ -1,30 +1,27 @@
-﻿using Microsoft.Extensions.Configuration;
-using Pharma263.MVC.DTOs;
+using Pharma263.Integration.Api.Common;
 using Pharma263.MVC.Services.IService;
 using Pharma263.MVC.Utility;
-using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace Pharma263.MVC.Services
 {
-    public class SaleStatusService : BaseService, ISaleStatusService
+    /// <summary>
+    /// Service for fetching sale status lookup data.
+    /// Migrated from BaseService to IApiService for better performance and consistency.
+    /// </summary>
+    public class SaleStatusService : ISaleStatusService
     {
-        private readonly IHttpClientFactory _clientFactory;
-        private string pharmaUrl;
+        private readonly IApiService _apiService;
 
-        public SaleStatusService(IHttpClientFactory clientFactory, IConfiguration configuration) : base(clientFactory)
+        public SaleStatusService(IApiService apiService)
         {
-            _clientFactory = clientFactory;
-            pharmaUrl = configuration.GetValue<string>("ServiceUrls:PharmaApi");
+            _apiService = apiService;
         }
 
-        public Task<T> GetAllAsync<T>()
+        public async Task<T> GetAllAsync<T>()
         {
-            return SendAsync<T>(new ApiRequest()
-            {
-                ApiType = StaticDetails.ApiType.GET,
-                Url = pharmaUrl + "/api/Selection/GetSaleStatuses"
-            });
+            var response = await _apiService.GetApiResponseAsync<T>("/api/Selection/GetSaleStatuses");
+            return response.Data;
         }
     }
 }

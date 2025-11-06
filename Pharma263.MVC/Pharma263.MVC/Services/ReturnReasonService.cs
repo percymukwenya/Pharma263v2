@@ -1,29 +1,27 @@
-﻿using Microsoft.Extensions.Configuration;
-using Pharma263.MVC.DTOs;
+using Pharma263.Integration.Api.Common;
 using Pharma263.MVC.Services.IService;
 using Pharma263.MVC.Utility;
-using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace Pharma263.MVC.Services
 {
-    public class ReturnReasonService : BaseService, IReturnReasonService
+    /// <summary>
+    /// Service for fetching return reason lookup data.
+    /// Migrated from BaseService to IApiService for better performance and consistency.
+    /// </summary>
+    public class ReturnReasonService : IReturnReasonService
     {
-        private readonly IHttpClientFactory _clientFactory;
-        private string pharmaUrl;
-        public ReturnReasonService(IHttpClientFactory clientFactory, IConfiguration configuration) : base(clientFactory)
+        private readonly IApiService _apiService;
+
+        public ReturnReasonService(IApiService apiService)
         {
-            _clientFactory = clientFactory;
-            pharmaUrl = configuration.GetValue<string>("ServiceUrls:PharmaApi");
+            _apiService = apiService;
         }
 
-        public Task<T> GetAllAsync<T>()
+        public async Task<T> GetAllAsync<T>()
         {
-            return SendAsync<T>(new ApiRequest()
-            {
-                ApiType = StaticDetails.ApiType.GET,
-                Url = pharmaUrl + "/api/Selection/GetReturnReasons"
-            });
+            var response = await _apiService.GetApiResponseAsync<T>("/api/Selection/GetReturnReasons");
+            return response.Data;
         }
     }
 }
