@@ -169,19 +169,8 @@
 
             toastr.options.timeOut = 3000;
 
-            // Global AJAX error handler for token expiration
-            $(document).ajaxError(function(event, xhr, settings) {
-                if (xhr.status === 401 || xhr.status === 403) {
-                    console.log('Authentication failed - redirecting to login');
-                    toastr.warning('Your session has expired. Please login again.');
-                    setTimeout(function() {
-                        window.location.href = '@Url.Action("Login", "Auth")';
-                    }, 2000);
-                }
-            });
-
-            // Additional AJAX setup (core setup is handled by Pharma263Core)
-            // This is just for backward compatibility with existing code
+            // Note: Global AJAX error handler for auth failures is in pharma263.core.js
+            // No need for duplicate handler here
         });
     </script>
 

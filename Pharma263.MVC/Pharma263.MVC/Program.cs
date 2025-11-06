@@ -120,6 +120,9 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
+// Add response caching for improved performance
+builder.Services.AddResponseCaching();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -133,6 +136,7 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+app.UseResponseCaching(); // Enable response caching for lookup data
 app.UseCors("all");
 
 app.UseAuthentication();

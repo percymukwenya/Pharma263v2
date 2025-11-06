@@ -50,6 +50,7 @@ namespace Pharma263.MVC.Controllers
         //    }
         //}
 
+        [ResponseCache(Duration = 3600, VaryByHeader = "Authorization")]
         public async Task<JsonResult> GetCustomerType()
         {
             var token = HttpContext.Session.GetString(StaticDetails.SessionToken);
@@ -95,6 +96,7 @@ namespace Pharma263.MVC.Controllers
             return Json(medicines);
         }
 
+        [ResponseCache(Duration = 3600, VaryByHeader = "Authorization")]
         public async Task<JsonResult> GetPaymentMethod()
         {
             var token = HttpContext.Session.GetString(StaticDetails.SessionToken);
@@ -104,6 +106,7 @@ namespace Pharma263.MVC.Controllers
             return Json(paymentMethods);
         }
 
+        [ResponseCache(Duration = 3600, VaryByHeader = "Authorization")]
         public async Task<JsonResult> GetPurchaseStatus()
         {
             var token = HttpContext.Session.GetString(StaticDetails.SessionToken);
@@ -113,6 +116,7 @@ namespace Pharma263.MVC.Controllers
             return Json(purchaseStatuses);
         }
 
+        [ResponseCache(Duration = 3600, VaryByHeader = "Authorization")]
         public async Task<JsonResult> GetSaleStatus()
         {
             var token = HttpContext.Session.GetString(StaticDetails.SessionToken);
@@ -122,6 +126,7 @@ namespace Pharma263.MVC.Controllers
             return Json(saleStatuses);
         }
 
+        [ResponseCache(Duration = 3600, VaryByHeader = "Authorization")]
         public async Task<JsonResult> GetReturnReasons()
         {
             var token = HttpContext.Session.GetString(StaticDetails.SessionToken);
@@ -131,6 +136,7 @@ namespace Pharma263.MVC.Controllers
             return Json(returnReason);
         }
 
+        [ResponseCache(Duration = 3600, VaryByHeader = "Authorization")]
         public async Task<JsonResult> GetReturnDestinations()
         {
             var token = HttpContext.Session.GetString(StaticDetails.SessionToken);
