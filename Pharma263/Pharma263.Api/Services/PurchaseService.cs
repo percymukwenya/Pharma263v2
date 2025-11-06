@@ -26,17 +26,20 @@ namespace Pharma263.Api.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IPurchaseRepository _purchaseRepository;
         private readonly IStockManagementService _stockManagementService;
+        private readonly IValidationService _validationService;
         private readonly IPurchaseCalculationService _purchaseCalculationService;
         private readonly IAppLogger<PurchaseService> _logger;
         private readonly IMemoryCache _cache;
 
         public PurchaseService(IUnitOfWork unitOfWork,
             IPurchaseRepository purchaseRepository, IStockManagementService stockManagementService,
-            IPurchaseCalculationService purchaseCalculationService, IAppLogger<PurchaseService> logger, IMemoryCache cache)
+            IValidationService validationService, IPurchaseCalculationService purchaseCalculationService,
+            IAppLogger<PurchaseService> logger, IMemoryCache cache)
         {
             _unitOfWork = unitOfWork;
             _purchaseRepository = purchaseRepository;
             _stockManagementService = stockManagementService;
+            _validationService = validationService;
             _purchaseCalculationService = purchaseCalculationService;
             _logger = logger;
             _cache = cache;
@@ -245,21 +248,19 @@ namespace Pharma263.Api.Services
 
         public async Task<ApiResponse<bool>> AddPurchase(AddPurchaseRequest request)
         {
-            // Validate for duplicates before transaction
-            var tempPurchase = new Purchase
+            // Validate request using ValidationService
+            var duplicateValidation = await _validationService.ValidatePurchaseNotDuplicateAsync(request);
+            if (!duplicateValidation.IsValid)
             {
-                PurchaseDate = DateTime.Now,
-                Notes = request.Notes,
-                PaymentMethodId = request.PaymentMethodId,
-                PurchaseStatusId = request.PurchaseStatusId,
-                SupplierId = request.SupplierId,
-                Discount = (decimal)request.Discount,
-                GrandTotal = (decimal)request.GrandTotal,
-                Total = (decimal)request.Total
-            };
+                return ApiResponse<bool>.CreateFailure(duplicateValidation.Errors.First(), 400, duplicateValidation.Errors);
+            }
 
-            if (await _purchaseRepository.IsDuplicate(tempPurchase))
-                return ApiResponse<bool>.CreateFailure("Purchase is a duplicate", 400);
+            var requestValidation = await _validationService.ValidatePurchaseRequestAsync(request);
+            if (!requestValidation.IsValid)
+            {
+                _logger.LogWarning("Purchase request validation failed: {Errors}", string.Join(", ", requestValidation.Errors));
+                return ApiResponse<bool>.CreateFailure("Purchase request validation failed", 400, requestValidation.Errors);
+            }
 
             // Calculate payment due date
             int dayDue = request.PurchaseStatusId switch
@@ -377,6 +378,15 @@ namespace Pharma263.Api.Services
 
         public async Task<ApiResponse<bool>> UpdatePurchase(UpdatePurchaseRequest request)
         {
+            // Validate request using ValidationService
+            var requestValidation = await _validationService.ValidateUpdatePurchaseRequestAsync(request);
+            if (!requestValidation.IsValid)
+            {
+                _logger.LogWarning("Purchase update validation failed: PurchaseId={PurchaseId}, Errors={Errors}",
+                    request.Id, string.Join(", ", requestValidation.Errors));
+                return ApiResponse<bool>.CreateFailure("Purchase update validation failed", 400, requestValidation.Errors);
+            }
+
             try
             {
                 // Wrap entire operation in transaction
