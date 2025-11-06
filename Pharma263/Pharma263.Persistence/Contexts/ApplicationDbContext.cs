@@ -78,9 +78,10 @@ namespace Pharma263.Persistence.Contexts
         public DbSet<Sales> Sales { get; set; }
         public DbSet<SalesItems> SalesItem { get; set; }
         public DbSet<SaleStatus> SaleStatuses { get; set; }
-        public DbSet<Stock> Stock { get; set; }        
+        public DbSet<Stock> Stock { get; set; }
         public DbSet<StoreSetting> StoreSetting { get; set; }
         public DbSet<Supplier> Suppliers { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
         public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
         {

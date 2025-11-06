@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Pharma263.Application.Exceptions;
 using System.Net;
@@ -13,11 +15,13 @@ namespace Pharma263.Api.Middleware
     {
         private readonly RequestDelegate _next;
         private readonly ILogger<ExceptionMiddleware> _logger;
+        private readonly IWebHostEnvironment _environment;
 
-        public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger)
+        public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger, IWebHostEnvironment environment)
         {
             _next = next;
-            this._logger = logger;
+            _logger = logger;
+            _environment = environment;
         }
 
         public async Task InvokeAsync(HttpContext httpContext)
@@ -36,6 +40,7 @@ namespace Pharma263.Api.Middleware
         {
             HttpStatusCode statusCode = HttpStatusCode.InternalServerError;
             CustomProblemDetails problem = new();
+            var isDevelopment = _environment.IsDevelopment();
 
             switch (ex)
             {
@@ -45,7 +50,7 @@ namespace Pharma263.Api.Middleware
                     {
                         Title = badRequestException.Message,
                         Status = (int)statusCode,
-                        Detail = badRequestException.InnerException?.Message,
+                        Detail = isDevelopment ? badRequestException.InnerException?.Message : null,
                         Type = nameof(BadRequestException),
                         Errors = badRequestException.ValidationErrors
                     };
@@ -57,25 +62,26 @@ namespace Pharma263.Api.Middleware
                         Title = NotFound.Message,
                         Status = (int)statusCode,
                         Type = nameof(NotFoundException),
-                        Detail = NotFound.InnerException?.Message,
+                        Detail = isDevelopment ? NotFound.InnerException?.Message : null,
                     };
                     break;
                 default:
                     problem = new CustomProblemDetails
                     {
-                        Title = ex.Message,
+                        Title = isDevelopment ? ex.Message : "An error occurred processing your request.",
                         Status = (int)statusCode,
                         Type = nameof(HttpStatusCode.InternalServerError),
-                        Detail = ex.StackTrace,
+                        Detail = isDevelopment ? ex.StackTrace : null,
                     };
                     break;
             }
 
             httpContext.Response.StatusCode = (int)statusCode;
-            var logMessage = JsonConvert.SerializeObject(problem);
-            _logger.LogError(logMessage);
-            await httpContext.Response.WriteAsJsonAsync(problem);
 
+            // Always log full exception details for monitoring (not sent to client in production)
+            _logger.LogError(ex, "An error occurred: {ErrorMessage}. Status Code: {StatusCode}", ex.Message, statusCode);
+
+            await httpContext.Response.WriteAsJsonAsync(problem);
         }
     }
 }

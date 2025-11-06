@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Pharma263.Api.Extensions;
@@ -9,6 +10,7 @@ using Pharma263.Application;
 using Pharma263.Infrastructure;
 using Pharma263.Persistence;
 using Serilog;
+using System;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,13 +28,33 @@ builder.Services.AddIdentityServices(builder.Configuration);
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddPersistenceServices(builder.Configuration);
 
-builder.Services.AddControllers();
+// Add controllers with global authorization filter
+builder.Services.AddControllers(options =>
+{
+    var policy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+    options.Filters.Add(new Microsoft.AspNetCore.Mvc.Authorization.AuthorizeFilter(policy));
+});
+
+// Configure CORS with environment-specific policies
+var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("all", builder => builder.AllowAnyOrigin()
-    .AllowAnyHeader()
-    .AllowAnyMethod());
+    // Development policy - allow any origin for local development
+    options.AddPolicy("development", builder => builder
+        .AllowAnyOrigin()
+        .AllowAnyHeader()
+        .AllowAnyMethod());
+
+    // Production policy - only allow configured origins
+    options.AddPolicy("production", builder => builder
+        .WithOrigins(allowedOrigins)
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials()
+        .SetIsOriginAllowedToAllowWildcardSubdomains());
 })
     .AddMemoryCache()
     .AddHttpContextAccessor()
@@ -58,7 +80,10 @@ app.UseMiddleware<Pharma263.Api.Middleware.ExceptionMiddleware>();
 //app.UseRouting();
 app.UseSerilogRequestLogging();
 app.UseHttpsRedirection();
-app.UseCors("all");
+
+// Use environment-specific CORS policy
+var corsPolicy = app.Environment.IsDevelopment() ? "development" : "production";
+app.UseCors(corsPolicy);
 
 app.UseAuthentication();
 app.UseAuthorization();

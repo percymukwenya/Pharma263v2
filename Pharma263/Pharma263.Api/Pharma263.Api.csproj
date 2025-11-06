@@ -3,6 +3,7 @@
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
 		<AspNetCoreHostingModel>OutOfProcess</AspNetCoreHostingModel>
+		<UserSecretsId>pharma263-api-secrets-2024</UserSecretsId>
 	</PropertyGroup>
 
 	<ItemGroup>
