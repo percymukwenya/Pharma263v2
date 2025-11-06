@@ -5,6 +5,7 @@ using Pharma263.Api.Models.Purchase.Request;
 using Pharma263.Api.Models.Purchase.Response;
 using Pharma263.Api.Shared.Contracts;
 using Pharma263.Application.Contracts.Logging;
+using Pharma263.Application.Contracts.Services;
 using Pharma263.Application.Models;
 using Pharma263.Application.Services.Printing;
 using Pharma263.Domain.Common;
@@ -24,18 +25,18 @@ namespace Pharma263.Api.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IPurchaseRepository _purchaseRepository;
-        private readonly IStockRepository _stockRepository;
+        private readonly IStockManagementService _stockManagementService;
         private readonly IPurchaseCalculationService _purchaseCalculationService;
         private readonly IAppLogger<PurchaseService> _logger;
         private readonly IMemoryCache _cache;
 
         public PurchaseService(IUnitOfWork unitOfWork,
-            IPurchaseRepository purchaseRepository, IStockRepository stockRepository,
+            IPurchaseRepository purchaseRepository, IStockManagementService stockManagementService,
             IPurchaseCalculationService purchaseCalculationService, IAppLogger<PurchaseService> logger, IMemoryCache cache)
         {
             _unitOfWork = unitOfWork;
             _purchaseRepository = purchaseRepository;
-            _stockRepository = stockRepository;
+            _stockManagementService = stockManagementService;
             _purchaseCalculationService = purchaseCalculationService;
             _logger = logger;
             _cache = cache;
@@ -244,102 +245,132 @@ namespace Pharma263.Api.Services
 
         public async Task<ApiResponse<bool>> AddPurchase(AddPurchaseRequest request)
         {
+            // Validate for duplicates before transaction
+            var tempPurchase = new Purchase
+            {
+                PurchaseDate = DateTime.Now,
+                Notes = request.Notes,
+                PaymentMethodId = request.PaymentMethodId,
+                PurchaseStatusId = request.PurchaseStatusId,
+                SupplierId = request.SupplierId,
+                Discount = (decimal)request.Discount,
+                GrandTotal = (decimal)request.GrandTotal,
+                Total = (decimal)request.Total
+            };
+
+            if (await _purchaseRepository.IsDuplicate(tempPurchase))
+                return ApiResponse<bool>.CreateFailure("Purchase is a duplicate", 400);
+
+            // Calculate payment due date
+            int dayDue = request.PurchaseStatusId switch
+            {
+                4 => 7,   // 7 days
+                5 => 14,  // 14 days
+                6 => 30,  // 30 days
+                _ => 0    // Cash purchase
+            };
+
             try
             {
-                var purchaseToCreate = new Purchase
+                // Wrap entire operation in transaction for data integrity
+                return await _unitOfWork.ExecuteTransactionAsync(async () =>
                 {
-                    PurchaseDate = DateTime.Now,
-                    Notes = request.Notes,
-                    PaymentMethodId = request.PaymentMethodId,
-                    PurchaseStatusId = request.PurchaseStatusId,
-                    SupplierId = request.SupplierId,
-                    Discount = (decimal)request.Discount,
-                    GrandTotal = (decimal)request.GrandTotal,
-                    Total = (decimal)request.Total
-                };
-
-                if (await _purchaseRepository.IsDuplicate(purchaseToCreate))
-                    return ApiResponse<bool>.CreateFailure("Purchase is a duplicate", 400);
-
-                DateTime now = DateTime.Now;
-                string transactionDate = now.ToString("yyyyMMddHHmm");
-
-                var transactionId = $"{transactionDate}";
-
-                int dayDue = request.PurchaseStatusId switch
-                {
-                    4 => 7,
-                    5 => 14,
-                    6 => 30,
-                    _ => 0
-                };
-
-                purchaseToCreate.PaymentDueDate = DateTime.Now.AddDays(dayDue);
-
-                foreach (var item in request.Items)
-                {
-                    var stock = await _unitOfWork.Repository<Stock>().FirstOrDefaultAsync(x => x.MedicineId == item.MedicineId && x.BatchNo == item.BatchNo);
-
-                    if (stock != null)
+                    var purchaseToCreate = new Purchase
                     {
-                        // update quantity
-                        await _stockRepository.AddQuantity(item.Quantity, stock.Id);
-                    }
-                    else
-                    {   // add new stock
-                        await _unitOfWork.Repository<Stock>().AddAsync(new Stock
+                        PurchaseDate = DateTime.Now,
+                        Notes = request.Notes,
+                        PaymentMethodId = request.PaymentMethodId,
+                        PurchaseStatusId = request.PurchaseStatusId,
+                        SupplierId = request.SupplierId,
+                        Discount = (decimal)request.Discount,
+                        GrandTotal = (decimal)request.GrandTotal,
+                        Total = (decimal)request.Total,
+                        PaymentDueDate = DateTime.Now.AddDays(dayDue),
+                        Items = new List<PurchaseItems>()
+                    };
+
+                    // Process each purchase item
+                    foreach (var item in request.Items)
+                    {
+                        // Check if stock exists for this medicine and batch
+                        var stock = await _unitOfWork.Repository<Stock>().FirstOrDefaultAsync(
+                            x => x.MedicineId == item.MedicineId && x.BatchNo == item.BatchNo);
+
+                        if (stock != null)
                         {
-                            TotalQuantity = item.Quantity,
-                            NotifyForQuantityBelow = SettingsModel.NotifyDefaultQuantity,
-                            MedicineId = item.MedicineId,
+                            // Update existing stock with business logic validation
+                            var stockResult = await _stockManagementService.AddStockAsync(
+                                stock.Id,
+                                item.Quantity,
+                                $"Purchase from Supplier ID: {request.SupplierId}");
+
+                            if (!stockResult.Success)
+                            {
+                                _logger.LogWarning($"Failed to add stock: {stockResult.Message}");
+                            }
+                        }
+                        else
+                        {
+                            // Add new stock item
+                            await _unitOfWork.Repository<Stock>().AddAsync(new Stock
+                            {
+                                TotalQuantity = item.Quantity,
+                                NotifyForQuantityBelow = SettingsModel.NotifyDefaultQuantity,
+                                MedicineId = item.MedicineId,
+                                BatchNo = item.BatchNo,
+                                ExpiryDate = item.ExpiryDate,
+                                BuyingPrice = item.BuyingPrice,
+                                SellingPrice = item.SellingPrice
+                            });
+                        }
+
+                        // Add purchase item
+                        purchaseToCreate.Items.Add(new PurchaseItems
+                        {
+                            Amount = item.Amount,
                             BatchNo = item.BatchNo,
-                            ExpiryDate = item.ExpiryDate,
-                            BuyingPrice = item.BuyingPrice,
-                            SellingPrice = item.SellingPrice
+                            Discount = item.Discount,
+                            MedicineId = item.MedicineId,
+                            Price = item.Price,
+                            Quantity = item.Quantity
                         });
                     }
 
-                    purchaseToCreate.Items.Add(new PurchaseItems
+                    // Save purchase
+                    await _unitOfWork.Repository<Purchase>().AddAsync(purchaseToCreate);
+
+                    // Create Accounts Payable for non-cash purchases
+                    if (request.PurchaseStatusId != 3)
                     {
-                        Amount = item.Amount,
-                        BatchNo = item.BatchNo,
-                        Discount = item.Discount,
-                        MedicineId = item.MedicineId,
-                        Price = item.Price,
-                        Quantity = item.Quantity
-                    });
-                }
+                        var accountsPayable = new AccountsPayable
+                        {
+                            SupplierId = purchaseToCreate.SupplierId,
+                            AmountOwed = purchaseToCreate.GrandTotal,
+                            AmountPaid = 0,
+                            BalanceOwed = purchaseToCreate.GrandTotal,
+                            DueDate = (DateTime)purchaseToCreate.PaymentDueDate,
+                            AccountsPayableStatusId = 1
+                        };
 
-                // add to database
-                await _unitOfWork.Repository<Purchase>().AddAsync(purchaseToCreate);
-                await _unitOfWork.SaveChangesAsync();
+                        await _unitOfWork.Repository<AccountsPayable>().AddAsync(accountsPayable);
+                    }
 
-                if (request.PurchaseStatusId != 3)
-                {
-                    var obj = new AccountsPayable
-                    {
-                        SupplierId = purchaseToCreate.SupplierId,
-                        AmountOwed = purchaseToCreate.GrandTotal,
-                        AmountPaid = 0,
-                        BalanceOwed = purchaseToCreate.GrandTotal,
-                        DueDate = (DateTime)purchaseToCreate.PaymentDueDate,
-                        AccountsPayableStatusId = 1
-                    };
-
-                    await _unitOfWork.Repository<AccountsPayable>().AddAsync(obj);
+                    // Save all changes within transaction
                     await _unitOfWork.SaveChangesAsync();
-                }
 
-                // Invalidate cache after successful creation
-                InvalidatePurchaseCache();
+                    // Invalidate cache after successful transaction
+                    InvalidatePurchaseCache();
 
-                // return record id
-                return ApiResponse<bool>.CreateSuccess(true, "Purchase created successfully");
+                    _logger.LogInformation(
+                        "Purchase created successfully: PurchaseId={PurchaseId}, SupplierId={SupplierId}, Items={ItemCount}, Total={Total}",
+                        purchaseToCreate.Id, purchaseToCreate.SupplierId, purchaseToCreate.Items.Count, purchaseToCreate.GrandTotal);
+
+                    return ApiResponse<bool>.CreateSuccess(true, "Purchase created successfully");
+                });
             }
             catch (Exception ex)
             {
                 _logger.LogWarning($"An error occurred while adding purchase. {ex.Message}", ex);
-
                 return ApiResponse<bool>.CreateFailure($"An error occurred while adding purchase. {ex.Message}", 500);
             }
         }
@@ -348,91 +379,115 @@ namespace Pharma263.Api.Services
         {
             try
             {
-                var purchaseToUpdate = await _unitOfWork.Repository<Purchase>()
-                .GetByIdWithIncludesAsync(request.Id, query => query.Include(p => p.Items));
-
-                if (purchaseToUpdate == null)
-                    return ApiResponse<bool>.CreateFailure("Purchase not found", 404);
-
-                foreach (var oldItem in purchaseToUpdate.Items)
+                // Wrap entire operation in transaction
+                return await _unitOfWork.ExecuteTransactionAsync(async () =>
                 {
-                    var stock = await _unitOfWork.Repository<Stock>().FirstOrDefaultAsync(
-                        x => x.MedicineId == oldItem.MedicineId && x.BatchNo == oldItem.BatchNo);
+                    var purchaseToUpdate = await _unitOfWork.Repository<Purchase>()
+                        .GetByIdWithIncludesAsync(request.Id, query => query.Include(p => p.Items));
 
-                    if (stock != null)
+                    if (purchaseToUpdate == null)
+                        return ApiResponse<bool>.CreateFailure("Purchase not found", 404);
+
+                    // Restore stock quantities for old items
+                    foreach (var oldItem in purchaseToUpdate.Items)
                     {
-                        // Subtract the quantity that was added when the purchase was created
-                        await _stockRepository.SubQuantity(oldItem.Quantity, stock.Id);
-                    }
-                }
+                        var stock = await _unitOfWork.Repository<Stock>().FirstOrDefaultAsync(
+                            x => x.MedicineId == oldItem.MedicineId && x.BatchNo == oldItem.BatchNo);
 
-                purchaseToUpdate.Items.Clear();
-
-                purchaseToUpdate.Notes = request.Notes;
-                purchaseToUpdate.PaymentMethodId = request.PaymentMethodId;
-                purchaseToUpdate.PurchaseStatusId = request.PurchaseStatusId;
-                purchaseToUpdate.Total = 0;
-                purchaseToUpdate.GrandTotal = 0;
-
-                foreach (var itemReq in request.Items)
-                {
-                    // Calculate the net amount using the business rules service.
-                    decimal netAmount = _purchaseCalculationService.CalculateLineNetAmount(itemReq.Price, itemReq.Quantity, itemReq.Discount);
-
-                    // Create a new purchase item with the new per-item discount
-                    var newItem = new PurchaseItems
-                    {
-                        Price = itemReq.Price,
-                        Quantity = itemReq.Quantity,
-                        Discount = itemReq.Discount,
-                        Amount = netAmount,
-                        MedicineId = itemReq.MedicineId,
-                        BatchNo = itemReq.BatchNo
-                    };
-
-                    // Add the new item to the purchase
-                    purchaseToUpdate.Items.Add(newItem);
-
-                    // Update stock based on new purchase items:
-                    var stock = await _unitOfWork.Repository<Stock>().FirstOrDefaultAsync(
-                        x => x.MedicineId == itemReq.MedicineId && x.BatchNo == itemReq.BatchNo);
-
-                    if (stock != null)
-                    {
-                        // Add quantity to the stock to reflect the updated purchase
-                        await _stockRepository.AddQuantity(itemReq.Quantity, stock.Id);
-                    }
-                    else
-                    {
-                        // If no stock record exists for this batch, add a new one
-                        await _unitOfWork.Repository<Stock>().AddAsync(new Stock
+                        if (stock != null)
                         {
-                            TotalQuantity = itemReq.Quantity,
-                            NotifyForQuantityBelow = SettingsModel.NotifyDefaultQuantity,
-                            MedicineId = itemReq.MedicineId,
-                            BatchNo = itemReq.BatchNo,
-                            ExpiryDate = itemReq.ExpiryDate,
-                            BuyingPrice = itemReq.BuyingPrice,
-                            SellingPrice = itemReq.SellingPrice
-                        });
+                            // Subtract the quantity that was added when the purchase was created
+                            var stockResult = await _stockManagementService.DeductStockAsync(
+                                stock.Id,
+                                oldItem.Quantity,
+                                $"Purchase update rollback for Purchase ID: {request.Id}");
+
+                            if (!stockResult.Success)
+                            {
+                                _logger.LogWarning($"Failed to rollback stock: {stockResult.Message}");
+                            }
+                        }
                     }
-                }
 
-                _purchaseCalculationService.RecalculateTotals(purchaseToUpdate);
+                    // Clear old items
+                    purchaseToUpdate.Items.Clear();
 
-                // Update the purchase record in the repository
-                _unitOfWork.Repository<Purchase>().Update(purchaseToUpdate);
+                    // Update purchase details
+                    purchaseToUpdate.Notes = request.Notes;
+                    purchaseToUpdate.PaymentMethodId = request.PaymentMethodId;
+                    purchaseToUpdate.PurchaseStatusId = request.PurchaseStatusId;
+                    purchaseToUpdate.Total = 0;
+                    purchaseToUpdate.GrandTotal = 0;
 
-                // Save all changes in one transaction
-                var result = await _unitOfWork.SaveChangesAsync();
+                    // Process new items
+                    foreach (var itemReq in request.Items)
+                    {
+                        // Calculate net amount
+                        decimal netAmount = _purchaseCalculationService.CalculateLineNetAmount(
+                            itemReq.Price, itemReq.Quantity, itemReq.Discount);
 
-                if (result <= 0)
-                    return ApiResponse<bool>.CreateFailure("Failed to update purchase", 500);
+                        // Create new purchase item
+                        var newItem = new PurchaseItems
+                        {
+                            Price = itemReq.Price,
+                            Quantity = itemReq.Quantity,
+                            Discount = itemReq.Discount,
+                            Amount = netAmount,
+                            MedicineId = itemReq.MedicineId,
+                            BatchNo = itemReq.BatchNo
+                        };
 
-                // Invalidate cache after successful update
-                InvalidatePurchaseCache();
+                        purchaseToUpdate.Items.Add(newItem);
 
-                return ApiResponse<bool>.CreateSuccess(true, "Purchase updated successfully");
+                        // Update stock
+                        var stock = await _unitOfWork.Repository<Stock>().FirstOrDefaultAsync(
+                            x => x.MedicineId == itemReq.MedicineId && x.BatchNo == itemReq.BatchNo);
+
+                        if (stock != null)
+                        {
+                            // Add quantity to existing stock
+                            var stockResult = await _stockManagementService.AddStockAsync(
+                                stock.Id,
+                                itemReq.Quantity,
+                                $"Purchase update for Purchase ID: {request.Id}");
+
+                            if (!stockResult.Success)
+                            {
+                                _logger.LogWarning($"Failed to add stock: {stockResult.Message}");
+                            }
+                        }
+                        else
+                        {
+                            // Add new stock item
+                            await _unitOfWork.Repository<Stock>().AddAsync(new Stock
+                            {
+                                TotalQuantity = itemReq.Quantity,
+                                NotifyForQuantityBelow = SettingsModel.NotifyDefaultQuantity,
+                                MedicineId = itemReq.MedicineId,
+                                BatchNo = itemReq.BatchNo,
+                                ExpiryDate = itemReq.ExpiryDate,
+                                BuyingPrice = itemReq.BuyingPrice,
+                                SellingPrice = itemReq.SellingPrice
+                            });
+                        }
+                    }
+
+                    // Recalculate totals
+                    _purchaseCalculationService.RecalculateTotals(purchaseToUpdate);
+
+                    // Update purchase
+                    _unitOfWork.Repository<Purchase>().Update(purchaseToUpdate);
+
+                    // Save all changes within transaction
+                    await _unitOfWork.SaveChangesAsync();
+
+                    // Invalidate cache after successful transaction
+                    InvalidatePurchaseCache();
+
+                    _logger.LogInformation("Purchase updated successfully: PurchaseId={PurchaseId}", request.Id);
+
+                    return ApiResponse<bool>.CreateSuccess(true, "Purchase updated successfully");
+                });
             }
             catch (Exception ex)
             {
@@ -446,36 +501,54 @@ namespace Pharma263.Api.Services
         {
             try
             {
-                var purchaseToDelete = await _unitOfWork.Repository<Purchase>().GetByIdAsync(id);
-
-                if (purchaseToDelete == null) return ApiResponse<bool>.CreateFailure("Purchase not found", 404);
-
-                var items = await _unitOfWork.Repository<PurchaseItems>().FindAsync(x => x.PurchaseId == id);
-
-                if (items.Any())
+                // Wrap entire operation in transaction
+                return await _unitOfWork.ExecuteTransactionAsync(async () =>
                 {
-                    // subtract item quantity from stock
-                    foreach (var item in items)
+                    var purchaseToDelete = await _unitOfWork.Repository<Purchase>().GetByIdAsync(id);
+
+                    if (purchaseToDelete == null)
+                        return ApiResponse<bool>.CreateFailure("Purchase not found", 404);
+
+                    // Get purchase items
+                    var items = await _unitOfWork.Repository<PurchaseItems>().FindAsync(x => x.PurchaseId == id);
+
+                    // Remove stock quantities for all items (reverse the purchase)
+                    if (items.Any())
                     {
-                        var stock = await _unitOfWork.Repository<Stock>().FirstOrDefaultAsync(x => x.MedicineId == item.MedicineId);
+                        foreach (var item in items)
+                        {
+                            var stock = await _unitOfWork.Repository<Stock>().FirstOrDefaultAsync(
+                                x => x.MedicineId == item.MedicineId);
 
-                        if (stock != null)
-                            await _stockRepository.SubQuantity(item.Quantity, stock.Id);
+                            if (stock != null)
+                            {
+                                var stockResult = await _stockManagementService.DeductStockAsync(
+                                    stock.Id,
+                                    item.Quantity,
+                                    $"Purchase deletion for Purchase ID: {id}");
+
+                                if (!stockResult.Success)
+                                {
+                                    _logger.LogWarning($"Failed to deduct stock during deletion: {stockResult.Message}");
+                                }
+                            }
+                        }
                     }
-                }
 
-                // remove from database
-                _unitOfWork.Repository<Purchase>().Delete(purchaseToDelete);
+                    // Delete purchase (cascade will delete items)
+                    _unitOfWork.Repository<Purchase>().Delete(purchaseToDelete);
 
-                var result = await _unitOfWork.SaveChangesAsync();
+                    // Save all changes within transaction
+                    await _unitOfWork.SaveChangesAsync();
 
-                if (result <= 0)
-                    return ApiResponse<bool>.CreateFailure("Failed to delete purchase", 500);
+                    // Invalidate cache after successful transaction
+                    InvalidatePurchaseCache();
 
-                // Invalidate cache after successful deletion
-                InvalidatePurchaseCache();
+                    _logger.LogInformation("Purchase deleted successfully: PurchaseId={PurchaseId}, ItemsRemoved={ItemCount}",
+                        id, items.Count());
 
-                return ApiResponse<bool>.CreateSuccess(true, "Purchase deleted successfully");
+                    return ApiResponse<bool>.CreateSuccess(true, "Purchase deleted successfully");
+                });
             }
             catch (Exception ex)
             {
@@ -491,8 +564,13 @@ namespace Pharma263.Api.Services
 
             var storeInfo = store.FirstOrDefault();
 
+            // Fix N+1 query: Eagerly load Medicine with ThenInclude
             var purchase = await _purchaseRepository.GetByIdWithIncludesAsync(id,
-                query => query.Include(i => i.Items).Include(s => s.Supplier).Include(x => x.PurchaseStatus).Include(x => x.PaymentMethod));
+                query => query.Include(i => i.Items)
+                              .ThenInclude(i => i.Medicine)
+                              .Include(s => s.Supplier)
+                              .Include(x => x.PurchaseStatus)
+                              .Include(x => x.PaymentMethod));
 
             var purchaseDto = new PurchaseDto
             {
@@ -514,16 +592,12 @@ namespace Pharma263.Api.Services
                     Quantity = i.Quantity,
                     Price = i.Price,
                     Discount = i.Discount,
-                    Amount = i.Amount
+                    Amount = i.Amount,
+                    MedicineName = i.Medicine?.Name ?? string.Empty
                 })]
             };
 
-            foreach (var item in purchaseDto.Items)
-            {
-                var medicine = await _unitOfWork.Repository<Medicine>().GetByIdAsync(item.MedicineId);
-
-                item.MedicineName = medicine.Name;
-            }
+            // N+1 query removed - Medicine now eagerly loaded above
 
             if (purchase != null)
             {
@@ -561,12 +635,6 @@ namespace Pharma263.Api.Services
                 x => x.MedicineId == medicineId && x.BatchNo == batchNo);
         }
 
-        private async Task UpdateStockQuantityAsync(int quantity, int stockId, bool isAdding)
-        {
-            if (isAdding)
-                await _stockRepository.AddQuantity(quantity, stockId);
-            else
-                await _stockRepository.SubQuantity(quantity, stockId);
-        }
+        // UpdateStockQuantityAsync helper removed - use IStockManagementService instead
     }
 }
