@@ -210,9 +210,12 @@ namespace Pharma263.Api.Services
 
             var storeInfo = store.FirstOrDefault();
 
+            // Fix N+1 query: Eagerly load Stock.Medicine with ThenInclude
             var sale = await _unitOfWork.Repository<Sales>().GetByIdWithIncludesAsync(id, query =>
                 query.Include(x => x.Customer)
                       .Include(x => x.Items)
+                          .ThenInclude(x => x.Stock)
+                              .ThenInclude(x => x.Medicine)
                       .Include(x => x.SaleStatus)
                       .Include(x => x.PaymentMethod));
 
@@ -234,22 +237,13 @@ namespace Pharma263.Api.Services
                     Amount = item.Amount,
                     Quantity = item.Quantity,
                     StockId = item.StockId,
-                    MedicineName = string.Empty,
-                    BatchNo = string.Empty,
-                    ExpiryDate = DateTime.Now
+                    MedicineName = item.Stock?.Medicine?.Name ?? string.Empty,
+                    BatchNo = item.Stock?.BatchNo ?? string.Empty,
+                    ExpiryDate = item.Stock?.ExpiryDate ?? DateTime.Now
                 }).ToList()
             };
 
-            foreach (var item in saleDto.Items)
-            {
-                var stockItem = await _unitOfWork.Repository<Stock>().GetByIdWithIncludesAsync(item.StockId, query => query.Include(x => x.Medicine));
-                if (stockItem != null)
-                {
-                    item.MedicineName = stockItem.Medicine.Name;
-                    item.BatchNo = stockItem.BatchNo;
-                    item.ExpiryDate = stockItem.ExpiryDate;
-                }
-            }
+            // N+1 query removed - Stock.Medicine now eagerly loaded above
 
             if (sale != null)
             {

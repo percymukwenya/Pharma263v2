@@ -70,7 +70,13 @@ namespace Pharma263.Api.Services
         {
             try
             {
-                var quotation = await _unitOfWork.Repository<Quotation>().GetByIdWithIncludesAsync(id, query => query.Include(c => c.Customer).Include(c => c.Items).Include(c => c.QuoteStatus));
+                // Fix N+1 query: Eagerly load Stock.Medicine with ThenInclude
+                var quotation = await _unitOfWork.Repository<Quotation>().GetByIdWithIncludesAsync(id,
+                    query => query.Include(c => c.Customer)
+                                  .Include(c => c.Items)
+                                      .ThenInclude(i => i.Stock)
+                                          .ThenInclude(s => s.Medicine)
+                                  .Include(c => c.QuoteStatus));
 
                 // convert data object to DTO object
                 var quotationDetails = new QuotationDetailsResponse
@@ -95,18 +101,12 @@ namespace Pharma263.Api.Services
                         Discount = item.Discount,
                         Amount = item.Amount,
                         StockId = item.StockId,
-                        MedicineName = string.Empty
+                        MedicineName = item.Stock?.Medicine?.Name ?? string.Empty,
+                        MedicineId = item.Stock?.MedicineId ?? 0
                     }).ToList()
                 };
 
-                foreach (var item in quotationDetails.Items)
-                {
-                    var stockItem = await _unitOfWork.Repository<Stock>().GetByIdWithIncludesAsync(item.StockId, query => query.Include(c => c.Medicine));
-
-                    item.MedicineName = stockItem.Medicine.Name;
-                    item.MedicineId = stockItem.MedicineId;
-                    item.StockId = stockItem.Id;
-                }
+                // N+1 query removed - Stock.Medicine now eagerly loaded above
 
                 return ApiResponse<QuotationDetailsResponse>.CreateSuccess(quotationDetails);
             }
@@ -123,7 +123,13 @@ namespace Pharma263.Api.Services
             var store = await _unitOfWork.Repository<StoreSetting>().GetAllAsync();
             var storeInfo = store.FirstOrDefault();
 
-            var quotation = await _unitOfWork.Repository<Quotation>().GetByIdWithIncludesAsync(id, query => query.Include(c => c.Customer).Include(c => c.QuoteStatus).Include(c => c.Items).ThenInclude(x => x.Stock));
+            // Fix N+1 query: Add Medicine to ThenInclude chain
+            var quotation = await _unitOfWork.Repository<Quotation>().GetByIdWithIncludesAsync(id,
+                query => query.Include(c => c.Customer)
+                              .Include(c => c.QuoteStatus)
+                              .Include(c => c.Items)
+                                  .ThenInclude(x => x.Stock)
+                                      .ThenInclude(s => s.Medicine));
 
             var quotationDto = new QuotationDto
             {
@@ -145,23 +151,15 @@ namespace Pharma263.Api.Services
                     Discount = x.Discount,
                     Amount = x.Amount,
                     StockId = x.StockId,
-                    MedicineName = string.Empty,
+                    MedicineName = x.Stock?.Medicine?.Name ?? string.Empty,
+                    MedicineId = x.Stock?.MedicineId ?? 0,
+                    BatchNo = x.Stock?.BatchNo ?? string.Empty,
+                    ExpiryDate = x.Stock?.ExpiryDate ?? DateTime.Now,
                     QuotationId = x.QuotationId
                 })]
             };
 
-            foreach (var item in quotationDto.Items)
-            {
-                var stockItem = await _unitOfWork.Repository<Stock>().FirstOrDefaultAsync(x => x.Id == item.StockId, q => q.Include(x => x.Medicine));
-
-                if (stockItem != null)
-                {
-                    item.MedicineId = stockItem.MedicineId;
-                    item.MedicineName = stockItem.Medicine.Name;
-                    item.BatchNo = stockItem.BatchNo;
-                    item.ExpiryDate = stockItem.ExpiryDate;
-                }
-            }
+            // N+1 query removed - Stock.Medicine now eagerly loaded above
 
             if (quotation != null)
             {

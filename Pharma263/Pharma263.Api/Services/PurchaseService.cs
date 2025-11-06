@@ -564,8 +564,13 @@ namespace Pharma263.Api.Services
 
             var storeInfo = store.FirstOrDefault();
 
+            // Fix N+1 query: Eagerly load Medicine with ThenInclude
             var purchase = await _purchaseRepository.GetByIdWithIncludesAsync(id,
-                query => query.Include(i => i.Items).Include(s => s.Supplier).Include(x => x.PurchaseStatus).Include(x => x.PaymentMethod));
+                query => query.Include(i => i.Items)
+                              .ThenInclude(i => i.Medicine)
+                              .Include(s => s.Supplier)
+                              .Include(x => x.PurchaseStatus)
+                              .Include(x => x.PaymentMethod));
 
             var purchaseDto = new PurchaseDto
             {
@@ -587,16 +592,12 @@ namespace Pharma263.Api.Services
                     Quantity = i.Quantity,
                     Price = i.Price,
                     Discount = i.Discount,
-                    Amount = i.Amount
+                    Amount = i.Amount,
+                    MedicineName = i.Medicine?.Name ?? string.Empty
                 })]
             };
 
-            foreach (var item in purchaseDto.Items)
-            {
-                var medicine = await _unitOfWork.Repository<Medicine>().GetByIdAsync(item.MedicineId);
-
-                item.MedicineName = medicine.Name;
-            }
+            // N+1 query removed - Medicine now eagerly loaded above
 
             if (purchase != null)
             {
