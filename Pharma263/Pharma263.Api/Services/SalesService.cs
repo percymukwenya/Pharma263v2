@@ -25,6 +25,7 @@ namespace Pharma263.Api.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly ISalesRepository _salesRepository;
         private readonly IStockManagementService _stockManagementService;
+        private readonly IValidationService _validationService;
         private readonly ILogger<SalesService> _logger;
         private readonly IMemoryCache _memoryCache;
         private const string SalesCacheKey = "sales_list";
@@ -32,11 +33,13 @@ namespace Pharma263.Api.Services
         private readonly TimeSpan CacheExpiry = TimeSpan.FromMinutes(5);
 
         public SalesService(IUnitOfWork unitOfWork, ISalesRepository salesRepository,
-            IStockManagementService stockManagementService, ILogger<SalesService> logger, IMemoryCache memoryCache)
+            IStockManagementService stockManagementService, IValidationService validationService,
+            ILogger<SalesService> logger, IMemoryCache memoryCache)
         {
             _unitOfWork = unitOfWork;
             _salesRepository = salesRepository;
             _stockManagementService = stockManagementService;
+            _validationService = validationService;
             _logger = logger;
             _memoryCache = memoryCache;
         }
@@ -275,19 +278,19 @@ namespace Pharma263.Api.Services
 
         public async Task<ApiResponse<int>> AddSale(AddSaleRequest request)
         {
-            // Validate request
-            var isDuplicate = await _salesRepository.IsDuplicate(new Sales
+            // Validate request using ValidationService
+            var duplicateValidation = await _validationService.ValidateSaleNotDuplicateAsync(request);
+            if (!duplicateValidation.IsValid)
             {
-                CustomerId = request.CustomerId,
-                SaleStatusId = request.SaleStatusId,
-                PaymentMethodId = request.PaymentMethodId,
-                Notes = request.Notes,
-                SalesDate = DateTime.Now,
-                Discount = request.Discount
-            });
+                return ApiResponse<int>.CreateFailure(duplicateValidation.Errors.First(), 400, duplicateValidation.Errors);
+            }
 
-            if (isDuplicate)
-                return ApiResponse<int>.CreateFailure("Duplicate sale detected", 400);
+            var requestValidation = await _validationService.ValidateSaleRequestAsync(request);
+            if (!requestValidation.IsValid)
+            {
+                _logger.LogWarning("Sale request validation failed: {Errors}", string.Join(", ", requestValidation.Errors));
+                return ApiResponse<int>.CreateFailure("Sale request validation failed", 400, requestValidation.Errors);
+            }
 
             // Calculate payment due date based on sale status
             var dayDue = request.SaleStatusId switch
@@ -319,19 +322,9 @@ namespace Pharma263.Api.Services
 
                     var errors = new List<string>();
 
-                    // Process each sale item
+                    // Process each sale item (validation already done by ValidationService)
                     foreach (var itemReq in request.Items)
                     {
-                        // Validate stock availability
-                        var isAvailable = await _stockManagementService.IsStockAvailableAsync(
-                            itemReq.StockId, itemReq.Quantity);
-
-                        if (!isAvailable)
-                        {
-                            errors.Add($"Insufficient stock for StockId: {itemReq.StockId}");
-                            continue;
-                        }
-
                         // Create sale item
                         var saleItem = new SalesItems
                         {
@@ -341,13 +334,6 @@ namespace Pharma263.Api.Services
                             Amount = (itemReq.Price * itemReq.Quantity) - itemReq.Discount,
                             StockId = itemReq.StockId
                         };
-
-                        // Validate item amount
-                        if (saleItem.Amount < 0)
-                        {
-                            errors.Add($"Item discount {itemReq.Discount} cannot exceed the total item price.");
-                            continue;
-                        }
 
                         // Add item to sale
                         saleToCreate.Items.Add(saleItem);

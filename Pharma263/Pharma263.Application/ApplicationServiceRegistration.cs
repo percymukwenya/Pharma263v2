@@ -25,6 +25,7 @@ namespace Pharma263.Application
             services.AddScoped<IReportService, ReportService>();
             services.AddScoped<IReportAnalyticsService, ReportAnalyticsService>();
             services.AddScoped<IStockManagementService, StockManagementService>();
+            services.AddScoped<IValidationService, ValidationService>();
 
             services.AddTransient<MemoryCacheService>();
             services.AddTransient<RedisCacheService>();
