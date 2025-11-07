@@ -626,6 +626,24 @@ class Pharma263Core {
             // Fallback to browser alert if toastr is not available
             alert(`${type.toUpperCase()}: ${message}`);
         }
+
+        // Announce to screen readers (WCAG 4.1.3 Status Messages)
+        this.announceToScreenReader(message);
+    }
+
+    /**
+     * Announce message to screen readers via live region
+     */
+    announceToScreenReader(message) {
+        const announcer = document.getElementById('screen-reader-announcements');
+        if (announcer) {
+            // Clear previous message
+            announcer.textContent = '';
+            // Set new message (triggers screen reader announcement)
+            setTimeout(() => {
+                announcer.textContent = message;
+            }, 100);
+        }
     }
 
     /**
