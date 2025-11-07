@@ -126,19 +126,39 @@ builder.Services.AddResponseCaching();
 // Add WebOptimizer for JS/CSS bundling and minification
 builder.Services.AddWebOptimizer(pipeline =>
 {
-    // Bundle and minify JavaScript files
-    pipeline.AddJavaScriptBundle("/js/bundle.js",
+    // Core JavaScript bundle - Loaded on all pages
+    pipeline.AddJavaScriptBundle("/js/core-bundle.js",
         "/js/pharma263.core.js",
-        "/js/pharma263.forms.js",
-        "/js/pharma263.calculations.js",
         "/js/utility.js",
+        "/js/navigation.js"
+    ).MinifyJavaScript();
+
+    // Forms JavaScript bundle - For sales, purchase, quotation pages
+    pipeline.AddJavaScriptBundle("/js/forms-bundle.js",
+        "/js/pharma263.forms.js",
+        "/js/pharma263.calculations.js"
+    ).MinifyJavaScript();
+
+    // Reports JavaScript bundle - For report pages
+    pipeline.AddJavaScriptBundle("/js/reports-bundle.js",
         "/js/reports.js"
     ).MinifyJavaScript();
 
-    // Bundle and minify CSS files
+    // Bundle and minify main CSS files
     pipeline.AddCssBundle("/css/bundle.css",
         "/css/site.css",
         "/css/site2.css"
+    ).MinifyCss();
+
+    // Bundle CSS modules for better caching and organization
+    pipeline.AddCssBundle("/css/modules-bundle.css",
+        "/css/modules/common-overrides.css",
+        "/css/modules/forms.css",
+        "/css/modules/sales.css",
+        "/css/modules/purchases.css",
+        "/css/modules/inventory.css",
+        "/css/modules/reports.css",
+        "/css/modules/customers.css"
     ).MinifyCss();
 
     // Minify individual files that aren't bundled

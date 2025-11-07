@@ -1,0 +1,63 @@
+/* Purchases Module
+ * Styles specific to purchase-related views
+ * AddPurchase.cshtml, EditPurchase.cshtml, etc.
+ */
+
+/* Purchase Item Table */
+.purchase-items-table {
+    border: 1px solid #ddd;
+}
+
+.purchase-items-table thead {
+    background-color: #f8f9fa;
+}
+
+.purchase-items-table td {
+    vertical-align: middle;
+}
+
+/* Purchase Summary */
+.purchase-summary {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    margin-top: 20px;
+}
+
+.purchase-summary .summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+}
+
+.purchase-summary .summary-row.total {
+    font-weight: bold;
+    font-size: 1.1rem;
+    border-top: 2px solid #333;
+    padding-top: 12px;
+    margin-top: 8px;
+}
+
+/* Supplier Selection */
+.supplier-info-display {
+    background-color: #fff3cd;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+
+/* Batch Number Display */
+.batch-number-field {
+    font-family: monospace;
+    font-weight: 500;
+}
+
+/* Expiry Date Warning */
+.expiry-date-warning {
+    color: #856404;
+    background-color: #fff3cd;
+    padding: 8px;
+    border-radius: 4px;
+    border-left: 4px solid #ffc107;
+    margin-top: 10px;
+}

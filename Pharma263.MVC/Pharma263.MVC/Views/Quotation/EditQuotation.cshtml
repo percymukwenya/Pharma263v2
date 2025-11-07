@@ -4,65 +4,7 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<style type="text/css">
-    .bg_1 {
-        background-color: green;
-    }
-
-    .bg_2 {
-        background-color: gray;
-    }
-
-    .error_msg {
-        color: #f00;
-        display: none;
-    }
-
-    .table {
-        margin-bottom: 0px;
-        width: 100%;
-    }
-    
-    /* Improve responsive layout */
-    .product-section {
-        display: flex;
-        flex-direction: row;
-        flex-wrap: wrap;
-    }
-    
-    .product-form {
-        flex: 0 0 100%;
-        margin-bottom: 20px;
-    }
-    
-    .product-list {
-        flex: 0 0 100%;
-    }
-    
-    /* Add % symbol to discount inputs */
-    .discount-percent-input {
-        position: relative;
-        width: 60px !important;
-    }
-    
-    .discount-percent-input::after {
-        content: "%";
-        position: absolute;
-        right: 5px;
-    }
-    
-    /* Make the page more responsive */
-    @@media (min-width: 992px) {
-        .product-form {
-            flex: 0 0 30%;
-            padding-right: 20px;
-        }
-        
-        .product-list {
-            flex: 0 0 70%;
-        }
-    }
-</style>
+@* Inline styles moved to /css/modules/common-overrides.css and forms.css *@
 <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
 

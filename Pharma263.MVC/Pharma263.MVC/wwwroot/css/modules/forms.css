@@ -1,0 +1,80 @@
+/* Forms Module
+ * Common form patterns and components
+ * Used in Sales, Purchase, Quotation, and other transaction forms
+ */
+
+/* Product Section Layout - Used in AddSale, Purchase, Quotation */
+.product-section {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.product-form {
+    flex: 0 0 100%;
+    margin-bottom: 20px;
+}
+
+.product-list {
+    flex: 0 0 100%;
+}
+
+/* Responsive layout for larger screens */
+@media (min-width: 992px) {
+    .product-form {
+        flex: 0 0 30%;
+        padding-right: 20px;
+    }
+
+    .product-list {
+        flex: 0 0 70%;
+    }
+}
+
+/* Discount Input Styling */
+.discount-percent-input {
+    position: relative;
+    width: 60px !important;
+}
+
+.discount-percent-input::after {
+    content: "%";
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+/* Form Actions */
+.form-actions {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e0e0e0;
+}
+
+/* Inline Form Groups */
+.form-inline-group {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+}
+
+.form-inline-group .form-group {
+    margin-bottom: 0;
+}
+
+/* Required Field Indicator */
+.required::after {
+    content: " *";
+    color: #dc3545;
+}
+
+/* Form Validation Feedback */
+.was-validated .form-control:invalid {
+    border-color: #dc3545;
+}
+
+.was-validated .form-control:valid {
+    border-color: #28a745;
+}

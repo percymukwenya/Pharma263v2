@@ -1,0 +1,309 @@
+/* Reports Module
+ * Styles specific to reports dashboard and report views
+ * Report/Index.cshtml (dashboard) and various report pages
+ */
+
+/* Dashboard Header */
+.dashboard-header {
+    background: #3a4a87;
+    color: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.dashboard-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin-bottom: 0;
+}
+
+/* Statistics Cards */
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.3s ease;
+    border-left: 4px solid;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+}
+
+.stat-card.primary {
+    border-left-color: #3a4a87;
+}
+
+.stat-card.success {
+    border-left-color: #28a745;
+}
+
+.stat-card.warning {
+    border-left-color: #ffc107;
+}
+
+.stat-card.info {
+    border-left-color: #17a2b8;
+}
+
+/* Stat Icons */
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+}
+
+.stat-card.primary .stat-icon {
+    background: #3a4a87;
+}
+
+.stat-card.success .stat-icon {
+    background: #28a745;
+}
+
+.stat-card.warning .stat-icon {
+    background: #ffc107;
+    color: #212529;
+}
+
+.stat-card.info .stat-icon {
+    background: #17a2b8;
+}
+
+/* Stat Content */
+.stat-content h3 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    color: #2c3e50;
+}
+
+.stat-label {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin: 0;
+    font-weight: 500;
+}
+
+.stat-trend {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.8rem;
+    color: #28a745;
+    margin-top: 0.25rem;
+}
+
+/* Search and Filter Bar */
+.search-filter-bar {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 1.5rem;
+}
+
+.search-container .input-group {
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* Report Cards */
+.report-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.report-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+/* Report Header */
+.report-header {
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: white;
+    position: relative;
+}
+
+.report-header.primary {
+    background: #3a4a87;
+}
+
+.report-header.success {
+    background: #28a745;
+}
+
+.report-header.warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+.report-header.danger {
+    background: #dc3545;
+}
+
+.report-header.info {
+    background: #17a2b8;
+}
+
+.report-header.secondary {
+    background: #6c757d;
+}
+
+/* Report Icon */
+.report-icon {
+    font-size: 2rem;
+}
+
+.report-actions {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+}
+
+/* Favorite Button */
+.favorite-btn {
+    opacity: 0.7;
+    transition: all 0.3s ease;
+}
+
+.favorite-btn:hover,
+.favorite-btn.active {
+    opacity: 1;
+    background: rgba(255,255,255,0.2) !important;
+    color: #ff6b6b !important;
+}
+
+/* Report Body */
+.report-body {
+    padding: 1.5rem;
+    flex-grow: 1;
+}
+
+.report-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #2c3e50;
+}
+
+.report-description {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    line-height: 1.4;
+}
+
+/* Report Meta */
+.report-meta {
+    margin-top: auto;
+}
+
+.usage-bar {
+    height: 4px;
+    background: #e9ecef;
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.usage-fill {
+    height: 100%;
+    background: #28a745;
+    transition: width 0.3s ease;
+}
+
+/* Report Footer */
+.report-footer {
+    padding: 1rem 1.5rem;
+    background: #f8f9fa;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Personal Dashboard Sidebar */
+.personal-dashboard .card {
+    border: 1px solid #e9ecef;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.personal-dashboard .card-header {
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .dashboard-header {
+        text-align: center;
+        padding: 1.5rem;
+    }
+
+    .dashboard-title {
+        font-size: 1.8rem;
+    }
+
+    .filter-container {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+    }
+
+    .filter-container > * {
+        width: 100% !important;
+    }
+
+    .search-filter-bar {
+        padding: 1rem;
+    }
+
+    .stat-card {
+        margin-bottom: 1rem;
+    }
+
+    .report-card {
+        margin-bottom: 1.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .dashboard-header .d-flex {
+        flex-direction: column !important;
+        gap: 1rem;
+    }
+
+    .report-footer {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .report-footer .btn {
+        width: 100%;
+    }
+}
