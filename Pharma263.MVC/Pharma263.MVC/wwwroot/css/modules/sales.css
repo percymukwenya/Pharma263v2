@@ -1,0 +1,66 @@
+/* Sales Module
+ * Styles specific to sales-related views
+ * AddSale.cshtml, EditSale.cshtml, etc.
+ */
+
+/* Sales Item Table */
+.sales-items-table {
+    border: 1px solid #ddd;
+}
+
+.sales-items-table thead {
+    background-color: #f8f9fa;
+}
+
+.sales-items-table td {
+    vertical-align: middle;
+}
+
+/* Sales Summary */
+.sales-summary {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    margin-top: 20px;
+}
+
+.sales-summary .summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+}
+
+.sales-summary .summary-row.total {
+    font-weight: bold;
+    font-size: 1.1rem;
+    border-top: 2px solid #333;
+    padding-top: 12px;
+    margin-top: 8px;
+}
+
+/* Customer Selection */
+.customer-info-display {
+    background-color: #e7f3ff;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+
+/* Item Selection Helper */
+.item-autocomplete-result {
+    padding: 8px;
+    cursor: pointer;
+}
+
+.item-autocomplete-result:hover {
+    background-color: #f0f0f0;
+}
+
+.item-autocomplete-result .item-name {
+    font-weight: 500;
+}
+
+.item-autocomplete-result .item-details {
+    font-size: 0.875rem;
+    color: #666;
+}

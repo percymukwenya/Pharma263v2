@@ -2,65 +2,7 @@
     ViewBag.Title = "Create New Purchase";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
-
-<style type="text/css">
-    .error_msg {
-        color: #f00;
-        display: none;
-    }
-
-    .table {
-        margin-bottom: 0px;
-        width: 100%;
-    }
-
-    /* Improve responsive layout - give more room to product list */
-    .product-section {
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
-    }
-
-    .product-form {
-        width: 100%;
-        margin-bottom: 20px;
-    }
-
-    .product-list {
-        width: 100%;
-    }
-
-    /* Add % symbol to discount inputs */
-    .discount-percent-input {
-        position: relative;
-        width: 80px !important;
-    }
-
-    /* Desktop layout - more space for product table */
-    @@media (min-width: 1200px) {
-        .product-section {
-            flex-direction: row;
-            gap: 15px;
-        }
-        
-        .product-form {
-            flex: 0 0 280px;
-            margin-bottom: 0;
-        }
-
-        .product-list {
-            flex: 1;
-            min-width: 0; /* Allows flex item to shrink below content size */
-        }
-    }
-
-    /* For tablets and smaller desktops, keep stacked */
-    @@media (min-width: 992px) and (max-width: 1199px) {
-        .product-section {
-            flex-direction: column;
-        }
-    }
-</style>
+@* Inline styles moved to /css/modules/common-overrides.css, forms.css, and purchases.css *@
 <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
 

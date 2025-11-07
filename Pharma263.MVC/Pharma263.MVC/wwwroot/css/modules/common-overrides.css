@@ -1,0 +1,50 @@
+/* Common Overrides Module
+ * Shared utility styles used across multiple views
+ * Extracted from inline styles to improve caching and maintainability
+ */
+
+/* Status Badge Backgrounds */
+.bg_1 {
+    background-color: #28a745; /* Bootstrap success green */
+    color: white;
+    padding: 4px 8px;
+    border-radius: 3px;
+}
+
+.bg_2 {
+    background-color: #6c757d; /* Bootstrap secondary gray */
+    color: white;
+    padding: 4px 8px;
+    border-radius: 3px;
+}
+
+/* Error Messages */
+.error_msg {
+    color: #dc3545;
+    display: none;
+    font-size: 0.875rem;
+    margin-top: 4px;
+}
+
+/* Table Overrides */
+.table-no-margin {
+    margin-bottom: 0;
+}
+
+.table-full-width {
+    width: 100%;
+}
+
+/* Wraper override - used in multiple views */
+.wraper {
+    min-height: 700px;
+}
+
+/* Panel overrides for consistent spacing */
+.panel-body-no-padding {
+    padding: 0;
+}
+
+.panel-heading-bold {
+    font-weight: 600;
+}

@@ -135,10 +135,21 @@ builder.Services.AddWebOptimizer(pipeline =>
         "/js/reports.js"
     ).MinifyJavaScript();
 
-    // Bundle and minify CSS files
+    // Bundle and minify main CSS files
     pipeline.AddCssBundle("/css/bundle.css",
         "/css/site.css",
         "/css/site2.css"
+    ).MinifyCss();
+
+    // Bundle CSS modules for better caching and organization
+    pipeline.AddCssBundle("/css/modules-bundle.css",
+        "/css/modules/common-overrides.css",
+        "/css/modules/forms.css",
+        "/css/modules/sales.css",
+        "/css/modules/purchases.css",
+        "/css/modules/inventory.css",
+        "/css/modules/reports.css",
+        "/css/modules/customers.css"
     ).MinifyCss();
 
     // Minify individual files that aren't bundled

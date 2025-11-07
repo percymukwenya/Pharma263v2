@@ -1,0 +1,61 @@
+/* Customers Module
+ * Styles specific to customer-related views
+ * AddCustomer.cshtml, EditCustomer.cshtml, CustomerList.cshtml
+ */
+
+/* Customer Form Sections */
+.customer-form-section {
+    margin-bottom: 20px;
+}
+
+/* Customer Type Specific Fields */
+#MCAZLicenceGroup,
+#HPALicenseGroup {
+    transition: all 0.3s ease;
+}
+
+/* Customer Info Display */
+.customer-info-card {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+}
+
+.customer-detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.customer-detail-row:last-child {
+    border-bottom: none;
+}
+
+.customer-detail-label {
+    font-weight: 600;
+    color: #495057;
+}
+
+.customer-detail-value {
+    color: #6c757d;
+}
+
+/* Customer Type Badge */
+.customer-type-badge {
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.customer-type-pharmacy {
+    background-color: #e7f3ff;
+    color: #0056b3;
+}
+
+.customer-type-individual {
+    background-color: #fff3cd;
+    color: #856404;
+}
