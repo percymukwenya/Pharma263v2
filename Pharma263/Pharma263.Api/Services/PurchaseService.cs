@@ -7,6 +7,7 @@ using Pharma263.Api.Models.Purchase.Response;
 using Pharma263.Api.Shared.Contracts;
 using Pharma263.Application.Contracts.Logging;
 using Pharma263.Application.Contracts.Services;
+using Pharma263.Application.Models;
 using Pharma263.Application.Services.Printing;
 using Pharma263.Domain.Common;
 using Pharma263.Domain.Entities;

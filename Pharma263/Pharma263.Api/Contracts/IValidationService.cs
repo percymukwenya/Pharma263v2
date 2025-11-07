@@ -1,6 +1,6 @@
 using Pharma263.Api.Models.Purchase.Request;
 using Pharma263.Api.Models.Quotation.Request;
-using Pharma263.Api.Models.Return.Request;
+using Pharma263.Api.Models.Returns.Request;
 using Pharma263.Api.Models.Sales.Request;
 using Pharma263.Api.Models.Validation;
 using System.Threading.Tasks;

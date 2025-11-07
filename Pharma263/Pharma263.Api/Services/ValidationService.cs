@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Pharma263.Api.Contracts;
 using Pharma263.Api.Models.Purchase.Request;
 using Pharma263.Api.Models.Quotation.Request;
-using Pharma263.Api.Models.Return.Request;
+using Pharma263.Api.Models.Returns.Request;
 using Pharma263.Api.Models.Sales.Request;
 using Pharma263.Api.Models.Validation;
 using Pharma263.Api.Shared.Contracts;
@@ -332,7 +332,7 @@ namespace Pharma263.Api.Services
             }
 
             // Validate supplier exists
-            var supplierValidation = await ValidateSupplierExistsAsync(request.SupplierId);
+            var supplierValidation = await ValidateSupplierExistsAsync(purchase.SupplierId);
             result.Merge(supplierValidation);
 
             // Validate items
