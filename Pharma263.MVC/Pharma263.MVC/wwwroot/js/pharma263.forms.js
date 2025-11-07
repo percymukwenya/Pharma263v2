@@ -46,7 +46,7 @@ class Pharma263Forms {
         const value = $field.val().trim();
         const isRequired = $field.prop('required');
         const fieldName = $field.attr('name') || $field.attr('id') || 'Field';
-        
+
         // Clear previous validation state
         $field.removeClass('is-valid is-invalid');
         $field.siblings('.invalid-feedback').remove();
@@ -62,6 +62,11 @@ class Pharma263Forms {
 
         // Show valid state
         $field.addClass('is-valid');
+
+        // Set ARIA valid state (WCAG 3.3.1)
+        $field.attr('aria-invalid', 'false');
+        $field.removeAttr('aria-describedby');
+
         return true;
     }
 
@@ -164,13 +169,23 @@ class Pharma263Forms {
      */
     static showFieldError($field, message) {
         $field.removeClass('is-valid').addClass('is-invalid');
-        
+
+        // Set ARIA invalid state (WCAG 3.3.1)
+        $field.attr('aria-invalid', 'true');
+
         // Remove existing error message
         $field.siblings('.invalid-feedback').remove();
-        
-        // Add error message
-        const $error = $(`<div class="invalid-feedback">${message}</div>`);
+
+        // Create unique error ID for aria-describedby
+        const fieldId = $field.attr('id') || $field.attr('name');
+        const errorId = fieldId ? 'error-' + fieldId : 'error-' + Date.now();
+
+        // Add error message with ARIA attributes
+        const $error = $(`<div class="invalid-feedback" id="${errorId}" role="alert">${message}</div>`);
         $field.after($error);
+
+        // Link field to error message (WCAG 3.3.1)
+        $field.attr('aria-describedby', errorId);
     }
 
     /**
