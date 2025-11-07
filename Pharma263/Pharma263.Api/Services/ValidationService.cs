@@ -5,7 +5,6 @@ using Pharma263.Api.Models.Quotation.Request;
 using Pharma263.Api.Models.Returns.Request;
 using Pharma263.Api.Models.Sales.Request;
 using Pharma263.Api.Models.Validation;
-using Pharma263.Api.Shared.Contracts;
 using Pharma263.Application.Contracts.Logging;
 using Pharma263.Domain.Common;
 using Pharma263.Domain.Entities;
@@ -16,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace Pharma263.Api.Services
 {
-    public class ValidationService : IValidationService, IScopedInjectedService
+    public class ValidationService : IValidationService
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IAppLogger<ValidationService> _logger;

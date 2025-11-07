@@ -23,7 +23,7 @@ namespace Pharma263.MVC.Services
             // Manual mapping - simpler than AutoMapper overhead
             var lowStocks = response.LowStocks?.Select(ls => new LowStock
             {
-                MedicineName = ls.Name,
+                MedicineName = ls.MedicineName,
                 BatchNo = ls.BatchNo,
                 TotalQuantity = ls.TotalQuantity,
                 BuyingPrice = (double)ls.BuyingPrice,
@@ -52,7 +52,7 @@ namespace Pharma263.MVC.Services
             // Manual mapping - simpler than AutoMapper overhead
             var lowStocks = response.Data.LowStocks?.Select(ls => new LowStock
             {
-                MedicineName = ls.Name,
+                MedicineName = ls.MedicineName,
                 BatchNo = ls.BatchNo,
                 TotalQuantity = ls.TotalQuantity,
                 BuyingPrice = (double)ls.BuyingPrice,
