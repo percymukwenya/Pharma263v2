@@ -2,84 +2,64 @@ using Pharma263.MVC.DTOs;
 using Pharma263.MVC.Models.Calculations;
 using Pharma263.MVC.Utility;
 using System.Collections.Generic;
-using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace Pharma263.MVC.Services
 {
-    public class CalculationService : BaseService, ICalculationService
+    /// <summary>
+    /// Service for calculation operations (sales, purchases, discounts, pricing, taxes, stock validation).
+    /// Migrated from BaseService to IApiService for better performance and consistency.
+    /// </summary>
+    public class CalculationService : ICalculationService
     {
-        private readonly IHttpClientFactory _clientFactory;
-        private readonly string _baseUrl;
+        private readonly IApiService _apiService;
 
-        public CalculationService(IHttpClientFactory clientFactory, Microsoft.Extensions.Configuration.IConfiguration configuration) : base(clientFactory)
+        public CalculationService(IApiService apiService)
         {
-            _clientFactory = clientFactory;
-            _baseUrl = configuration.GetSection("ServiceUrls:PharmaApi").Value + "/api/calculation";
+            _apiService = apiService;
         }
 
         public async Task<CalculationResult> CalculateSalesTotalAsync(List<CalculationItem> items)
         {
-            var request = new ApiRequest
-            {
-                ApiType = StaticDetails.ApiType.POST,
-                Url = $"{_baseUrl}/sales-total",
-                Data = new { Items = items }
-            };
-
-            var apiResponse = await this.SendAsync<ApiResponseWrapper<CalculationResult>>(request);
-            return apiResponse?.Data ?? new CalculationResult();
+            var response = await _apiService.PostApiResponseAsync<CalculationResult>(
+                "/api/calculation/sales-total",
+                new { Items = items });
+            return response.Data ?? new CalculationResult();
         }
 
         public async Task<CalculationResult> CalculatePurchaseTotalAsync(List<CalculationItem> items)
         {
-            var request = new ApiRequest
-            {
-                ApiType = StaticDetails.ApiType.POST,
-                Url = $"{_baseUrl}/purchase-total",
-                Data = new { Items = items }
-            };
-
-            var apiResponse = await this.SendAsync<ApiResponseWrapper<CalculationResult>>(request);
-            return apiResponse?.Data ?? new CalculationResult();
+            var response = await _apiService.PostApiResponseAsync<CalculationResult>(
+                "/api/calculation/purchase-total",
+                new { Items = items });
+            return response.Data ?? new CalculationResult();
         }
 
         public async Task<DiscountResult> CalculateDiscountAsync(decimal subtotal, decimal discountPercent, decimal discountAmount, string discountType)
         {
-            var request = new ApiRequest
-            {
-                ApiType = StaticDetails.ApiType.POST,
-                Url = $"{_baseUrl}/discount",
-                Data = new
+            var response = await _apiService.PostApiResponseAsync<DiscountResult>(
+                "/api/calculation/discount",
+                new
                 {
                     Subtotal = subtotal,
                     DiscountPercent = discountPercent,
                     DiscountAmount = discountAmount,
                     DiscountType = discountType
-                }
-            };
-
-            var apiResponse = await this.SendAsync<ApiResponseWrapper<DiscountResult>>(request);
-            return apiResponse?.Data ?? new DiscountResult { IsValid = false };
+                });
+            return response.Data ?? new DiscountResult { IsValid = false };
         }
 
         public async Task<StockValidationResult> ValidateStockQuantityAsync(int stockId, int requestedQuantity, List<ExistingOrder> existingOrders)
         {
-            var request = new ApiRequest
-            {
-                ApiType = StaticDetails.ApiType.POST,
-                Url = $"{_baseUrl}/stock-validation",
-                Data = new
+            var response = await _apiService.PostApiResponseAsync<StockValidationResult>(
+                "/api/calculation/stock-validation",
+                new
                 {
                     StockId = stockId,
                     RequestedQuantity = requestedQuantity,
                     ExistingOrders = existingOrders
-                }
-            };
-
-            // API returns ApiResponse<StockValidationResult>, so we need to unwrap it
-            var apiResponse = await SendAsync<ApiResponseWrapper<StockValidationResult>>(request);
-            return apiResponse?.Data ?? new StockValidationResult
+                });
+            return response.Data ?? new StockValidationResult
             {
                 IsValid = false,
                 AvailableQuantity = 0,
@@ -89,87 +69,59 @@ namespace Pharma263.MVC.Services
             };
         }
 
-        // Helper class to match API response structure
-        private class ApiResponseWrapper<T>
-        {
-            public T Data { get; set; }
-            public bool IsSuccess { get; set; }
-            public string Message { get; set; }
-        }
-
         public async Task<PricingResult> CalculatePricingAsync(int medicineId, int? customerId, int quantity, decimal basePrice)
         {
-            var request = new ApiRequest
-            {
-                ApiType = StaticDetails.ApiType.POST,
-                Url = $"{_baseUrl}/pricing",
-                Data = new
+            var response = await _apiService.PostApiResponseAsync<PricingResult>(
+                "/api/calculation/pricing",
+                new
                 {
                     MedicineId = medicineId,
                     CustomerId = customerId,
                     Quantity = quantity,
                     BasePrice = basePrice
-                }
-            };
-
-            var apiResponse = await this.SendAsync<ApiResponseWrapper<PricingResult>>(request);
-            return apiResponse?.Data ?? new PricingResult();
+                });
+            return response.Data ?? new PricingResult();
         }
 
         public async Task<TaxResult> CalculateTaxesAsync(List<CalculationItem> items, int? customerId, string transactionType)
         {
-            var request = new ApiRequest
-            {
-                ApiType = StaticDetails.ApiType.POST,
-                Url = $"{_baseUrl}/taxes",
-                Data = new
+            var response = await _apiService.PostApiResponseAsync<TaxResult>(
+                "/api/calculation/taxes",
+                new
                 {
                     Items = items,
                     CustomerId = customerId,
                     TransactionType = transactionType
-                }
-            };
-
-            var apiResponse = await this.SendAsync<ApiResponseWrapper<TaxResult>>(request);
-            return apiResponse?.Data ?? new TaxResult();
+                });
+            return response.Data ?? new TaxResult();
         }
 
         public async Task<PharmaceuticalValidationResult> ValidatePharmaceuticalRulesAsync(List<CalculationItem> items, int? customerId, string transactionType)
         {
-            var request = new ApiRequest
-            {
-                ApiType = StaticDetails.ApiType.POST,
-                Url = $"{_baseUrl}/pharmaceutical-validation",
-                Data = new
+            var response = await _apiService.PostApiResponseAsync<PharmaceuticalValidationResult>(
+                "/api/calculation/pharmaceutical-validation",
+                new
                 {
                     Items = items,
                     CustomerId = customerId,
                     TransactionType = transactionType
-                }
-            };
-
-            var apiResponse = await this.SendAsync<ApiResponseWrapper<PharmaceuticalValidationResult>>(request);
-            return apiResponse?.Data ?? new PharmaceuticalValidationResult { IsValid = false };
+                });
+            return response.Data ?? new PharmaceuticalValidationResult { IsValid = false };
         }
 
         public async Task<ItemCalculationResult> CalculateItemTotalAsync(decimal price, int quantity, decimal discountPercent, decimal discountAmount, string discountType)
         {
-            var request = new ApiRequest
-            {
-                ApiType = StaticDetails.ApiType.POST,
-                Url = $"{_baseUrl}/item-calculation",
-                Data = new
+            var response = await _apiService.PostApiResponseAsync<ItemCalculationResult>(
+                "/api/calculation/item-calculation",
+                new
                 {
                     Price = price,
                     Quantity = quantity,
                     DiscountPercent = discountPercent,
                     DiscountAmount = discountAmount,
                     DiscountType = discountType
-                }
-            };
-
-            var apiResponse = await this.SendAsync<ApiResponseWrapper<ItemCalculationResult>>(request);
-            return apiResponse?.Data ?? new ItemCalculationResult();
+                });
+            return response.Data ?? new ItemCalculationResult();
         }
     }
 }

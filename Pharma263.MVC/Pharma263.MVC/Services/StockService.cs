@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Http;
-using Newtonsoft.Json;
 using Pharma263.Integration.Api.Common;
 using Pharma263.Integration.Api.Models.Request;
 using Pharma263.Integration.Api.Models.Response;

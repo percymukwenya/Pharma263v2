@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using Humanizer;
-using Newtonsoft.Json;
 using Pharma263.Integration.Api;
 using Pharma263.Integration.Api.Common;
 using Pharma263.Integration.Api.Models.Request;

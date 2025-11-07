@@ -20,13 +20,13 @@ namespace Pharma263.MVC.Services
     /// - Better 401/403 handling with BaseController integration
     /// - Cleaner API with GetApiResponseAsync/PostApiResponseAsync methods
     ///
-    /// This service is kept for backward compatibility with 8 existing services:
-    /// SaleStatusService, QuarantineService, ReportService, ReturnDestinationService,
-    /// ReturnReasonService, PurchaseStatusService, CustomerTypeService, CalculationService
+    /// MIGRATION STATUS: ALL services have been successfully migrated to IApiService as of Phase 3.
+    /// - Phase 2: SaleStatusService, QuarantineService, ReturnDestinationService, ReturnReasonService, PurchaseStatusService, CustomerTypeService
+    /// - Phase 3: ReportService, CalculationService
     ///
-    /// These services should be migrated to IApiService when time permits.
+    /// This service is now UNUSED and scheduled for removal in the next major version.
     /// </summary>
-    [Obsolete("Use IApiService instead. BaseService will be removed in a future version.", false)]
+    [Obsolete("Use IApiService instead. BaseService is UNUSED and will be removed in the next major version.", true)]
     public class BaseService : IBaseService
     {
         public ApiResponse responseModel { get; set; }
