@@ -9,7 +9,7 @@
         <div class="col-lg-12">
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <h3 class="panel-title"> Accounts Payable List </h3>
+                    <h2 class="panel-title"> Accounts Payable List </h2>
 
                 </div>
                 <div class="panel-body">
@@ -18,23 +18,23 @@
                             <table class="table table-hover" id="datatable">
                                 <thead>
                                     <tr>
-                                        <th>
+                                        <th scope="col">
                                             @Html.DisplayNameFor(model => model.Supplier)
                                         </th>
-                                        <th>
+                                        <th scope="col">
                                             @Html.DisplayNameFor(model => model.AmountOwed)
                                         </th>
-                                        <th>
+                                        <th scope="col">
                                             @Html.DisplayNameFor(model => model.AmountPaid)
                                         </th>
-                                        <th>
+                                        <th scope="col">
                                             @Html.DisplayNameFor(model => model.BalanceOwed)
                                         </th>
-                                        <th>
+                                        <th scope="col">
                                             @Html.DisplayNameFor(model => model.DueDate)
                                         </th>
 
-                                        <th>Action</th>
+                                        <th scope="col">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>

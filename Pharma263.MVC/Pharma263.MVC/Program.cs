@@ -10,6 +10,8 @@ using System;
 using Pharma263.Integration.Api.Extensions;
 using System.Net.Http.Headers;
 using Pharma263.MVC.Utility;
+using Microsoft.AspNetCore.ResponseCompression;
+using System.IO.Compression;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -120,7 +122,66 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-// Add response caching for improved performance
+// ===== PHASE 5: PERFORMANCE OPTIMIZATIONS =====
+
+// Add response compression (Brotli + Gzip) for 60-80% size reduction
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true; // Enable compression for HTTPS
+    options.Providers.Add<BrotliCompressionProvider>();
+    options.Providers.Add<GzipCompressionProvider>();
+    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[]
+    {
+        "application/json",
+        "text/css",
+        "text/javascript",
+        "application/javascript",
+        "text/html",
+        "text/xml",
+        "text/plain"
+    });
+});
+
+// Configure Brotli compression (better than Gzip, modern browsers)
+builder.Services.Configure<BrotliCompressionProviderOptions>(options =>
+{
+    options.Level = CompressionLevel.Optimal; // Best compression for production
+});
+
+// Configure Gzip compression (fallback for older browsers)
+builder.Services.Configure<GzipCompressionProviderOptions>(options =>
+{
+    options.Level = CompressionLevel.Optimal;
+});
+
+// Add output caching for rendered pages (replaces/enhances ResponseCaching)
+builder.Services.AddOutputCache(options =>
+{
+    // Dashboard: Cache for 5 minutes (frequently updated data)
+    options.AddPolicy("Dashboard", builder =>
+        builder.Expire(TimeSpan.FromMinutes(5))
+               .SetVaryByQuery("*")
+               .Tag("dashboard"));
+
+    // Reports: Cache for 10 minutes (less frequently updated)
+    options.AddPolicy("Reports", builder =>
+        builder.Expire(TimeSpan.FromMinutes(10))
+               .SetVaryByQuery("*")
+               .Tag("reports"));
+
+    // Static pages: Cache for 1 hour (rarely change)
+    options.AddPolicy("Static", builder =>
+        builder.Expire(TimeSpan.FromHours(1))
+               .Tag("static"));
+
+    // List pages: Cache for 2 minutes (balance between freshness and performance)
+    options.AddPolicy("Lists", builder =>
+        builder.Expire(TimeSpan.FromMinutes(2))
+               .SetVaryByQuery("*")
+               .Tag("lists"));
+});
+
+// Keep response caching for backward compatibility with [ResponseCache] attributes
 builder.Services.AddResponseCaching();
 
 // Add WebOptimizer for JS/CSS bundling and minification
@@ -177,10 +238,30 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// ===== PHASE 5: PERFORMANCE MIDDLEWARE =====
+// Order matters! Compression must be early in pipeline
+app.UseResponseCompression(); // Enable Brotli/Gzip compression (60-80% size reduction)
+
 app.UseWebOptimizer(); // Enable WebOptimizer for bundling/minification
-app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        // Cache static files for 1 year (immutable with asp-append-version)
+        const int durationInSeconds = 60 * 60 * 24 * 365; // 1 year
+        ctx.Context.Response.Headers.Append("Cache-Control", $"public,max-age={durationInSeconds}");
+    }
+});
+
 app.UseRouting();
-app.UseResponseCaching(); // Enable response caching for lookup data
+
+// Output caching for rendered pages (use before ResponseCaching)
+app.UseOutputCache();
+
+// Keep response caching for backward compatibility with [ResponseCache] attributes
+app.UseResponseCaching();
+
 app.UseCors("all");
 
 app.UseAuthentication();

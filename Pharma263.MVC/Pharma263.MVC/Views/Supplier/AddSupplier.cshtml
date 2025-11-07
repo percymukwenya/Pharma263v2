@@ -5,13 +5,13 @@
 
 <div class="wraper container-fluid">
     <div class="page-title">
-        <h3 class="title">Supplier </h3>
+        <h1 class="title">Supplier </h1>
     </div>
     <div class="row">
         <div class="col-lg-10 col-md-offset-1">
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <h3 class="panel-title">New Supplier</h3>
+                    <h2 class="panel-title">New Supplier</h2>
                 </div>
                 <div class="panel-body">
                     @using (Html.BeginForm("AddSupplier", "Supplier", FormMethod.Post, new { @class = "ajax-form", data_ajax = "true", data_validate = "true", data_ajax_options = "{\"showSuccess\": true, \"resetForm\": true, \"redirect\": \"/Supplier/Index\"}" }))

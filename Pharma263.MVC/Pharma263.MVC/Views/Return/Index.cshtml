@@ -6,7 +6,7 @@
 
 <div class="wraper container-fluid">
     <div class="page-title">
-        <h3 class="title">Returns Management</h3>
+        <h1 class="title">Returns Management</h1>
         <div class="clearfix"></div>
     </div>
     
@@ -14,9 +14,9 @@
         <div class="col-lg-12">
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <h3 class="panel-title">
+                    <h2 class="panel-title">
                         <i class="fa fa-undo"></i> Return List
-                    </h3>
+                    </h2>
                 </div>
                 <div class="panel-body">
                     @if (TempData["success"] != null)
@@ -38,15 +38,15 @@
                         <table id="returnsTable" class="table table-hover table-striped">
                             <thead>
                                 <tr>
-                                    <th>Return ID</th>
-                                    <th>Sale ID</th>
-                                    <th>Medicine</th>
-                                    <th>Quantity</th>
-                                    <th>Return Reason</th>
-                                    <th>Destination</th>
-                                    <th>Status</th>
-                                    <th>Date Returned</th>
-                                    <th>Actions</th>
+                                    <th scope="col">Return ID</th>
+                                    <th scope="col">Sale ID</th>
+                                    <th scope="col">Medicine</th>
+                                    <th scope="col">Quantity</th>
+                                    <th scope="col">Return Reason</th>
+                                    <th scope="col">Destination</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Date Returned</th>
+                                    <th scope="col">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>

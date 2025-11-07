@@ -6,7 +6,7 @@
 
 <div class="wraper container-fluid">
     <div class="page-title">
-        <h3 class="title">Sale Details - #@Model.Id</h3>
+        <h1 class="title">Sale Details - #@Model.Id</h1>
         <a href="@Url.Action("Index", "Sale")" class="btn btn-default pull-right">
             <i class="fa fa-arrow-left"></i> Back to Sales
         </a>
@@ -17,7 +17,7 @@
         <div class="col-lg-8">
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <h3 class="panel-title">Sale Information</h3>
+                    <h2 class="panel-title">Sale Information</h2>
                 </div>
                 <div class="panel-body">
                     <div class="row">
@@ -86,7 +86,7 @@
         <div class="col-lg-4">
             <div class="panel panel-info">
                 <div class="panel-heading">
-                    <h3 class="panel-title">Actions</h3>
+                    <h2 class="panel-title">Actions</h2>
                 </div>
                 <div class="panel-body">
                     <div class="btn-group-vertical btn-block" role="group">
@@ -115,7 +115,7 @@
         <div class="col-lg-12">
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <h3 class="panel-title">Sale Items</h3>
+                    <h2 class="panel-title">Sale Items</h2>
                 </div>
                 <div class="panel-body">
                     @if (Model.Items != null && Model.Items.Any())
@@ -124,11 +124,11 @@
                             <table class="table table-hover table-striped">
                                 <thead>
                                     <tr>
-                                        <th>#</th>
-                                        <th>Medicine</th>
-                                        <th>Unit Price</th>
-                                        <th>Quantity</th>
-                                        <th>Amount</th>
+                                        <th scope="col">#</th>
+                                        <th scope="col">Medicine</th>
+                                        <th scope="col">Unit Price</th>
+                                        <th scope="col">Quantity</th>
+                                        <th scope="col">Amount</th>
                                     </tr>
                                 </thead>
                                 <tbody>
