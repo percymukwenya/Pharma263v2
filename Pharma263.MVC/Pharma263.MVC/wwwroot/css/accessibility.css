@@ -1,0 +1,250 @@
+/**
+ * Accessibility Styles - WCAG 2.1 AA Compliance
+ * Ensures the application is accessible to all users
+ */
+
+/* ===== 1. FOCUS INDICATORS (WCAG 2.4.7 Focus Visible - Level AA) ===== */
+
+/* Default focus indicator for all interactive elements */
+a:focus,
+button:focus,
+input:focus,
+select:focus,
+textarea:focus,
+[tabindex]:focus {
+    outline: 2px solid #4A90E2 !important;
+    outline-offset: 2px;
+    /* Ensure focus is always visible */
+}
+
+/* Enhanced focus for navigation items */
+.navigation a:focus,
+.top-nav-right a:focus {
+    outline: 2px solid #4A90E2 !important;
+    outline-offset: 2px;
+    background-color: rgba(74, 144, 226, 0.1);
+}
+
+/* Focus for buttons */
+.btn:focus {
+    outline: 2px solid #4A90E2 !important;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.25) !important;
+}
+
+/* Focus for form controls */
+.form-control:focus {
+    outline: 2px solid #4A90E2 !important;
+    outline-offset: 0;
+    border-color: #4A90E2 !important;
+    box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.25) !important;
+}
+
+/* ===== 2. SKIP LINKS (WCAG 2.4.1 Bypass Blocks - Level A) ===== */
+
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: #000;
+    color: #fff;
+    padding: 12px 16px;
+    text-decoration: none;
+    z-index: 10000;
+    font-weight: bold;
+    border-radius: 0 0 4px 0;
+}
+
+.skip-link:focus {
+    top: 0;
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+}
+
+/* ===== 3. SCREEN READER ONLY TEXT (Utility) ===== */
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+.sr-only-focusable:active,
+.sr-only-focusable:focus {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+}
+
+/* ===== 4. HIGH CONTRAST MODE SUPPORT ===== */
+
+@media (prefers-contrast: high) {
+    a:focus,
+    button:focus,
+    input:focus,
+    select:focus,
+    textarea:focus {
+        outline: 3px solid currentColor !important;
+        outline-offset: 3px;
+    }
+}
+
+/* ===== 5. REDUCED MOTION SUPPORT (WCAG 2.3.3 Animation from Interactions) ===== */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* ===== 6. KEYBOARD NAVIGATION INDICATORS ===== */
+
+/* Indicate when user is navigating with keyboard */
+body.user-is-tabbing *:focus {
+    outline: 2px solid #4A90E2 !important;
+    outline-offset: 2px;
+}
+
+/* ===== 7. ERROR MESSAGE STYLING (WCAG 3.3.1 Error Identification) ===== */
+
+[aria-invalid="true"] {
+    border-color: #dc3545 !important;
+}
+
+[aria-invalid="true"]:focus {
+    outline: 2px solid #dc3545 !important;
+    outline-offset: 0;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+}
+
+.error_msg[role="alert"] {
+    color: #dc3545;
+    font-weight: 500;
+}
+
+/* ===== 8. FOCUS WITHIN (for composite components) ===== */
+
+.dropdown:focus-within,
+.has-submenu:focus-within {
+    background-color: rgba(74, 144, 226, 0.1);
+}
+
+/* ===== 9. TOUCH TARGET SIZE (WCAG 2.5.5 Target Size - Level AAA) ===== */
+
+/* Ensure interactive elements are at least 44x44 pixels for touch */
+@media (pointer: coarse) {
+    button,
+    a,
+    input[type="button"],
+    input[type="submit"],
+    input[type="reset"] {
+        min-height: 44px;
+        min-width: 44px;
+    }
+}
+
+/* ===== 10. CONTRAST FIXES ===== */
+
+/* Ensure sufficient contrast for links */
+a {
+    /* Inherits from site.css but ensure minimum contrast */
+}
+
+a:hover,
+a:focus {
+    text-decoration: underline;
+    /* Ensure underline is visible */
+}
+
+/* ===== 11. LIVE REGION STYLING ===== */
+
+#screen-reader-announcements {
+    /* Already hidden with sr-only class */
+    /* This is for screen readers only */
+}
+
+/* ===== 12. FOCUS TRAP FOR MODALS ===== */
+
+.modal-open {
+    /* Prevent background scroll when modal is open */
+    overflow: hidden;
+}
+
+.modal[aria-hidden="false"] {
+    display: block;
+}
+
+.modal[aria-hidden="true"] {
+    display: none;
+}
+
+/* ===== 13. ACCESSIBLE DATA TABLES ===== */
+
+table caption {
+    padding: 10px;
+    font-weight: bold;
+    text-align: left;
+    font-size: 1.1em;
+}
+
+th[scope="col"],
+th[scope="row"] {
+    font-weight: bold;
+}
+
+/* ===== 14. FORM FIELD REQUIRED INDICATOR ===== */
+
+.required-field::after {
+    content: " *";
+    color: #dc3545;
+    font-weight: bold;
+}
+
+/* Also show required visually for screen reader users */
+[required] + label::after,
+[aria-required="true"] + label::after {
+    content: " (required)";
+    color: #6c757d;
+    font-size: 0.875em;
+}
+
+/* ===== 15. PRINT STYLES (Accessibility for print) ===== */
+
+@media print {
+    .skip-link,
+    .navigation,
+    .top-nav-right,
+    footer {
+        display: none;
+    }
+
+    a[href]::after {
+        content: " (" attr(href) ")";
+    }
+
+    main {
+        margin: 0;
+        padding: 0;
+    }
+}
+
+/* ===== 16. DARK MODE SUPPORT (User Preference) ===== */
+
+@media (prefers-color-scheme: dark) {
+    /* Future: Add dark mode styles for better accessibility */
+    /* This is a placeholder for future dark mode implementation */
+}

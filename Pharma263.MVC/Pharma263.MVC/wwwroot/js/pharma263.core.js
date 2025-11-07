@@ -215,6 +215,17 @@ class Pharma263Core {
                 errorElement: 'div',
                 errorPlacement: function(error, element) {
                     error.addClass('invalid-feedback');
+
+                    // Add role="alert" for screen readers (WCAG 4.1.3)
+                    error.attr('role', 'alert');
+
+                    // Create unique error ID for aria-describedby
+                    const elementId = element.attr('id') || element.attr('name');
+                    if (elementId) {
+                        const errorId = 'error-' + elementId;
+                        error.attr('id', errorId);
+                    }
+
                     if (element.parent('.input-group').length) {
                         error.insertAfter(element.parent());
                     } else {
@@ -222,13 +233,37 @@ class Pharma263Core {
                     }
                 },
                 highlight: function(element) {
-                    $(element).removeClass('is-valid').addClass('is-invalid');
+                    const $element = $(element);
+                    $element.removeClass('is-valid').addClass('is-invalid');
+
+                    // Add ARIA invalid state (WCAG 3.3.1)
+                    $element.attr('aria-invalid', 'true');
+
+                    // Link to error message with aria-describedby
+                    const elementId = $element.attr('id') || $element.attr('name');
+                    if (elementId) {
+                        const errorId = 'error-' + elementId;
+                        $element.attr('aria-describedby', errorId);
+                    }
                 },
                 unhighlight: function(element) {
-                    $(element).removeClass('is-invalid').addClass('is-valid');
+                    const $element = $(element);
+                    $element.removeClass('is-invalid').addClass('is-valid');
+
+                    // Remove ARIA invalid state (WCAG 3.3.1)
+                    $element.attr('aria-invalid', 'false');
+
+                    // Remove aria-describedby when valid
+                    $element.removeAttr('aria-describedby');
                 },
                 success: function(label, element) {
-                    $(element).removeClass('is-invalid').addClass('is-valid');
+                    const $element = $(element);
+                    $element.removeClass('is-invalid').addClass('is-valid');
+
+                    // Remove ARIA invalid state (WCAG 3.3.1)
+                    $element.attr('aria-invalid', 'false');
+                    $element.removeAttr('aria-describedby');
+
                     $(label).remove();
                 }
             });
@@ -625,6 +660,24 @@ class Pharma263Core {
         } else {
             // Fallback to browser alert if toastr is not available
             alert(`${type.toUpperCase()}: ${message}`);
+        }
+
+        // Announce to screen readers (WCAG 4.1.3 Status Messages)
+        this.announceToScreenReader(message);
+    }
+
+    /**
+     * Announce message to screen readers via live region
+     */
+    announceToScreenReader(message) {
+        const announcer = document.getElementById('screen-reader-announcements');
+        if (announcer) {
+            // Clear previous message
+            announcer.textContent = '';
+            // Set new message (triggers screen reader announcement)
+            setTimeout(() => {
+                announcer.textContent = message;
+            }, 100);
         }
     }
 
