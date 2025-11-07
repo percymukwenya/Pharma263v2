@@ -1,6 +1,4 @@
-﻿using AutoMapper;
 using Humanizer;
-using Newtonsoft.Json;
 using Pharma263.Integration.Api;
 using Pharma263.Integration.Api.Common;
 using Pharma263.Integration.Api.Models.Request;
@@ -17,13 +15,11 @@ namespace Pharma263.MVC.Services
     public class AuthService : IAuthService
     {
         private readonly IPharmaApiService _pharmaApiService;
-        private readonly IMapper _mapper;
         private readonly IApiService _apiService;
 
-        public AuthService(IPharmaApiService pharmaApiService, IMapper mapper, IApiService apiService)
+        public AuthService(IPharmaApiService pharmaApiService, IApiService apiService)
         {
             _pharmaApiService = pharmaApiService;
-            _mapper = mapper;
             _apiService = apiService;
         }
 
@@ -48,10 +44,14 @@ namespace Pharma263.MVC.Services
 
         public async Task ForgotPassword(ForgotPasswordDto model)
         {
-            var obj = _mapper.Map<ForgotPasswordRequest>(model);
+            // Manual mapping - single property, no AutoMapper overhead needed
+            var obj = new ForgotPasswordRequest
+            {
+                Email = model.Email
+            };
 
             await _pharmaApiService.ForgotPassword(obj);
-        }        
+        }
 
         public Task<string> Register(RegisterDto model)
         {
@@ -60,7 +60,14 @@ namespace Pharma263.MVC.Services
 
         public async Task<bool> ResetPassword(ResetPasswordDto model)
         {
-            var obj = _mapper.Map<ResetPasswordRequest>(model);
+            // Manual mapping - identical properties, no AutoMapper overhead needed
+            var obj = new ResetPasswordRequest
+            {
+                Email = model.Email,
+                Token = model.Token,
+                Password = model.Password,
+                ConfirmPassword = model.ConfirmPassword
+            };
 
             var response = await _pharmaApiService.ResetPassword(obj);
 

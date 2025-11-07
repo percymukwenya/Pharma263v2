@@ -1,5 +1,3 @@
-﻿using AutoMapper;
-using Newtonsoft.Json;
 using Pharma263.Integration.Api;
 using Pharma263.Integration.Api.Common;
 using Pharma263.Integration.Api.Models;
@@ -18,13 +16,11 @@ namespace Pharma263.MVC.Services
     {
         private readonly IApiService _apiService;
         private readonly IPharmaApiService _pharmaApiService;
-        private readonly IMapper _mapper;
 
-        public QuotationService(IApiService apiService, IPharmaApiService pharmaApiService, IMapper mapper)
+        public QuotationService(IApiService apiService, IPharmaApiService pharmaApiService)
         {
             _apiService = apiService;
             _pharmaApiService = pharmaApiService;
-            _mapper = mapper;
         }
 
         public async Task<ApiResponse<List<QuotationDto>>> GetQuotations()

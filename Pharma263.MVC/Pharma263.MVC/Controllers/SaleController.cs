@@ -1,4 +1,3 @@
-﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Pharma263.MVC.DTOs.Sales;
@@ -10,12 +9,10 @@ namespace Pharma263.MVC.Controllers
 {
     public class SaleController : BaseController
     {
-        private readonly IMapper _mapper;
         private readonly ISaleService _saleService;
 
-        public SaleController(IMapper mapper, ISaleService saleService)
+        public SaleController(ISaleService saleService)
         {
-            _mapper = mapper;
             _saleService = saleService;
         }
 

@@ -1,8 +1,8 @@
-﻿using AutoMapper;
 using Pharma263.Integration.Api;
 using Pharma263.MVC.Models;
 using Pharma263.MVC.Services.IService;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Pharma263.MVC.Services
@@ -10,19 +10,25 @@ namespace Pharma263.MVC.Services
     public class DashboardService : IDashboardService
     {
         private readonly IPharmaApiService _pharmaApiService;
-        private readonly IMapper _mapper;
 
-        public DashboardService(IPharmaApiService pharmaApiService, IMapper mapper)
+        public DashboardService(IPharmaApiService pharmaApiService)
         {
             _pharmaApiService = pharmaApiService;
-            _mapper = mapper;
         }
 
         public async Task<DashboardViewModel> GetDashboardAsync(string token)
         {
             var response = await _pharmaApiService.GetDashboard(token);
 
-            var lowStocks = _mapper.Map<List<LowStock>>(response.LowStocks);
+            // Manual mapping - simpler than AutoMapper overhead
+            var lowStocks = response.LowStocks?.Select(ls => new LowStock
+            {
+                MedicineName = ls.Name,
+                BatchNo = ls.BatchNo,
+                TotalQuantity = ls.TotalQuantity,
+                BuyingPrice = (double)ls.BuyingPrice,
+                SellingPrice = (double)ls.SellingPrice
+            }).ToList() ?? new List<LowStock>();
 
             return new DashboardViewModel
             {
@@ -43,7 +49,15 @@ namespace Pharma263.MVC.Services
         {
             var response = await _pharmaApiService.GetDashboardWithTrends(token, days);
 
-            var lowStocks = _mapper.Map<List<LowStock>>(response.Data.LowStocks);
+            // Manual mapping - simpler than AutoMapper overhead
+            var lowStocks = response.Data.LowStocks?.Select(ls => new LowStock
+            {
+                MedicineName = ls.Name,
+                BatchNo = ls.BatchNo,
+                TotalQuantity = ls.TotalQuantity,
+                BuyingPrice = (double)ls.BuyingPrice,
+                SellingPrice = (double)ls.SellingPrice
+            }).ToList() ?? new List<LowStock>();
 
             return new DashboardViewModel
             {
@@ -57,7 +71,7 @@ namespace Pharma263.MVC.Services
                 Sales = response.Data.DashboardCounts.TotalSales,
                 TotalSales = response.Data.DashboardCounts.TotalSalesAmount,
                 LowStocks = lowStocks,
-                
+
                 // Add trend data
                 SalesPercentageChange = response.Data.DashboardCounts.SalesPercentageChange,
                 PurchasesPercentageChange = response.Data.DashboardCounts.PurchasesPercentageChange,
@@ -65,7 +79,7 @@ namespace Pharma263.MVC.Services
                 SuppliersPercentageChange = response.Data.DashboardCounts.SuppliersPercentageChange,
                 StockPercentageChange = response.Data.DashboardCounts.StockPercentageChange,
                 MedicinesPercentageChange = response.Data.DashboardCounts.MedicinesPercentageChange,
-                
+
                 SalesTrend = response.Data.DashboardCounts.SalesTrend,
                 PurchasesTrend = response.Data.DashboardCounts.PurchasesTrend,
                 CustomersTrend = response.Data.DashboardCounts.CustomersTrend,
