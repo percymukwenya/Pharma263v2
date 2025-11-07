@@ -1,4 +1,3 @@
-﻿using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Pharma263.MVC.DTOs.User;
@@ -12,12 +11,10 @@ namespace Pharma263.MVC.Controllers
     [Authorize] // Require authentication for all role management
     public class RoleController : BaseController
     {
-        private readonly IMapper _mapper;
         private readonly IRoleService _roleService;
 
-        public RoleController(IMapper mapper, IRoleService roleService)
+        public RoleController(IRoleService roleService)
         {
-            _mapper = mapper;
             _roleService = roleService;
         }
 

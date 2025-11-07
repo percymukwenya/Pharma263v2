@@ -1,4 +1,3 @@
-﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Pharma263.Integration.Api.Models.Request;
 using Pharma263.MVC.DTOs.Purchases;
@@ -10,12 +9,10 @@ namespace Pharma263.MVC.Controllers
     public class PurchaseController : BaseController
     {
         private readonly IPurchaseService _purchaseService;
-        private readonly IMapper _mapper;
 
-        public PurchaseController(IPurchaseService purchaseService, IMapper mapper)
+        public PurchaseController(IPurchaseService purchaseService)
         {
             _purchaseService = purchaseService;
-            _mapper = mapper;
         }
 
         public async Task<ActionResult> Index()
@@ -57,7 +54,6 @@ namespace Pharma263.MVC.Controllers
 
             if (purchase != null)
             {
-                var purchaseToUpdate = _mapper.Map<PurchaseDetailsDto>(purchase.Data);
 
                 return View(model: purchaseId);
             }

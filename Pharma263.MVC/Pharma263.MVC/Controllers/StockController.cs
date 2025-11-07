@@ -1,4 +1,3 @@
-﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Pharma263.Integration.Api.Models.Request;
@@ -18,12 +17,10 @@ namespace Pharma263.MVC.Controllers
     public class StockController : BaseController
     {
         private readonly IStockService _stockService;
-        private readonly IMapper _mapper;
 
-        public StockController(IStockService stockService, IMapper mapper)
+        public StockController(IStockService stockService)
         {
             _stockService = stockService;
-            _mapper = mapper;
         }
 
         public ActionResult Index()

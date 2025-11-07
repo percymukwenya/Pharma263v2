@@ -1,4 +1,3 @@
-﻿using AutoMapper;
 using Pharma263.Integration.Api;
 using Pharma263.Integration.Api.Common;
 using Pharma263.Integration.Api.Models;

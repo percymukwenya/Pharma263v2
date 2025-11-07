@@ -1,4 +1,3 @@
-﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -19,16 +18,14 @@ namespace Pharma263.MVC.Controllers
         private readonly ISupplierService _supplierService;
         private readonly IStockService _stockService;
         private readonly ISelectionsService _selectionsService;
-        private readonly IMapper _mapper;
 
         public MedicineController(IMedicineService medicineService, ISupplierService supplierService,
-            IStockService stockService, ISelectionsService selectionsService, IMapper mapper)
+            IStockService stockService, ISelectionsService selectionsService)
         {
             _medicineService = medicineService;
             _supplierService = supplierService;
             _stockService = stockService;
             _selectionsService = selectionsService;
-            _mapper = mapper;
         }
 
         public ActionResult Index()

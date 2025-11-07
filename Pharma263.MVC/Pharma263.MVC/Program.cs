@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Pharma263.MVC.MappingProfiles;
 using Pharma263.MVC.Middleware;
 using Pharma263.MVC.Services;
 using Pharma263.MVC.Services.IService;
@@ -15,8 +14,6 @@ using Pharma263.MVC.Utility;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
-builder.Services.AddAutoMapper(typeof(MappingConfig));
 builder.Services.AddControllersWithViews()
     .AddJsonOptions(options =>
     {
