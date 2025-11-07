@@ -9,13 +9,13 @@
 
 <div class="wraper container-fluid">
     <div class="page-title">
-        <h3 class="title">Medicine </h3>
+        <h1 class="title">Medicine </h1>
     </div>
     <div class="row">
         <div class="col-lg-10 col-md-offset-1">
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <h3 class="panel-title">Update Medicine</h3>
+                    <h2 class="panel-title">Update Medicine</h2>
                 </div>
                 <div class="panel-body">
                     @using (Html.BeginForm("EditMedicine", "Medicine", FormMethod.Post, new { @class = "ajax-form", data_ajax = "true", data_validate = "true", data_ajax_options = "{\"showSuccess\": true, \"redirect\": \"/Medicine/Index\"}" }))

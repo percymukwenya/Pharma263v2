@@ -5,7 +5,7 @@
 
 <div class="wraper container-fluid">
     <div class="page-title">
-        <h3 class="title">Accounting Dashboard</h3>
+        <h1 class="title">Accounting Dashboard</h1>
         <div class="pull-right">
             <div class="btn-group">
                 <a href="@Url.Action("Index", "AccountsReceivable")" class="btn btn-primary btn-sm">
@@ -24,9 +24,9 @@
         <div class="col-md-3">
             <div class="panel panel-primary">
                 <div class="panel-heading">
-                    <h3 class="panel-title">
+                    <h2 class="panel-title">
                         <i class="fa fa-money"></i> Total A/R
-                    </h3>
+                    </h2>
                 </div>
                 <div class="panel-body text-center">
                     <h3 id="totalAccountsReceivable" class="text-primary">
@@ -38,9 +38,9 @@
         <div class="col-md-3">
             <div class="panel panel-info">
                 <div class="panel-heading">
-                    <h3 class="panel-title">
+                    <h2 class="panel-title">
                         <i class="fa fa-credit-card"></i> Total A/P
-                    </h3>
+                    </h2>
                 </div>
                 <div class="panel-body text-center">
                     <h3 id="totalAccountsPayable" class="text-info">
@@ -52,9 +52,9 @@
         <div class="col-md-3">
             <div class="panel panel-warning">
                 <div class="panel-heading">
-                    <h3 class="panel-title">
+                    <h2 class="panel-title">
                         <i class="fa fa-exclamation-triangle"></i> Past Due A/R
-                    </h3>
+                    </h2>
                 </div>
                 <div class="panel-body text-center">
                     <h3 id="pastDueReceivables" class="text-warning">
@@ -66,9 +66,9 @@
         <div class="col-md-3">
             <div class="panel panel-danger">
                 <div class="panel-heading">
-                    <h3 class="panel-title">
+                    <h2 class="panel-title">
                         <i class="fa fa-warning"></i> Past Due A/P
-                    </h3>
+                    </h2>
                 </div>
                 <div class="panel-body text-center">
                     <h3 id="pastDuePayables" class="text-danger">
@@ -84,9 +84,9 @@
         <div class="col-md-12">
             <div class="panel panel-info">
                 <div class="panel-heading">
-                    <h3 class="panel-title">
+                    <h2 class="panel-title">
                         <i class="fa fa-bolt"></i> Quick Actions
-                    </h3>
+                    </h2>
                 </div>
                 <div class="panel-body">
                     <div class="row">
@@ -121,9 +121,9 @@
         <div class="col-md-6">
             <div class="panel panel-warning">
                 <div class="panel-heading">
-                    <h3 class="panel-title">
+                    <h2 class="panel-title">
                         <i class="fa fa-exclamation-triangle"></i> Top 10 Past Due Receivables
-                    </h3>
+                    </h2>
                     <div class="pull-right">
                         <a href="@Url.Action("Index", "AccountsReceivable")" class="btn btn-xs btn-default">
                             <i class="fa fa-external-link"></i> View All
@@ -157,9 +157,9 @@
         <div class="col-md-6">
             <div class="panel panel-danger">
                 <div class="panel-heading">
-                    <h3 class="panel-title">
+                    <h2 class="panel-title">
                         <i class="fa fa-warning"></i> Top 10 Past Due Payables
-                    </h3>
+                    </h2>
                     <div class="pull-right">
                         <a href="@Url.Action("Index", "AccountsPayable")" class="btn btn-xs btn-default">
                             <i class="fa fa-external-link"></i> View All
@@ -197,9 +197,9 @@
         <div class="col-md-12">
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <h3 class="panel-title">
+                    <h2 class="panel-title">
                         <i class="fa fa-calendar"></i> A/R Aging Summary
-                    </h3>
+                    </h2>
                     <div class="pull-right">
                         <button class="btn btn-xs btn-default" type="button" data-toggle="collapse" data-target="#agingReportCollapse" aria-expanded="false">
                             <i class="fa fa-chevron-down"></i> Show/Hide
@@ -244,7 +244,7 @@
         <div class="col-md-6">
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <h3 class="panel-title">Payments Received (Last 30 Days)</h3>
+                    <h2 class="panel-title">Payments Received (Last 30 Days)</h2>
                 </div>
                 <div class="panel-body">
                     <canvas id="paymentsReceivedChart" height="250"></canvas>
@@ -254,7 +254,7 @@
         <div class="col-md-6">
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <h3 class="panel-title">Payments Made (Last 30 Days)</h3>
+                    <h2 class="panel-title">Payments Made (Last 30 Days)</h2>
                 </div>
                 <div class="panel-body">
                     <canvas id="paymentsMadeChart" height="250"></canvas>

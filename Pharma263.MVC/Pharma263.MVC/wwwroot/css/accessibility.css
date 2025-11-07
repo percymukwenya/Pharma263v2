@@ -242,7 +242,40 @@ th[scope="row"] {
     }
 }
 
-/* ===== 16. DARK MODE SUPPORT (User Preference) ===== */
+/* ===== 16. HEADING HIERARCHY FIX (WCAG 1.3.1, 2.4.6) ===== */
+
+/* After changing H3 page titles to H1 and H3 panel titles to H2 for proper
+   semantic structure, we maintain the original visual styling to avoid UI changes */
+
+h1.title {
+    /* Page title - maintain H3-like appearance */
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    line-height: 1.3;
+    color: #333;
+}
+
+h2.panel-title {
+    /* Panel headers - maintain H3-like appearance */
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+    line-height: 1.4;
+    color: #333;
+}
+
+/* Ensure heading hierarchy styles don't break existing panel layouts */
+.panel-heading h2.panel-title {
+    margin: 0;
+    padding: 0;
+}
+
+.page-title h1.title {
+    margin: 0 0 15px 0;
+}
+
+/* ===== 17. DARK MODE SUPPORT (User Preference) ===== */
 
 @media (prefers-color-scheme: dark) {
     /* Future: Add dark mode styles for better accessibility */
