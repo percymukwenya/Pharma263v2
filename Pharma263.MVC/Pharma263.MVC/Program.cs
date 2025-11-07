@@ -126,12 +126,21 @@ builder.Services.AddResponseCaching();
 // Add WebOptimizer for JS/CSS bundling and minification
 builder.Services.AddWebOptimizer(pipeline =>
 {
-    // Bundle and minify JavaScript files
-    pipeline.AddJavaScriptBundle("/js/bundle.js",
+    // Core JavaScript bundle - Loaded on all pages
+    pipeline.AddJavaScriptBundle("/js/core-bundle.js",
         "/js/pharma263.core.js",
-        "/js/pharma263.forms.js",
-        "/js/pharma263.calculations.js",
         "/js/utility.js",
+        "/js/navigation.js"
+    ).MinifyJavaScript();
+
+    // Forms JavaScript bundle - For sales, purchase, quotation pages
+    pipeline.AddJavaScriptBundle("/js/forms-bundle.js",
+        "/js/pharma263.forms.js",
+        "/js/pharma263.calculations.js"
+    ).MinifyJavaScript();
+
+    // Reports JavaScript bundle - For report pages
+    pipeline.AddJavaScriptBundle("/js/reports-bundle.js",
         "/js/reports.js"
     ).MinifyJavaScript();
 
