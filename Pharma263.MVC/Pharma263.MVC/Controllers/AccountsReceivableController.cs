@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Pharma263.MVC.Controllers
 {
-    public class AccountsReceivableController : Controller
+    public class AccountsReceivableController : BaseController
     {
         private readonly IAccountsReceivableService _accountsReceivableService;
         private readonly IPaymentReceivedService _paymentReceivedService;

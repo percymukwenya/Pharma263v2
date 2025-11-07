@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Pharma263.MVC.Controllers
 {
-    public class QuarantineController : Controller
+    public class QuarantineController : BaseController
     {
         private readonly IQuarantineService _quarantineService;
 

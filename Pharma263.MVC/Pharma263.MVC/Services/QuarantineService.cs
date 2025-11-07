@@ -1,30 +1,29 @@
-﻿using Microsoft.Extensions.Configuration;
-using Pharma263.MVC.DTOs;
+using Pharma263.Integration.Api.Common;
 using Pharma263.MVC.Services.IService;
 using Pharma263.MVC.Utility;
-using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace Pharma263.MVC.Services
 {
-    public class QuarantineService : BaseService, IQuarantineService
+    /// <summary>
+    /// Service for fetching quarantine stock data.
+    /// Migrated from BaseService to IApiService for better performance and consistency.
+    /// </summary>
+    public class QuarantineService : IQuarantineService
     {
-        private readonly IHttpClientFactory _clientFactory;
-        private string pharmaUrl;
-        public QuarantineService(IHttpClientFactory clientFactory, IConfiguration configuration) : base(clientFactory)
+        private readonly IApiService _apiService;
+
+        public QuarantineService(IApiService apiService)
         {
-            _clientFactory = clientFactory;
-            pharmaUrl = configuration.GetValue<string>("ServiceUrls:PharmaApi");
+            _apiService = apiService;
         }
 
-        public Task<T> GetAllAsync<T>(string token)
+        public async Task<T> GetAllAsync<T>(string token)
         {
-            return SendAsync<T>(new ApiRequest()
-            {
-                ApiType = StaticDetails.ApiType.GET,
-                Url = pharmaUrl + "/api/QuarantineStock/GetQuarantineStockList",
-                Token = token
-            });
+            // Note: Token parameter kept for interface compatibility but not used
+            // IApiService automatically injects token via ITokenService
+            var response = await _apiService.GetApiResponseAsync<T>("/api/QuarantineStock/GetQuarantineStockList");
+            return response.Data;
         }
     }
 }

@@ -11,6 +11,22 @@ using Newtonsoft.Json;
 
 namespace Pharma263.MVC.Services
 {
+    /// <summary>
+    /// [DEPRECATED] Legacy HTTP client service using Newtonsoft.Json and manual token passing.
+    ///
+    /// MIGRATION NOTE: Please use IApiService (ApiService.cs) for new code instead:
+    /// - Uses modern System.Text.Json
+    /// - Automatic token injection via ITokenService
+    /// - Better 401/403 handling with BaseController integration
+    /// - Cleaner API with GetApiResponseAsync/PostApiResponseAsync methods
+    ///
+    /// This service is kept for backward compatibility with 8 existing services:
+    /// SaleStatusService, QuarantineService, ReportService, ReturnDestinationService,
+    /// ReturnReasonService, PurchaseStatusService, CustomerTypeService, CalculationService
+    ///
+    /// These services should be migrated to IApiService when time permits.
+    /// </summary>
+    [Obsolete("Use IApiService instead. BaseService will be removed in a future version.", false)]
     public class BaseService : IBaseService
     {
         public ApiResponse responseModel { get; set; }

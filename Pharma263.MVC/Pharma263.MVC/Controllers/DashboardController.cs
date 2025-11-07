@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Pharma263.MVC.Controllers
 {
-    public class DashboardController : Controller
+    public class DashboardController : BaseController
     {
         private readonly IDashboardService _dashboardService;
         private readonly IAccountsReceivableService _accountsReceivableService;

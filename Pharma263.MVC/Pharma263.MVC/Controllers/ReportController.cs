@@ -16,7 +16,7 @@ using System.Threading.Tasks;
 
 namespace Pharma263.MVC.Controllers
 {
-    public class ReportController : Controller
+    public class ReportController : BaseController
     {
         private readonly IReportService _reportService;
         private readonly ICustomerService _customerService;

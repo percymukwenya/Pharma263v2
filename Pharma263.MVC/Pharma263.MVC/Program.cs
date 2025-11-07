@@ -18,9 +18,12 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddAutoMapper(typeof(MappingConfig));
 builder.Services.AddControllersWithViews()
-    .AddNewtonsoftJson(options =>
+    .AddJsonOptions(options =>
     {
-        options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+        // Use System.Text.Json instead of Newtonsoft.Json for better performance
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
     });
 
 builder.Services.AddHttpClient("PharmaApiClient", client =>
@@ -115,9 +118,35 @@ builder.Services.AddDistributedMemoryCache();
 
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.IdleTimeout = TimeSpan.FromMinutes(90); // Aligned with cookie auth timeout
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
+});
+
+// Add response caching for improved performance
+builder.Services.AddResponseCaching();
+
+// Add WebOptimizer for JS/CSS bundling and minification
+builder.Services.AddWebOptimizer(pipeline =>
+{
+    // Bundle and minify JavaScript files
+    pipeline.AddJavaScriptBundle("/js/bundle.js",
+        "/js/pharma263.core.js",
+        "/js/pharma263.forms.js",
+        "/js/pharma263.calculations.js",
+        "/js/utility.js",
+        "/js/reports.js"
+    ).MinifyJavaScript();
+
+    // Bundle and minify CSS files
+    pipeline.AddCssBundle("/css/bundle.css",
+        "/css/site.css",
+        "/css/site2.css"
+    ).MinifyCss();
+
+    // Minify individual files that aren't bundled
+    pipeline.MinifyJsFiles("/js/**/*.js");
+    pipeline.MinifyCssFiles("/css/**/*.css");
 });
 
 var app = builder.Build();
@@ -131,8 +160,10 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseWebOptimizer(); // Enable WebOptimizer for bundling/minification
 app.UseStaticFiles();
 app.UseRouting();
+app.UseResponseCaching(); // Enable response caching for lookup data
 app.UseCors("all");
 
 app.UseAuthentication();

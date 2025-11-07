@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Pharma263.MVC.Controllers
 {
-    public class PurchaseController : Controller
+    public class PurchaseController : BaseController
     {
         private readonly IPurchaseService _purchaseService;
         private readonly IMapper _mapper;

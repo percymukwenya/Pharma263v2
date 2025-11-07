@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace Pharma263.MVC.Controllers
 {
     [Authorize] // Require authentication for all role management
-    public class RoleController : Controller
+    public class RoleController : BaseController
     {
         private readonly IMapper _mapper;
         private readonly IRoleService _roleService;

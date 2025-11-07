@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace Pharma263.MVC.Controllers
 {
-    public class MedicineController : Controller
+    public class MedicineController : BaseController
     {
         private readonly IMedicineService _medicineService;
         private readonly ISupplierService _supplierService;

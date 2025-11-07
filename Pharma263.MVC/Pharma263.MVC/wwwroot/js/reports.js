@@ -113,16 +113,15 @@ class ReportManager {
 
         } catch (error) {
             console.error(`Error loading report ${reportId}:`, error);
-            
+
             let errorMessage = 'Unable to load report data. Please try again.';
             if (error.name === 'AbortError') {
                 errorMessage = 'Request timed out. Please try again.';
-            } else if (error.message.includes('401') || error.message.includes('403')) {
-                errorMessage = 'Session expired. Please refresh the page and try again.';
             } else if (error.message.includes('500')) {
                 errorMessage = 'Server error. Please contact support if this persists.';
             }
-            
+            // Note: 401/403 errors are handled by global ajaxError handler in pharma263.core.js
+
             this.showError(reportId, errorMessage);
             throw error;
         }
