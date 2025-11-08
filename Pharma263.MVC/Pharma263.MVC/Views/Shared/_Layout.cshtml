@@ -130,28 +130,44 @@
 
     <!-- Modern jQuery and core libraries -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
-    <script src="~/Scripts/jquery.validate.min.js"></script>
-    <script src="~/Scripts/jquery.validate.unobtrusive.min.js"></script>
-    
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" defer></script>
+    <script src="~/Scripts/jquery.validate.min.js" defer></script>
+    <script src="~/Scripts/jquery.validate.unobtrusive.min.js" defer></script>
+
     <!-- Bootstrap JavaScript for dropdown functionality -->
     <script src="~/Content/adminFront/assets/js/bootstrap.min.js"></script>
-    
-    <!-- DataTables -->
-    <script src="~/Content/adminFront/assets/plugins/datatables/jquery.dataTables.min.js"></script>
-    <script src="~/Content/adminFront/assets/plugins/datatables/dataTables.bootstrap.js"></script>
-    
-    <!-- Optional plugins -->
-    <script src="~/Content/adminFront/assets/js/jquery.nicescroll.js"></script>
-    
+
+    <!-- DataTables - Loaded on demand -->
+    @if (ViewBag.UseDataTables == true)
+    {
+        <script src="~/Content/adminFront/assets/plugins/datatables/jquery.dataTables.min.js"></script>
+        <script src="~/Content/adminFront/assets/plugins/datatables/dataTables.bootstrap.js"></script>
+    }
+
+    <!-- Optional plugins (deferred) -->
+    <script src="~/Content/adminFront/assets/js/jquery.nicescroll.js" defer></script>
+
     <!-- Pharma263 Core Bundle - Loaded on all pages (core, utility, navigation) -->
     <script src="~/js/core-bundle.js" asp-append-version="true"></script>
+
+    <!-- Forms Bundle - Load only on form pages -->
+    @if (ViewBag.UseForms == true)
+    {
+        <script src="~/js/forms-bundle.js" asp-append-version="true" defer></script>
+    }
+
+    <!-- Reports Bundle - Load only on report pages -->
+    @if (ViewBag.UseReports == true)
+    {
+        <script src="~/js/reports-bundle.js" asp-append-version="true" defer></script>
+    }
+
     <!-- Vendor plugins (jQuery plugins, toggles, UI interactions) -->
-    <script src="~/js/site2.js" asp-append-version="true"></script>
+    <script src="~/js/site2.js" asp-append-version="true" defer></script>
 
     <!-- Include Toastr JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
-    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
 
     @RenderSection("scripts", required: false)
     <script type="text/javascript">

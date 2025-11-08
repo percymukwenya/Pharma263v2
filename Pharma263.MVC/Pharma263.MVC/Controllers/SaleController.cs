@@ -19,6 +19,8 @@ namespace Pharma263.MVC.Controllers
 
         public ActionResult Index()
         {
+            // Enable DataTables for lazy loading
+            ViewBag.UseDataTables = true;
             // Return empty view - data will be loaded via server-side DataTables
             return View();
         }
@@ -33,6 +35,8 @@ namespace Pharma263.MVC.Controllers
         [HttpGet]
         public ActionResult AddSale()
         {
+            // Enable forms bundle for sale forms
+            ViewBag.UseForms = true;
             return View();
         }
 
