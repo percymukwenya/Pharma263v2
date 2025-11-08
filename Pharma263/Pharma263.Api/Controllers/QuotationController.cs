@@ -29,6 +29,14 @@ namespace Pharma263.Api.Controllers
             return StatusCode(result.StatusCode, result);
         }
 
+        [HttpGet("GetQuotationsPaged")]
+        public async Task<ActionResult<ApiResponse<PaginatedList<QuotationListResponse>>>> GetQuotationsPaged([FromQuery] PagedRequest request)
+        {
+            var response = await _quotationService.GetQuotationsPaged(request);
+
+            return StatusCode(response.StatusCode, response);
+        }
+
         [HttpGet("GetQuotation")]
         public async Task<ActionResult<QuotationDetailsResponse>> GetQuotation([FromQuery] int id)
         {

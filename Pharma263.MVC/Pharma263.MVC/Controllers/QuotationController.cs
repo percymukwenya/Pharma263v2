@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Pharma263.Integration.Api.Models;
 using Pharma263.Integration.Api.Models.Request;
+using Pharma263.Integration.Api.Models.Common;
 using Pharma263.MVC.DTOs.Quotation;
 using Pharma263.MVC.Services.IService;
 using Pharma263.MVC.Utility;
@@ -22,11 +23,17 @@ namespace Pharma263.MVC.Controllers
             _saleService = saleService;
         }
 
-        public async Task<ActionResult> Index()
+        public ActionResult Index()
         {
-            var response = await _quotationService.GetQuotations();
+            // Return empty view - data will be loaded via server-side DataTables
+            return View();
+        }
 
-            return View(response.Data);
+        [HttpPost]
+        public async Task<JsonResult> GetQuotationsDataTable([FromBody] DataTableRequest request)
+        {
+            var response = await _quotationService.GetQuotationsForDataTable(request);
+            return Json(response);
         }
 
         [HttpGet]

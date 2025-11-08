@@ -13,6 +13,7 @@ using Pharma263.Domain.Models.Dtos;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 
 namespace Pharma263.Api.Services
@@ -67,6 +68,66 @@ namespace Pharma263.Api.Services
                 return ApiResponse<List<QuotationListResponse>>.CreateFailure($"An error occurred while retrieving quotations. {ex.Message}", 500);
             }
 
+        }
+
+        public async Task<ApiResponse<PaginatedList<QuotationListResponse>>> GetQuotationsPaged(PagedRequest request)
+        {
+            try
+            {
+                Expression<Func<Quotation, bool>> filter = null;
+
+                if (!string.IsNullOrEmpty(request.SearchTerm))
+                {
+                    var searchTerm = request.SearchTerm.ToLower();
+                    filter = x => x.Customer.Name.ToLower().Contains(searchTerm) ||
+                                  x.Notes.ToLower().Contains(searchTerm) ||
+                                  x.QuoteStatus.Name.ToLower().Contains(searchTerm);
+                }
+
+                Func<IQueryable<Quotation>, IOrderedQueryable<Quotation>> orderBy = request.SortBy?.ToLower() switch
+                {
+                    "customername" => request.SortDescending ? (query => query.OrderByDescending(x => x.Customer.Name)) : (query => query.OrderBy(x => x.Customer.Name)),
+                    "quotationdate" => request.SortDescending ? (query => query.OrderByDescending(x => x.QuotationDate)) : (query => query.OrderBy(x => x.QuotationDate)),
+                    "total" => request.SortDescending ? (query => query.OrderByDescending(x => x.Total)) : (query => query.OrderBy(x => x.Total)),
+                    "grandtotal" => request.SortDescending ? (query => query.OrderByDescending(x => x.GrandTotal)) : (query => query.OrderBy(x => x.GrandTotal)),
+                    "quotationstatus" => request.SortDescending ? (query => query.OrderByDescending(x => x.QuoteStatus.Name)) : (query => query.OrderBy(x => x.QuoteStatus.Name)),
+                    _ => query => query.OrderByDescending(x => x.QuotationDate)
+                };
+
+                var paginatedQuotations = await _unitOfWork.Repository<Quotation>().GetPaginatedAsync(
+                    request.Page,
+                    request.PageSize,
+                    filter,
+                    orderBy,
+                    query => query.Include(c => c.Customer)
+                                  .Include(c => c.QuoteStatus));
+
+                var quotations = paginatedQuotations.Items.ToList();
+
+                var data = quotations.Select(x => new QuotationListResponse
+                {
+                    Id = x.Id,
+                    QuotationDate = x.QuotationDate,
+                    CustomerName = x.Customer.Name,
+                    Notes = x.Notes,
+                    Total = (double)x.Total,
+                    Discount = (double)x.Discount,
+                    GrandTotal = (double)x.GrandTotal,
+                    QuotationStatus = x.QuoteStatus.Name,
+                    CustomerAddress = x.Customer.DeliveryAddress,
+                    CustomerPhone = x.Customer.Phone
+                }).ToList();
+
+                var paginatedResult = new PaginatedList<QuotationListResponse>(data, paginatedQuotations.TotalCount, paginatedQuotations.PageIndex, request.PageSize);
+
+                return ApiResponse<PaginatedList<QuotationListResponse>>.CreateSuccess(paginatedResult);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning($"An error occurred while retrieving paginated quotations. {ex.Message}", ex);
+
+                return ApiResponse<PaginatedList<QuotationListResponse>>.CreateFailure($"An error occurred while retrieving paginated quotations. {ex.Message}", 500);
+            }
         }
 
         public async Task<ApiResponse<QuotationDetailsResponse>> GetQuotation(int id)
