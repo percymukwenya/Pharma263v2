@@ -3,6 +3,7 @@ using Pharma263.Integration.Api.Common;
 using Pharma263.Integration.Api.Models;
 using Pharma263.Integration.Api.Models.Request;
 using Pharma263.Integration.Api.Models.Common;
+using Pharma263.Integration.Api.Models.Response;
 using Pharma263.MVC.DTOs.Quotation;
 using Pharma263.MVC.Services.IService;
 using Pharma263.MVC.Utility;
@@ -31,13 +32,13 @@ namespace Pharma263.MVC.Services
             return response;
         }
 
-        public async Task<ApiResponse<PaginatedList<QuotationDto>>> GetQuotationsPaged(PagedRequest request)
+        public async Task<ApiResponse<PaginatedList<QuotationListResponse>>> GetQuotationsPaged(PagedRequest request)
         {
             var queryString = $"Page={request.Page}&PageSize={request.PageSize}&SearchTerm={request.SearchTerm}&SortBy={request.SortBy}&SortDescending={request.SortDescending}";
-            return await _apiService.GetApiResponseAsync<PaginatedList<QuotationDto>>($"/api/Quotation/GetQuotationsPaged?{queryString}");
+            return await _apiService.GetApiResponseAsync<PaginatedList<QuotationListResponse>>($"/api/Quotation/GetQuotationsPaged?{queryString}");
         }
 
-        public async Task<DataTableResponse<QuotationDto>> GetQuotationsForDataTable(DataTableRequest request)
+        public async Task<DataTableResponse<QuotationListResponse>> GetQuotationsForDataTable(DataTableRequest request)
         {
             try
             {
@@ -54,7 +55,7 @@ namespace Pharma263.MVC.Services
 
                 if (apiResponse.Success && apiResponse.Data != null)
                 {
-                    return new DataTableResponse<QuotationDto>
+                    return new DataTableResponse<QuotationListResponse>
                     {
                         Draw = request.Draw,
                         RecordsTotal = apiResponse.Data.TotalCount,
@@ -64,7 +65,7 @@ namespace Pharma263.MVC.Services
                 }
                 else
                 {
-                    return new DataTableResponse<QuotationDto>
+                    return new DataTableResponse<QuotationListResponse>
                     {
                         Draw = request.Draw,
                         RecordsTotal = 0,
@@ -75,7 +76,7 @@ namespace Pharma263.MVC.Services
             }
             catch (System.Exception ex)
             {
-                return new DataTableResponse<QuotationDto>
+                return new DataTableResponse<QuotationListResponse>
                 {
                     Draw = request.Draw,
                     RecordsTotal = 0,
