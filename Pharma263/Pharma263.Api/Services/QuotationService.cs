@@ -42,7 +42,8 @@ namespace Pharma263.Api.Services
         {
             try
             {
-                var quotations = await _unitOfWork.Repository<Quotation>().GetAllAsync(query => query.Include(c => c.Customer).Include(c => c.Items).Include(x => x.QuoteStatus));
+                // Removed unnecessary .Include(c => c.Items) - not used in list response
+                var quotations = await _unitOfWork.Repository<Quotation>().GetAllAsync(query => query.Include(c => c.Customer).Include(x => x.QuoteStatus));
 
                 var quotationList = quotations.Select(x => new QuotationListResponse
                 {

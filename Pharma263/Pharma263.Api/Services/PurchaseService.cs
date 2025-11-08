@@ -195,11 +195,28 @@ namespace Pharma263.Api.Services
         {
             try
             {
+                // Fix N+1 query: Eagerly load Medicine for each PurchaseItem
                 var purchase = await _unitOfWork.Repository<Purchase>().GetByIdWithIncludesAsync(id, query =>
                     query.Include(i => i.Items)
+                            .ThenInclude(i => i.Medicine)
                         .Include(p => p.PaymentMethod)
                         .Include(p => p.PurchaseStatus)
                         .Include(s => s.Supplier));
+
+                // Batch load all stock items in a single query to get additional stock details
+                var medicineAndBatchPairs = purchase.Items.Select(i => new { i.MedicineId, i.BatchNo }).Distinct().ToList();
+                var stockItems = new Dictionary<(int MedicineId, string BatchNo), Stock>();
+
+                if (medicineAndBatchPairs.Any())
+                {
+                    var stocks = await _unitOfWork.Repository<Stock>()
+                        .FindAsync(s => medicineAndBatchPairs.Any(p => p.MedicineId == s.MedicineId && p.BatchNo == s.BatchNo));
+
+                    foreach (var stock in stocks)
+                    {
+                        stockItems[(stock.MedicineId, stock.BatchNo)] = stock;
+                    }
+                }
 
                 var mappedPurchase = new PurchaseDetailsResponse
                 {
@@ -217,25 +234,26 @@ namespace Pharma263.Api.Services
                     Supplier = purchase.Supplier.Name,
                     SupplierPhoneNumber = purchase.Supplier.Phone,
                     SupplierAddress = purchase.Supplier.Address,
-                    Items = [.. purchase.Items.Select(i => new PurchaseItemModel
-                {
-                    MedicineId = i.MedicineId,
-                    BatchNo = i.BatchNo,
-                    Quantity = i.Quantity,
-                    Price = i.Price,
-                    Discount = i.Discount,
-                    Amount = i.Amount
-                })]
+                    Items = purchase.Items.Select(i =>
+                    {
+                        stockItems.TryGetValue((i.MedicineId, i.BatchNo), out var stock);
+                        return new PurchaseItemModel
+                        {
+                            MedicineId = i.MedicineId,
+                            MedicineName = i.Medicine?.Name ?? string.Empty,
+                            BatchNo = i.BatchNo,
+                            Quantity = i.Quantity,
+                            Price = i.Price,
+                            Discount = i.Discount,
+                            Amount = i.Amount,
+                            ExpiryDate = stock?.ExpiryDate ?? DateTime.Now,
+                            BuyingPrice = stock?.BuyingPrice ?? 0,
+                            SellingPrice = stock?.SellingPrice ?? 0
+                        };
+                    }).ToList()
                 };
 
-                foreach (var item in mappedPurchase.Items)
-                {
-                    var stockItem = await _unitOfWork.Repository<Stock>().FirstOrDefaultAsync(x => x.MedicineId == item.MedicineId && x.BatchNo == item.BatchNo, query => query.Include(m => m.Medicine));
-                    item.MedicineName = stockItem.Medicine.Name;
-                    item.ExpiryDate = stockItem.ExpiryDate;
-                    item.BuyingPrice = stockItem.BuyingPrice;
-                    item.SellingPrice = stockItem.SellingPrice;
-                }
+                // N+1 query removed - Medicine eagerly loaded and Stock batch loaded above
 
                 return ApiResponse<PurchaseDetailsResponse>.CreateSuccess(mappedPurchase);
             }
@@ -399,13 +417,25 @@ namespace Pharma263.Api.Services
                     if (purchaseToUpdate == null)
                         return ApiResponse<bool>.CreateFailure("Purchase not found", 404);
 
-                    // Restore stock quantities for old items
+                    // Optimize: Batch load all stocks for old items in a single query
+                    var oldItemPairs = purchaseToUpdate.Items.Select(i => new { i.MedicineId, i.BatchNo }).Distinct().ToList();
+                    var oldStocks = new Dictionary<(int MedicineId, string BatchNo), Stock>();
+
+                    if (oldItemPairs.Any())
+                    {
+                        var stocks = await _unitOfWork.Repository<Stock>()
+                            .FindAsync(s => oldItemPairs.Any(p => p.MedicineId == s.MedicineId && p.BatchNo == s.BatchNo));
+
+                        foreach (var stock in stocks)
+                        {
+                            oldStocks[(stock.MedicineId, stock.BatchNo)] = stock;
+                        }
+                    }
+
+                    // Restore stock quantities for old items using batch-loaded stocks
                     foreach (var oldItem in purchaseToUpdate.Items)
                     {
-                        var stock = await _unitOfWork.Repository<Stock>().FirstOrDefaultAsync(
-                            x => x.MedicineId == oldItem.MedicineId && x.BatchNo == oldItem.BatchNo);
-
-                        if (stock != null)
+                        if (oldStocks.TryGetValue((oldItem.MedicineId, oldItem.BatchNo), out var stock))
                         {
                             // Subtract the quantity that was added when the purchase was created
                             var stockResult = await _stockManagementService.DeductStockAsync(
@@ -523,15 +553,30 @@ namespace Pharma263.Api.Services
                     // Get purchase items
                     var items = await _unitOfWork.Repository<PurchaseItems>().FindAsync(x => x.PurchaseId == id);
 
-                    // Remove stock quantities for all items (reverse the purchase)
+                    // Optimize: Batch load all stocks for items in a single query
+                    var medicineIds = items.Select(i => i.MedicineId).Distinct().ToList();
+                    var stocksDict = new Dictionary<int, Stock>();
+
+                    if (medicineIds.Any())
+                    {
+                        var stocks = await _unitOfWork.Repository<Stock>()
+                            .FindAsync(s => medicineIds.Contains(s.MedicineId));
+
+                        foreach (var stock in stocks)
+                        {
+                            if (!stocksDict.ContainsKey(stock.MedicineId))
+                            {
+                                stocksDict[stock.MedicineId] = stock;
+                            }
+                        }
+                    }
+
+                    // Remove stock quantities for all items (reverse the purchase) using batch-loaded stocks
                     if (items.Any())
                     {
                         foreach (var item in items)
                         {
-                            var stock = await _unitOfWork.Repository<Stock>().FirstOrDefaultAsync(
-                                x => x.MedicineId == item.MedicineId);
-
-                            if (stock != null)
+                            if (stocksDict.TryGetValue(item.MedicineId, out var stock))
                             {
                                 var stockResult = await _stockManagementService.DeductStockAsync(
                                     stock.Id,

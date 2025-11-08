@@ -275,6 +275,8 @@ namespace Pharma263.Api.Services
 
             try
             {
+                // Phase 1: Validate all requests upfront
+                var validRequests = new List<(AddStockRequest Request, int Index)>();
                 for (int i = 0; i < requests.Count; i++)
                 {
                     var request = requests[i];
@@ -285,25 +287,98 @@ namespace Pharma263.Api.Services
                         result.Errors.Add($"Entry {i + 1}: {string.Join(", ", validationErrors)}");
                         continue;
                     }
-
-                    var addResult = await AddStock(request);
-                    if (addResult.Success)
-                    {
-                        result.SuccessfulImports++;
-                    }
-                    else
-                    {
-                        result.FailedImports++;
-                        result.Errors.Add($"Entry {i + 1}: {addResult.Message}");
-                    }
+                    validRequests.Add((request, i));
                 }
+
+                if (!validRequests.Any())
+                {
+                    return ApiResponse<BatchImportResult>.CreateFailure("All entries failed validation",
+                        400, result.Errors);
+                }
+
+                // Phase 2: Batch process all valid requests in a single transaction
+                await _unitOfWork.ExecuteTransactionAsync(async () =>
+                {
+                    // Batch-load all existing medicines by name
+                    var medicineNames = validRequests.Select(r => r.Request.MedicineName).Distinct().ToList();
+                    var existingMedicines = await _unitOfWork.Repository<Medicine>()
+                        .FindAsync(m => medicineNames.Contains(m.Name));
+
+                    var medicineDict = existingMedicines.ToDictionary(m => m.Name, m => m.Id);
+
+                    // Create new medicines in bulk
+                    var newMedicines = new List<Medicine>();
+                    foreach (var name in medicineNames)
+                    {
+                        if (!medicineDict.ContainsKey(name))
+                        {
+                            var medicine = new Medicine
+                            {
+                                Name = name,
+                                GenericName = name
+                            };
+                            newMedicines.Add(medicine);
+                        }
+                    }
+
+                    if (newMedicines.Any())
+                    {
+                        foreach (var medicine in newMedicines)
+                        {
+                            await _unitOfWork.Repository<Medicine>().AddAsync(medicine);
+                        }
+                        await _unitOfWork.SaveChangesAsync();
+
+                        // Add newly created medicines to dictionary
+                        foreach (var medicine in newMedicines)
+                        {
+                            medicineDict[medicine.Name] = medicine.Id;
+                        }
+                    }
+
+                    // Create all stock items in bulk
+                    foreach (var (request, index) in validRequests)
+                    {
+                        try
+                        {
+                            if (medicineDict.TryGetValue(request.MedicineName, out var medicineId))
+                            {
+                                var stock = CreateStockFromRequest(request, medicineId);
+                                await _unitOfWork.Repository<Stock>().AddAsync(stock);
+                                result.SuccessfulImports++;
+                            }
+                            else
+                            {
+                                result.FailedImports++;
+                                result.Errors.Add($"Entry {index + 1}: Medicine '{request.MedicineName}' could not be created");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            result.FailedImports++;
+                            result.Errors.Add($"Entry {index + 1}: {ex.Message}");
+                            _logger.LogWarning(ex, "Failed to add stock for entry {Index}", index + 1);
+                        }
+                    }
+
+                    // Single SaveChanges for all stock items
+                    await _unitOfWork.SaveChangesAsync();
+
+                    return ApiResponse<bool>.CreateSuccess(true);
+                });
+
+                // Invalidate cache after successful batch operation
+                InvalidateStockCache();
 
                 if (result.FailedImports == 0)
                 {
+                    _logger.LogInformation("Batch stock import successful: {Count} items added", result.SuccessfulImports);
                     return ApiResponse<BatchImportResult>.CreateSuccess(result, "All stocks added successfully");
                 }
                 else
                 {
+                    _logger.LogWarning("Batch stock import partial: {Success} succeeded, {Failed} failed",
+                        result.SuccessfulImports, result.FailedImports);
                     return ApiResponse<BatchImportResult>.CreateFailure("Some stocks failed to add",
                         result.FailedImports == result.TotalRows ? 400 : 206, result.Errors);
                 }
