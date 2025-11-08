@@ -176,5 +176,14 @@ namespace Pharma263.Persistence.Shared
             }
             return await _dbSet.SumAsync(selector);
         }
+
+        /// <summary>
+        /// Returns the underlying IQueryable for advanced queries with projections.
+        /// Use this for Select() projections to reduce data transfer.
+        /// </summary>
+        public IQueryable<T> Query()
+        {
+            return _dbSet.AsQueryable();
+        }
     }
 }
