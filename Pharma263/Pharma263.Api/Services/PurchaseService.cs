@@ -125,7 +125,7 @@ namespace Pharma263.Api.Services
                 }
 
                 // Apply sorting
-                query = string.IsNullOrWhiteSpace(request.SortBy) ? "purchasedate" : request.SortBy.ToLower() switch
+                query = (string.IsNullOrWhiteSpace(request.SortBy) ? "purchasedate" : request.SortBy.ToLower()) switch
                 {
                     "purchasedate" => request.SortDescending ? query.OrderByDescending(x => x.PurchaseDate) : query.OrderBy(x => x.PurchaseDate),
                     "total" => request.SortDescending ? query.OrderByDescending(x => x.Total) : query.OrderBy(x => x.Total),

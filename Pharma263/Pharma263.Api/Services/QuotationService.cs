@@ -77,7 +77,7 @@ namespace Pharma263.Api.Services
             try
             {
                 // Use Query() for projection - reduces data transfer by 30-40%
-                var query = _unitOfWork.Repository<Quotation>().Query()
+                IQueryable<Quotation> query = _unitOfWork.Repository<Quotation>().Query()
                     .Include(c => c.Customer)
                     .Include(c => c.QuoteStatus);
 
