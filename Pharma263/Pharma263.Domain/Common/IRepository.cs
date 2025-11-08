@@ -27,5 +27,10 @@ namespace Pharma263.Domain.Common
         Task<TResult> MinAsync<TResult>(Expression<Func<T, TResult>> selector, Expression<Func<T, bool>> filter = null);
         Task<decimal> AverageAsync(Expression<Func<T, decimal>> selector, Expression<Func<T, bool>> filter = null);
         Task<decimal> SumAsync(Expression<Func<T, decimal>> selector, Expression<Func<T, bool>> filter = null);
+
+        /// <summary>
+        /// Returns the underlying IQueryable for advanced queries with projections
+        /// </summary>
+        IQueryable<T> Query();
     }
 }

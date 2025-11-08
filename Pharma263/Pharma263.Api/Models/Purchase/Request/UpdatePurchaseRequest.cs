@@ -32,5 +32,6 @@ namespace Pharma263.Api.Models.Purchase.Request
         [Required(ErrorMessage = "Purchase items are required")]
         [MinLength(1, ErrorMessage = "At least one purchase item is required")]
         public List<PurchaseItemModel> Items { get; set; }
+        public int SupplierId { get; internal set; }
     }
 }

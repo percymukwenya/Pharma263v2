@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Pharma263.Integration.Api.Models.Common;
 using Pharma263.MVC.DTOs.PaymentMethods;
 using Pharma263.MVC.DTOs.Returns;
 using Pharma263.MVC.Models;
@@ -28,11 +29,17 @@ namespace Pharma263.MVC.Controllers
             _returnDestinationService = returnDestinationService;
         }
 
-        public async Task<ActionResult> Index()
+        public ActionResult Index()
         {
-            var response = await _returnService.GetAllAsync();
+            // Return empty view - data will be loaded via server-side DataTables
+            return View();
+        }
 
-            return View(response.Data);
+        [HttpPost]
+        public async Task<JsonResult> GetReturnsDataTable([FromBody] DataTableRequest request)
+        {
+            var response = await _returnService.GetReturnsForDataTable(request);
+            return Json(response);
         }
 
         [HttpGet]

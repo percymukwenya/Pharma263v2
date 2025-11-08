@@ -1,182 +1,242 @@
-﻿@{
+@{
     ViewBag.Title = "Create New Purchase";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
+
 @* Inline styles moved to /css/modules/common-overrides.css, forms.css, and purchases.css *@
 <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
-<div class="wraper container-fluid">
-    <div class="col-md-12">
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <h2 class="panel-title">Create New Purchase</h2>
+<style>
+    /* Improved Form Layout - More Spacious */
+    .form-spacious {
+        max-width: 1600px;
+        margin: 20px auto;
+        padding: 0 20px;
+    }
+    .form-header {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+        padding: 20px 30px;
+        border-radius: 8px 8px 0 0;
+        margin-bottom: 0;
+    }
+    .form-header h2 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 600;
+    }
+    .form-body-spacious {
+        background: white;
+        padding: 30px;
+        border-radius: 0 0 8px 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .add-item-panel {
+        background: #f8f9fa;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 25px;
+        margin-bottom: 25px;
+    }
+    .add-item-panel h3 {
+        margin: 0 0 20px 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: #495057;
+    }
+    .form-row-inline {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 150px;
+        gap: 15px;
+        align-items: end;
+    }
+    @media (max-width: 992px) {
+        .form-row-inline {
+            grid-template-columns: 1fr;
+        }
+    }
+    .product-list-section {
+        margin-top: 30px;
+    }
+    .totals-section {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-top: 20px;
+    }
+    .form-group label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 8px;
+    }
+    .form-control {
+        border-radius: 6px;
+        border: 1px solid #ced4da;
+        padding: 10px 12px;
+    }
+    .btn-add-item {
+        height: 42px;
+        margin-top: 0;
+        border-radius: 6px;
+        font-weight: 600;
+    }
+</style>
+
+<div class="form-spacious">
+    <div class="form-header">
+        <h2>Create New Purchase</h2>
+    </div>
+    <div class="form-body-spacious">
+        <!-- Supplier and Date Section -->
+        <div class="row" style="margin-bottom: 25px;">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="Supplier">Supplier</label>
+                    <select id="Supplier" class="form-control" onchange="blankme(this.id)">
+                        <option value="">Select Supplier</option>
+                    </select>
+                    <small id="error_Supplier" class="form-text error_msg">Select supplier from list</small>
+                </div>
             </div>
-            <div class="panel-body">
-                <!-- Supplier and Date Section -->
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="Supplier">Supplier : </label>
-                            <select id="Supplier" class="form-control" onchange="blankme(this.id)">
-                                <option value="">Select Supplier</option>
-                            </select>
-                            <small id="error_Supplier" class="form-text error_msg">Select supplier from list</small>
-                        </div>
+
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="Date">Purchase Date</label>
+                    @Html.TextBox("Date", null, new { @class = "form-control mydatepicker", @placeholder = "Select Purchase Date", onchange = "blankme(this.id)" })
+                    <small id="error_Date" class="form-text error_msg">Purchase Date is Required</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Item Section - Horizontal Layout -->
+        <div class="add-item-panel">
+            <h3>Add Item</h3>
+            <form role="form">
+                <div class="form-row-inline">
+                    <div class="form-group">
+                        <label for="Medicine">Medicine</label>
+                        <select id="Medicine" class="form-control">
+                            <option value="">Search for a medicine...</option>
+                        </select>
+                        <small id="error_Medicine" class="form-text error_msg">Select Medicine from list</small>
                     </div>
 
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="Date">Purchase Date : </label>
-                            @Html.TextBox("Date", null, new { @class = "form-control mydatepicker", @placeholder = "Select Purchase Date", onchange = "blankme(this.id)" })
-                            <small id="error_Date" class="form-text error_msg">Purchase Date is Required</small>
+                    <div class="form-group">
+                        <label for="Quantity">Quantity</label>
+                        @Html.TextBox("Quantity", null, new { @class = "form-control", @type = "number", @placeholder = "Qty", @min = "0" })
+                        <small id="error_Quantity" class="form-text error_msg">Quantity is required</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="DiscountPercent">Discount %</label>
+                        @Html.TextBox("DiscountPercent", null, new { @class = "form-control", @type = "number", @placeholder = "0", @min = "0", @max = "100", @step = "0.01" })
+                        <small id="error_DiscountPercent" class="form-text error_msg">Discount must be between 0-100%</small>
+                    </div>
+
+                    <div class="form-group">
+                        <button type="submit" id="addToList" class="btn btn-primary btn-block btn-add-item">
+                            <i class="fa fa-plus"></i> Add Item
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group" id="medicineDetails" style="margin-top: 15px;">
+                    <!-- Medicine details will be populated here -->
+                </div>
+            </form>
+        </div>
+
+        <!-- Product List Section -->
+        <div class="product-list-section">
+            <h3 style="margin-bottom: 15px; font-weight: 600; color: #495057;">Product List</h3>
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered" id="detailsTable">
+                    <thead class="thead-light">
+                        <tr>
+                            <th scope="col" style="width: 50px;">#</th>
+                            <th scope="col">Name</th>
+                            <th scope="col" style="width: 130px;">Batch No</th>
+                            <th scope="col" style="width: 120px;">Expiry</th>
+                            <th scope="col" style="width: 110px;">Buying Price</th>
+                            <th scope="col" style="width: 110px;">Selling Price</th>
+                            <th scope="col" style="width: 100px;">Discount %</th>
+                            <th scope="col" style="width: 90px;">Qty</th>
+                            <th scope="col" style="width: 130px;">Amount</th>
+                            <th scope="col" style="width: 80px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                    <tfoot>
+                        <tr class="font-weight-bold">
+                            <td colspan="8" class="text-right"><strong>Subtotal:</strong></td>
+                            <td><strong id="SubTotal"></strong></td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            <small id="error_SubTotal" class="form-text error_msg">At least add one item</small>
+        </div>
+
+        <!-- Purchase Details and Totals Section -->
+        <div class="totals-section">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="Notes">Notes</label>
+                        @Html.TextArea("Notes", new { @class = "form-control", @rows = "3", @placeholder = "Enter any additional notes" })
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="PaymentMethod">Payment Method</label>
+                                <select id="PaymentMethod" class="form-control" onchange="blankme(this.id)">
+                                    <option value="">Select Payment Method</option>
+                                </select>
+                                <small id="error_PaymentMethod" class="form-text error_msg">Select Payment Method</small>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="PurchaseStatus">Purchase Status</label>
+                                <select id="PurchaseStatus" class="form-control" onchange="blankme(this.id)">
+                                    <option value="">Select Purchase Status</option>
+                                </select>
+                                <small id="error_PurchaseStatus" class="form-text error_msg">Select Purchase Status</small>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Product Section - Improved Layout -->
-                <div class="product-section">
-                    <!-- Product Selection Form -->
-                    <div class="product-form">
-                        <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h2 class="panel-title">Add Item</h2>
+                <div class="col-md-6">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="Discount">Discount Amount</label>
+                                @Html.TextBox("Discount", 0, new { @class = "form-control", @Value = "0", @type = "number", @placeholder = "0.00", onchange = "DiscountAmount()" })
+                                <small id="error_Discount" class="form-text error_msg">Discount can't be empty</small>
                             </div>
-                            <div class="panel-body">
-                                <form role="form">
-                                    <div class="form-group">
-                                        <label for="Medicine">Medicine : </label>
-                                        <select id="Medicine" class="form-control">
-                                            <option value="">Search for a medicine...</option>
-                                        </select>
-                                        <small id="error_Medicine" class="form-text error_msg">Select Medicine from list</small>
-                                    </div>
-                                    <div class="form-group" id="medicineDetails">
-                                        <!-- Medicine details will be populated here -->
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="Quantity">Quantity : </label>
-                                        @Html.TextBox("Quantity", null, new { @class = "form-control", @type = "number", @placeholder = "Enter Quantity", @min = "0" })
-                                        <small id="error_Quantity" class="form-text error_msg">Quantity is required</small>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="DiscountPercent">Discount % : </label>
-                                        @Html.TextBox("DiscountPercent", null, new { @class = "form-control", @type = "number", @placeholder = "Enter Discount %", @min = "0", @max = "100", @step = "0.01" })
-                                        <small id="error_DiscountPercent" class="form-text error_msg">Discount must be between 0-100%</small>
-                                    </div>
-                                    <div class="form-group">
-                                        <button type="submit" id="addToList" class="btn btn-info btn-block">
-                                            Add To List
-                                        </button>
-                                    </div>
-                                </form>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="GrandTotal">Grand Total</label>
+                                <h4 id="GrandTotal" class="form-control" style="background: #e9ecef; font-weight: bold; color: #28a745;"></h4>
+                                <small id="error_GrandTotal" class="form-text error_msg">Total is empty</small>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Product List -->
-                    <div class="product-list">
-                        <div class="panel panel-color panel-primary">
-                            <div class="panel-heading">
-                                <h2 class="panel-title">Product List</h2>
-                            </div>
-                            <div class="panel-body">
-                                <div class="table-responsive">
-                                    <table class="table table-hover" id="detailsTable">
-                                        <thead>
-                                            <tr>
-                                                <th scope="col">#</th>
-                                                <th scope="col">Name</th>
-                                                <th scope="col">Batch No</th>
-                                                <th scope="col">Expiry</th>
-                                                <th scope="col">Buying $</th>
-                                                <th scope="col">Selling $</th>
-                                                <th scope="col">Discount %</th>
-                                                <th scope="col">Qty</th>
-                                                <th scope="col">Amount</th>
-                                                <th scope="col" style="width:20px"></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody></tbody>
-                                        <tfoot>
-                                            <tr>
-                                                <td></td>
-                                                <td></td>
-                                                <td></td>
-                                                <td></td>
-                                                <td></td>
-                                                <td></td>
-                                                <td></td>
-                                                <td><strong>Total:</strong></td>
-                                                <td><strong id="SubTotal"></strong></td>
-                                                <td></td>
-                                            </tr>
-                                        </tfoot>
-                                    </table>
-                                </div>
-                                <small id="error_SubTotal" class="form-text error_msg">At least add one item</small>
-                            </div>
-                        </div>
-
-                        <!-- Purchase Details Section -->
-                        <div class="row">
-                            <div class="col-md-8">
-                                <div class="form-group">
-                                    <label for="Notes">Notes: </label>
-                                    @Html.TextArea("Notes", new { @class = "form-control", @rows = "2", @placeholder = "Enter Notes" })
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="PaymentMethod">Payment Method : </label>
-                                            <select id="PaymentMethod" class="form-control" onchange="blankme(this.id)">
-                                                <option value="">Select Payment Method</option>
-                                            </select>
-                                            <small id="error_PaymentMethod" class="form-text error_msg">Select Payment Method</small>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="PurchaseStatus">Purchase Status : </label>
-                                            <select id="PurchaseStatus" class="form-control" onchange="blankme(this.id)">
-                                                <option value="">Select Purchase Status</option>
-                                            </select>
-                                            <small id="error_PurchaseStatus" class="form-text error_msg">Select Purchase Status</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label for="Discount">Discount : </label>
-                                    @Html.TextBox("Discount", 0, new { @class = "form-control", @Value = "0", @type = "number", @placeholder = "Discount Amount", onchange = "DiscountAmount()" })
-                                    <small id="error_Discount" class="form-text error_msg">Discount can't be empty</small>
-                                </div>
-                                <div class="form-group">
-                                    <label for="GrandTotal">Grand Total : </label>
-                                    <h5 id="GrandTotal" class="form-control"></h5>
-                                    <small id="error_GrandTotal" class="form-text error_msg">Total is empty</small>
-                                </div>
-
-                                <div class="form-group">
-                                    <input id="BtnSave" class="btn btn-success btn-block" type="submit" value="Save Purchase" />
-                                </div>
-                            </div>
-                        </div>
+                    <div class="form-group" style="margin-top: 15px;">
+                        <input id="BtnSave" class="btn btn-success btn-lg btn-block" type="submit" value="Save Purchase" style="height: 50px; font-size: 18px; font-weight: 600;" />
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-
-<!-- Add these in your layout or at the end of the view (before the scripts section) -->
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-
-
 
 @section scripts {
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

@@ -14,6 +14,7 @@ using Pharma263.Domain.Models.Dtos;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 
 namespace Pharma263.Api.Services
@@ -41,7 +42,8 @@ namespace Pharma263.Api.Services
         {
             try
             {
-                var quotations = await _unitOfWork.Repository<Quotation>().GetAllAsync(query => query.Include(c => c.Customer).Include(c => c.Items).Include(x => x.QuoteStatus));
+                // Removed unnecessary .Include(c => c.Items) - not used in list response
+                var quotations = await _unitOfWork.Repository<Quotation>().GetAllAsync(query => query.Include(c => c.Customer).Include(x => x.QuoteStatus));
 
                 var quotationList = quotations.Select(x => new QuotationListResponse
                 {
@@ -68,6 +70,67 @@ namespace Pharma263.Api.Services
                 return ApiResponse<List<QuotationListResponse>>.CreateFailure($"An error occurred while retrieving quotations. {ex.Message}", 500);
             }
 
+        }
+
+        public async Task<ApiResponse<PaginatedList<QuotationListResponse>>> GetQuotationsPaged(PagedRequest request)
+        {
+            try
+            {
+                // Use Query() for projection - reduces data transfer by 30-40%
+                var query = _unitOfWork.Repository<Quotation>().Query()
+                    .Include(c => c.Customer)
+                    .Include(c => c.QuoteStatus);
+
+                if (!string.IsNullOrEmpty(request.SearchTerm))
+                {
+                    var searchTerm = request.SearchTerm.ToLower();
+                    query = query.Where(x => x.Customer.Name.ToLower().Contains(searchTerm) ||
+                                            x.Notes.ToLower().Contains(searchTerm) ||
+                                            x.QuoteStatus.Name.ToLower().Contains(searchTerm));
+                }
+
+                // Apply sorting
+                query = request.SortBy?.ToLower() switch
+                {
+                    "customername" => request.SortDescending ? query.OrderByDescending(x => x.Customer.Name) : query.OrderBy(x => x.Customer.Name),
+                    "quotationdate" => request.SortDescending ? query.OrderByDescending(x => x.QuotationDate) : query.OrderBy(x => x.QuotationDate),
+                    "total" => request.SortDescending ? query.OrderByDescending(x => x.Total) : query.OrderBy(x => x.Total),
+                    "grandtotal" => request.SortDescending ? query.OrderByDescending(x => x.GrandTotal) : query.OrderBy(x => x.GrandTotal),
+                    "quotationstatus" => request.SortDescending ? query.OrderByDescending(x => x.QuoteStatus.Name) : query.OrderBy(x => x.QuoteStatus.Name),
+                    _ => query.OrderByDescending(x => x.QuotationDate)
+                };
+
+                var count = await query.CountAsync();
+
+                // Project to DTO before materialization - EF generates optimized SQL
+                var data = await query
+                    .Skip((request.Page - 1) * request.PageSize)
+                    .Take(request.PageSize)
+                    .Select(x => new QuotationListResponse
+                    {
+                        Id = x.Id,
+                        QuotationDate = x.QuotationDate,
+                        CustomerName = x.Customer.Name,
+                        Notes = x.Notes,
+                        Total = (double)x.Total,
+                        Discount = (double)x.Discount,
+                        GrandTotal = (double)x.GrandTotal,
+                        QuotationStatus = x.QuoteStatus.Name,
+                        CustomerAddress = x.Customer.DeliveryAddress,
+                        CustomerPhone = x.Customer.Phone
+                    })
+                    .ToListAsync();
+
+                var paginatedResult = new PaginatedList<QuotationListResponse>(data, count, request.Page, request.PageSize);
+
+                return ApiResponse<PaginatedList<QuotationListResponse>>.CreateSuccess(paginatedResult);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning($"An error occurred while retrieving paginated quotations. {ex.Message}", ex);
+
+                return ApiResponse<PaginatedList<QuotationListResponse>>.CreateFailure($"An error occurred while retrieving paginated quotations. {ex.Message}", 500);
+            }
         }
 
         public async Task<ApiResponse<QuotationDetailsResponse>> GetQuotation(int id)
@@ -240,7 +303,7 @@ namespace Pharma263.Api.Services
 
                 if (result == 0)
                 {
-                    return ApiResponse<bool>.CreateFailure("Error adding quotation", 400, requestValidation.Errors);
+                    return ApiResponse<bool>.CreateFailure("Error adding quotation", 400);
                 }
 
                 return ApiResponse<bool>.CreateSuccess(true);

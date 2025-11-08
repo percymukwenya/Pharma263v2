@@ -1,4 +1,3 @@
-﻿@model IEnumerable<Pharma263.MVC.DTOs.Quotation.QuotationDto>
 @{
     ViewBag.Title = "Quotation List";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -22,89 +21,17 @@
                             <table class="table table-hover table-bordered" id="quotedatatable">
                                 <thead>
                                     <tr>
-                                        <td>
-                                            #
-                                        </td>
-                                        <th scope="col">
-                                            Customer
-                                        </th>
-                                        <th scope="col">
-                                            Quotation Date
-                                        </th>
-                                        <th scope="col">
-                                            @Html.DisplayNameFor(model => model.Total)
-                                        </th>
-                                        <th scope="col">
-                                            @Html.DisplayNameFor(model => model.Discount)
-                                        </th>
-                                        <th scope="col">
-                                            @Html.DisplayNameFor(model => model.GrandTotal)
-                                        </th>
-                                        <th scope="col">
-                                            @Html.DisplayNameFor(model => model.QuotationStatus)
-                                        </th>
-
-                                        <th scope="col">action</th>
+                                        <th scope="col">#</th>
+                                        <th scope="col">Customer</th>
+                                        <th scope="col">Quotation Date</th>
+                                        <th scope="col">Total</th>
+                                        <th scope="col">Discount</th>
+                                        <th scope="col">Grand Total</th>
+                                        <th scope="col">Quotation Status</th>
+                                        <th scope="col">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var item in Model)
-                                    {
-
-                                        <tr>
-                                            <td>
-                                                @Html.DisplayFor(modelItem => item.Id)
-                                            </td>
-                                            <td>
-                                                @item.CustomerName
-                                            </td>
-                                            <td>
-                                                @Html.DisplayFor(modelItem => item.QuotationDate)
-                                            </td>
-                                            <td>
-                                                @Html.DisplayFor(modelItem => item.Total)
-                                            </td>
-                                            <td>
-                                                @Html.DisplayFor(modelItem => item.Discount)
-                                            </td>
-                                            <td>
-                                                @Html.DisplayFor(modelItem => item.GrandTotal)
-                                            </td>
-                                            <td>
-                                                @Html.DisplayFor(modelItem => item.QuotationStatus)
-                                            </td>
-
-                                            <td>
-                                                <div class="btn-group">
-                                                    <button type="button" class="btn btn-purple dropdown-toggle btn-xs" data-toggle="dropdown" aria-expanded="true">
-                                                        action <span class="caret"></span>
-                                                    </button>
-                                                    <ul class="dropdown-menu" role="menu">
-                                                        <li>
-                                                            <a href="@Url.Action("EditQuotation", "Quotation", new {quotationId = item.Id})"><i class="fa fa-edit"></i> Edit</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href="@Url.Action("DeleteQuotation", "Quotation", new { quotationId = item.Id })" onclick="return confirm('Are you sure you want to Remove this Quotation ?')"> <i class="fa fa-remove"></i> Delete</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href="@Url.Action("QuotationDoc","Quotation", new {quotationId = item.Id,style=1})" target="_blank"><i class="fa fa-print"></i> Invoice</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href="@Url.Action("FinalizeSale","Quotation", new {quotationId = item.Id,style=2})"><i class="fa fa-print"> </i> Finalize Sale</a>
-                                                        </li>
-                                                    </ul>
-                                                </div>
-
-                                                @*<a href="@Url.Action("EditSale", "Sales", new {saleId = item.Id})" class="btn btn-icon btn-warning btn-xs m-b-5">
-                                            <i class="fa fa-edit"></i>
-                                            </a>
-                                            <a href="@Url.Action("DeleteSale", "Sales", new {saleId = item.Id})" onclick="return confirm('Are you sure you want to Remove this Sale ?')" class="btn btn-icon btn-danger btn-xs m-b-5">
-                                            <i class="fa fa-remove"></i>
-                                            </a>*@
-                                            </td>
-                                        </tr>
-
-                                    }
                                 </tbody>
                             </table>
                         </div>
@@ -117,22 +44,98 @@
 </div>
 
 @section scripts {
+    <link rel="stylesheet" href="~/Content/adminFront/assets/plugins/datatables/jquery.dataTables.min.css">
+    <script src="~/Content/adminFront/assets/plugins/datatables/jquery.dataTables.min.js"></script>
+
     <script type="text/javascript">
         $(document).ready(function () {
-
             $('#quotedatatable').DataTable({
-                "paging": true,
-                "lengthChange": false,
-                "searching": true,
-                "info": false,
-                "autoWidth": false,
-                "dom": '<lf<t>ip>',
-                language: {
-                    searchPlaceholder: "Search anything"
+                "processing": true,
+                "serverSide": true,
+                "ajax": {
+                    "url": "@Url.Action("GetQuotationsDataTable", "Quotation")",
+                    "type": "POST",
+                    "contentType": "application/json",
+                    "data": function (d) {
+                        return JSON.stringify(d);
+                    },
+                    "dataSrc": function (json) {
+                        if (json.error) {
+                            console.error('DataTable Error:', json.error);
+                            toastr.error('Failed to load quotations: ' + json.error);
+                        }
+                        return json.data;
+                    }
                 },
-                order: [[0, 'desc']]
+                "columns": [
+                    { "data": "id" },
+                    { "data": "customerName" },
+                    {
+                        "data": "quotationDate",
+                        "render": function(data, type, row) {
+                            if (data && type === 'display') {
+                                var date = new Date(data);
+                                return date.toLocaleDateString();
+                            }
+                            return data;
+                        }
+                    },
+                    {
+                        "data": "total",
+                        "render": function(data, type, row) {
+                            return type === 'display' ? parseFloat(data).toFixed(2) : data;
+                        }
+                    },
+                    {
+                        "data": "discount",
+                        "render": function(data, type, row) {
+                            return type === 'display' ? parseFloat(data).toFixed(2) : data;
+                        }
+                    },
+                    {
+                        "data": "grandTotal",
+                        "render": function(data, type, row) {
+                            return type === 'display' ? parseFloat(data).toFixed(2) : data;
+                        }
+                    },
+                    { "data": "quotationStatus" },
+                    {
+                        "data": null,
+                        "orderable": false,
+                        "render": function (data, type, row) {
+                            var editUrl = '@Url.Action("EditQuotation", "Quotation")' + '?quotationId=' + row.id;
+                            var deleteUrl = '@Url.Action("DeleteQuotation", "Quotation")' + '?quotationId=' + row.id;
+                            var invoiceUrl = '@Url.Action("QuotationDoc", "Quotation")' + '?quotationId=' + row.id;
+                            var finalizeUrl = '@Url.Action("FinalizeSale", "Quotation")' + '?quotationId=' + row.id;
+
+                            return '<div class="btn-group">' +
+                                   '<button type="button" class="btn btn-purple dropdown-toggle btn-xs" data-toggle="dropdown" aria-expanded="true">' +
+                                   'action <span class="caret"></span>' +
+                                   '</button>' +
+                                   '<ul class="dropdown-menu" role="menu">' +
+                                   '<li><a href="' + editUrl + '"><i class="fa fa-edit"></i> Edit</a></li>' +
+                                   '<li><a href="' + deleteUrl + '" onclick="return confirm(\'Are you sure you want to Remove this Quotation ?\')"><i class="fa fa-remove"></i> Delete</a></li>' +
+                                   '<li><a href="' + invoiceUrl + '" target="_blank"><i class="fa fa-print"></i> Invoice</a></li>' +
+                                   '<li><a href="' + finalizeUrl + '"><i class="fa fa-print"></i> Finalize Sale</a></li>' +
+                                   '</ul>' +
+                                   '</div>';
+                        }
+                    }
+                ],
+                "pageLength": 25,
+                "lengthMenu": [[10, 25, 50, 100], [10, 25, 50, 100]],
+                "searching": true,
+                "ordering": true,
+                "info": true,
+                "autoWidth": false,
+                "order": [[0, 'desc']],
+                "language": {
+                    "searchPlaceholder": "Search quotations...",
+                    "processing": '<i class="fa fa-spinner fa-spin fa-3x fa-fw"></i><span class="sr-only">Loading...</span>',
+                    "emptyTable": "No quotations found",
+                    "zeroRecords": "No matching quotations found"
+                }
             });
         });
-
     </script>
 }

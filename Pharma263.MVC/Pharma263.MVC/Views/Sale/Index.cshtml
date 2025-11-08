@@ -1,4 +1,3 @@
-﻿@model IEnumerable<Pharma263.MVC.DTOs.Sales.SaleDto>
 @{
     ViewBag.Title = "Sales List";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -21,85 +20,17 @@
                             <table class="table table-hover table-bordered" id="saledatatable">
                                 <thead>
                                     <tr>
-                                        <td>
-                                            #
-                                        </td>
-                                        <th scope="col">
-                                            Customer
-                                        </th>
-                                        <th scope="col">
-                                            Sale Date
-                                        </th>
-                                        <th scope="col">
-                                            @Html.DisplayNameFor(model => model.Total)
-                                        </th>
-                                        <th scope="col">
-                                            @Html.DisplayNameFor(model => model.Discount)
-                                        </th>
-                                        <th scope="col">
-                                            @Html.DisplayNameFor(model => model.GrandTotal)
-                                        </th>
-                                        <th scope="col">
-                                            @Html.DisplayNameFor(model => model.SaleStatus)
-                                        </th>
-
-                                        <th scope="col">action</th>
+                                        <th scope="col">#</th>
+                                        <th scope="col">Customer</th>
+                                        <th scope="col">Sale Date</th>
+                                        <th scope="col">Total</th>
+                                        <th scope="col">Discount</th>
+                                        <th scope="col">Grand Total</th>
+                                        <th scope="col">Sale Status</th>
+                                        <th scope="col">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var item in Model)
-                                    {
-
-                                        <tr>
-                                            <td>
-                                                @Html.DisplayFor(modelItem => item.Id)
-                                            </td>
-                                            <td>
-                                                @item.CustomerName
-                                            </td>
-                                            <td>
-                                                @Html.DisplayFor(modelItem => item.SalesDate)
-                                            </td>
-                                            <td>
-                                                @Html.DisplayFor(modelItem => item.Total)
-                                            </td>
-                                            <td>
-                                                @Html.DisplayFor(modelItem => item.Discount)
-                                            </td>
-                                            <td>
-                                                @Html.DisplayFor(modelItem => item.GrandTotal)
-                                            </td>
-                                            <td>
-                                                @Html.DisplayFor(modelItem => item.SaleStatus)
-                                            </td>
-
-                                            <td>
-                                                <div class="btn-group">
-                                                    <button type="button" class="btn btn-purple dropdown-toggle btn-xs" data-toggle="dropdown" aria-expanded="true">
-                                                        action <span class="caret"></span>
-                                                    </button>
-                                                    <ul class="dropdown-menu" role="menu">
-                                                        <li>
-                                                            <a href="@Url.Action("Details", "Sale", new { id = item.Id })"><i class="fa fa-eye"></i> View Details</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href="@Url.Action("Process", "Return", new {saleId = item.Id})"><i class="fa fa-refresh"></i> Return</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href="@Url.Action("DeleteSale", "Sale", new { saleId = item.Id })" onclick="return confirm('Are you sure you want to Remove this Sale ?')"> <i class="fa fa-remove"></i> Delete</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href="@Url.Action("SaleInvoice","Sale", new {saleId = item.Id,style=1})" target="_blank"><i class="fa fa-print"></i> Invoice</a>
-                                                        </li>
-                                                        @* <li>
-                                                            <a href="@Url.Action("DispatchVoucher","Sale", new {saleId = item.Id,style=2})" target="_blank"><i class="fa fa-print"> </i> Dispatch Voucher</a>
-                                                        </li> *@
-                                                    </ul>
-                                                </div>
-                                            </td>
-                                        </tr>
-
-                                    }
                                 </tbody>
                             </table>
                         </div>
@@ -110,23 +41,100 @@
         </div>
     </div>
 </div>
+
 @section scripts {
+    <link rel="stylesheet" href="~/Content/adminFront/assets/plugins/datatables/jquery.dataTables.min.css">
+    <script src="~/Content/adminFront/assets/plugins/datatables/jquery.dataTables.min.js"></script>
+
     <script type="text/javascript">
         $(document).ready(function () {
-
             $('#saledatatable').DataTable({
-                "paging": true,
-                "lengthChange": false,
-                "searching": true,
-                "info": false,
-                "autoWidth": false,
-                "dom": '<lf<t>ip>',
-                language: {
-                    searchPlaceholder: "Search anything"
+                "processing": true,
+                "serverSide": true,
+                "ajax": {
+                    "url": "@Url.Action("GetSalesDataTable", "Sale")",
+                    "type": "POST",
+                    "contentType": "application/json",
+                    "data": function (d) {
+                        return JSON.stringify(d);
+                    },
+                    "dataSrc": function (json) {
+                        if (json.error) {
+                            console.error('DataTable Error:', json.error);
+                            toastr.error('Failed to load sales: ' + json.error);
+                        }
+                        return json.data;
+                    }
                 },
-                order: [[0, 'desc']]
+                "columns": [
+                    { "data": "id" },
+                    { "data": "customerName" },
+                    {
+                        "data": "salesDate",
+                        "render": function(data, type, row) {
+                            if (data && type === 'display') {
+                                var date = new Date(data);
+                                return date.toLocaleDateString();
+                            }
+                            return data;
+                        }
+                    },
+                    {
+                        "data": "total",
+                        "render": function(data, type, row) {
+                            return type === 'display' ? parseFloat(data).toFixed(2) : data;
+                        }
+                    },
+                    {
+                        "data": "discount",
+                        "render": function(data, type, row) {
+                            return type === 'display' ? parseFloat(data).toFixed(2) : data;
+                        }
+                    },
+                    {
+                        "data": "grandTotal",
+                        "render": function(data, type, row) {
+                            return type === 'display' ? parseFloat(data).toFixed(2) : data;
+                        }
+                    },
+                    { "data": "saleStatus" },
+                    {
+                        "data": null,
+                        "orderable": false,
+                        "render": function (data, type, row) {
+                            var detailsUrl = '@Url.Action("Details", "Sale")' + '?id=' + row.id;
+                            var returnUrl = '@Url.Action("Process", "Return")' + '?saleId=' + row.id;
+                            var deleteUrl = '@Url.Action("DeleteSale", "Sale")' + '?saleId=' + row.id;
+                            var invoiceUrl = '@Url.Action("SaleInvoice", "Sale")' + '?saleId=' + row.id;
+
+                            return '<div class="btn-group">' +
+                                   '<button type="button" class="btn btn-purple dropdown-toggle btn-xs" data-toggle="dropdown" aria-expanded="true">' +
+                                   'action <span class="caret"></span>' +
+                                   '</button>' +
+                                   '<ul class="dropdown-menu" role="menu">' +
+                                   '<li><a href="' + detailsUrl + '"><i class="fa fa-eye"></i> View Details</a></li>' +
+                                   '<li><a href="' + returnUrl + '"><i class="fa fa-refresh"></i> Return</a></li>' +
+                                   '<li><a href="' + deleteUrl + '" onclick="return confirm(\'Are you sure you want to Remove this Sale ?\')"><i class="fa fa-remove"></i> Delete</a></li>' +
+                                   '<li><a href="' + invoiceUrl + '" target="_blank"><i class="fa fa-print"></i> Invoice</a></li>' +
+                                   '</ul>' +
+                                   '</div>';
+                        }
+                    }
+                ],
+                "pageLength": 25,
+                "lengthMenu": [[10, 25, 50, 100], [10, 25, 50, 100]],
+                "searching": true,
+                "ordering": true,
+                "info": true,
+                "autoWidth": false,
+                "order": [[0, 'desc']],
+                "language": {
+                    "searchPlaceholder": "Search sales...",
+                    "processing": '<i class="fa fa-spinner fa-spin fa-3x fa-fw"></i><span class="sr-only">Loading...</span>',
+                    "emptyTable": "No sales found",
+                    "zeroRecords": "No matching sales found"
+                }
             });
         });
-
     </script>
 }

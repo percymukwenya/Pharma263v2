@@ -1,4 +1,3 @@
-﻿@model IEnumerable<Pharma263.Integration.Api.Models.Response.PurchasesResponse>
 @{
     ViewBag.Title = "Purchase List";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -21,89 +20,16 @@
                             <table class="table table-hover table-bordered table-responsive" id="purchasedatatable">
                                 <thead>
                                     <tr>
-                                        <th scope="col">
-                                            #
-                                        </th>                                        
-                                        <th scope="col">
-                                            @Html.DisplayNameFor(model => model.Supplier)
-                                        </th>
-                                        <th scope="col">
-                                            Purchase Date
-                                        </th>
-                                        <th scope="col">
-                                            @Html.DisplayNameFor(model => model.PaymentMethod)
-                                        </th>
-                                        <th scope="col">
-                                            @Html.DisplayNameFor(model => model.GrandTotal)
-                                        </th>
-                                        <th scope="col">
-                                            @Html.DisplayNameFor(model => model.PurchaseStatus)
-                                        </th>
-
-                                        <th scope="col">action</th>
+                                        <th scope="col">#</th>
+                                        <th scope="col">Supplier</th>
+                                        <th scope="col">Purchase Date</th>
+                                        <th scope="col">Payment Method</th>
+                                        <th scope="col">Grand Total</th>
+                                        <th scope="col">Purchase Status</th>
+                                        <th scope="col">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var item in Model)
-                                    {
-
-                                        <tr>
-                                            <td>
-                                                @Html.DisplayFor(modelItem => item.Id)
-                                            </td>
-                                            <td>
-                                                @Html.DisplayFor(modelItem => item.Supplier)
-                                            </td>
-                                            <td>
-                                                @Html.DisplayFor(modelItem => item.PurchaseDate)
-                                            </td>
-                                            <td>
-                                                @Html.DisplayFor(modelItem => item.PaymentMethod)
-                                            </td>
-                                            <td>
-                                                @Html.DisplayFor(modelItem => item.GrandTotal)
-                                            </td>
-                                            <td>
-                                                @Html.DisplayFor(modelItem => item.PurchaseStatus)
-                                            </td>
-
-                                            <td>
-
-
-                                                <div class="btn-group">
-                                                    <button type="button" class="btn btn-purple dropdown-toggle btn-xs" data-toggle="dropdown" aria-expanded="true">
-                                                        action <span class="caret"></span>
-                                                    </button>
-                                                    <ul class="dropdown-menu" role="menu">
-                                                        <li>
-                                                            <a href="@Url.Action("Details", "Purchase", new { id = item.Id })"><i class="fa fa-eye"></i> View Details</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href="@Url.Action("EditPurchase", "Purchase", new {purchaseId = item.Id})"><i class="fa fa-edit"></i> Edit</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href="@Url.Action("DeletePurchase", "Purchase", new { purchaseId = item.Id })" onclick="return confirm('Are you sure you want to Remove this Purchase ?')"> <i class="fa fa-remove"></i> Delete</a>
-                                                        </li>
-                                                        <li>
-                                                            <a href="@Url.Action("PurchaseInvoice","Purchase", new {purchaseId = item.Id})" target="_blank"><i class="fa fa-print"></i> Purchase Order</a>
-                                                        </li>
-                                                        @*<li>
-                                                    <a href="@Url.Action("PurchaseInvoice","Admin", new {purchaseId = item.Id,style=2})"><i class="fa fa-print"> </i> Purchase Order 2</a>
-                                                    </li>*@
-                                                    </ul>
-                                                </div>
-
-
-                                                @*<a href="@Url.Action("EditPurchase", "Admin", new {purchaseId = item.Id})" class="btn btn-icon btn-warning btn-xs m-b-5">
-                                            <i class="fa fa-edit"></i>
-                                            </a>
-                                            <a href="@Url.Action("DeletePurcahse", "Admin", new {purchaseId = item.Id})" onclick="return confirm('Are you sure you want to Remove this Purchase ?')" class="btn btn-icon btn-danger btn-xs m-b-5">
-                                            <i class="fa fa-remove"></i>
-                                            </a>*@
-                                            </td>
-                                        </tr>
-
-                                    }
                                 </tbody>
                             </table>
                         </div>
@@ -117,22 +43,87 @@
 
 
 @section scripts {
+    <link rel="stylesheet" href="~/Content/adminFront/assets/plugins/datatables/jquery.dataTables.min.css">
+    <script src="~/Content/adminFront/assets/plugins/datatables/jquery.dataTables.min.js"></script>
+
     <script type="text/javascript">
         $(document).ready(function () {
-
             $('#purchasedatatable').DataTable({
-                "paging": true,
-                "lengthChange": false,
-                "searching": true,
-                "info": false,
-                "autoWidth": false,
-                "dom": '<lf<t>ip>',
-                language: {
-                    searchPlaceholder: "Search anything"
+                "processing": true,
+                "serverSide": true,
+                "ajax": {
+                    "url": "@Url.Action("GetPurchasesDataTable", "Purchase")",
+                    "type": "POST",
+                    "contentType": "application/json",
+                    "data": function (d) {
+                        return JSON.stringify(d);
+                    },
+                    "dataSrc": function (json) {
+                        if (json.error) {
+                            console.error('DataTable Error:', json.error);
+                            toastr.error('Failed to load purchases: ' + json.error);
+                        }
+                        return json.data;
+                    }
                 },
-                order: [[0, 'desc']]
+                "columns": [
+                    { "data": "id" },
+                    { "data": "supplier" },
+                    {
+                        "data": "purchaseDate",
+                        "render": function(data, type, row) {
+                            if (data && type === 'display') {
+                                var date = new Date(data);
+                                return date.toLocaleDateString();
+                            }
+                            return data;
+                        }
+                    },
+                    { "data": "paymentMethod" },
+                    {
+                        "data": "grandTotal",
+                        "render": function(data, type, row) {
+                            return type === 'display' ? parseFloat(data).toFixed(2) : data;
+                        }
+                    },
+                    { "data": "purchaseStatus" },
+                    {
+                        "data": null,
+                        "orderable": false,
+                        "render": function (data, type, row) {
+                            var detailsUrl = '@Url.Action("Details", "Purchase")' + '?id=' + row.id;
+                            var editUrl = '@Url.Action("EditPurchase", "Purchase")' + '?purchaseId=' + row.id;
+                            var deleteUrl = '@Url.Action("DeletePurchase", "Purchase")' + '?purchaseId=' + row.id;
+                            var invoiceUrl = '@Url.Action("PurchaseInvoice", "Purchase")' + '?purchaseId=' + row.id;
+
+                            return '<div class="btn-group">' +
+                                   '<button type="button" class="btn btn-purple dropdown-toggle btn-xs" data-toggle="dropdown" aria-expanded="true">' +
+                                   'action <span class="caret"></span>' +
+                                   '</button>' +
+                                   '<ul class="dropdown-menu" role="menu">' +
+                                   '<li><a href="' + detailsUrl + '"><i class="fa fa-eye"></i> View Details</a></li>' +
+                                   '<li><a href="' + editUrl + '"><i class="fa fa-edit"></i> Edit</a></li>' +
+                                   '<li><a href="' + deleteUrl + '" onclick="return confirm(\'Are you sure you want to Remove this Purchase ?\')"><i class="fa fa-remove"></i> Delete</a></li>' +
+                                   '<li><a href="' + invoiceUrl + '" target="_blank"><i class="fa fa-print"></i> Purchase Order</a></li>' +
+                                   '</ul>' +
+                                   '</div>';
+                        }
+                    }
+                ],
+                "pageLength": 25,
+                "lengthMenu": [[10, 25, 50, 100], [10, 25, 50, 100]],
+                "searching": true,
+                "ordering": true,
+                "info": true,
+                "autoWidth": false,
+                "order": [[0, 'desc']],
+                "language": {
+                    "searchPlaceholder": "Search purchases...",
+                    "processing": '<i class="fa fa-spinner fa-spin fa-3x fa-fw"></i><span class="sr-only">Loading...</span>',
+                    "emptyTable": "No purchases found",
+                    "zeroRecords": "No matching purchases found"
+                }
             });
         });
-
     </script>
 }

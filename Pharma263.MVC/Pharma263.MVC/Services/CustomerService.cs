@@ -13,44 +13,88 @@ namespace Pharma263.MVC.Services
     public class CustomerService : ICustomerService
     {
         private readonly IApiService _apiService;
+        private readonly ICacheService _cacheService;
 
-        public CustomerService(IApiService apiService)
+        // Cache key constants for customers (Phase 2.2: Caching)
+        private const string CACHE_KEY_ALL_CUSTOMERS = "customers:all";
+        private const string CACHE_KEY_CUSTOMER_PREFIX = "customers:id:";
+
+        public CustomerService(IApiService apiService, ICacheService cacheService)
         {
             _apiService = apiService;
+            _cacheService = cacheService;
         }
 
         public async Task<ApiResponse<CustomerDetailsResponse>> GetCustomer(int id)
         {
-            var response = await _apiService.GetApiResponseAsync<CustomerDetailsResponse>($"/api/Customer/GetCustomer?id={id}");
+            // Phase 2.2: Cache individual customer (high read, medium write)
+            var cacheKey = $"{CACHE_KEY_CUSTOMER_PREFIX}{id}";
+
+            var response = await _cacheService.GetOrCreateAsync(
+                cacheKey,
+                async () => await _apiService.GetApiResponseAsync<CustomerDetailsResponse>($"/api/Customer/GetCustomer?id={id}"),
+                absoluteExpirationMinutes: 20,
+                slidingExpirationMinutes: 10
+            );
 
             return response;
         }
 
         public async Task<ApiResponse<List<CustomerResponse>>> GetCustomers()
         {
-            var response = await _apiService.GetApiResponseAsync<List<CustomerResponse>>("/api/Customer/GetCustomers");
+            // Phase 2.2: Cache all customers (high read, medium write)
+            var response = await _cacheService.GetOrCreateAsync(
+                CACHE_KEY_ALL_CUSTOMERS,
+                async () => await _apiService.GetApiResponseAsync<List<CustomerResponse>>("/api/Customer/GetCustomers"),
+                absoluteExpirationMinutes: 20,
+                slidingExpirationMinutes: 10
+            );
 
             return response;
         }
 
         public async Task<ApiResponse<bool>> CreateCustomer(CreateCustomerRequest model)
         {
-            return await _apiService.PostApiResponseAsync<bool>("/api/Customer/CreateCustomer", model);
+            var response = await _apiService.PostApiResponseAsync<bool>("/api/Customer/CreateCustomer", model);
+
+            // Phase 2.2: Invalidate customer cache on create
+            if (response.Success)
+            {
+                _cacheService.RemoveByPattern("customers:*");
+            }
+
+            return response;
         }
 
         public async Task<ApiResponse<bool>> UpdateCustomer(UpdateCustomerRequest dto)
         {
-            return await _apiService.PutApiResponseAsync<bool>("/api/Customer/UpdateCustomer", dto);
+            var response = await _apiService.PutApiResponseAsync<bool>("/api/Customer/UpdateCustomer", dto);
+
+            // Phase 2.2: Invalidate customer cache on update
+            if (response.Success)
+            {
+                _cacheService.RemoveByPattern("customers:*");
+            }
+
+            return response;
         }
 
         public async Task<ApiResponse<bool>> DeleteCustomer(int id)
         {
-            return await _apiService.DeleteApiResponseAsync($"/api/Customer?id={id}");
+            var response = await _apiService.DeleteApiResponseAsync($"/api/Customer?id={id}");
+
+            // Phase 2.2: Invalidate customer cache on delete
+            if (response.Success)
+            {
+                _cacheService.RemoveByPattern("customers:*");
+            }
+
+            return response;
         }
 
         public async Task<ApiResponse<PaginatedList<CustomerResponse>>> GetCustomersPaged(PagedRequest request)
         {
-            var queryString = $"Page={request.Page}&PageSize={request.PageSize}&SearchTerm={request.SearchTerm}&SortBy={request.SortBy}&SortDescending={request.SortDescending}";
+            var queryString = $"Page={request.Page}&PageSize={request.PageSize}&SearchTerm={System.Uri.EscapeDataString(request.SearchTerm ?? "")}&SortBy={System.Uri.EscapeDataString(request.SortBy ?? "")}&SortDescending={request.SortDescending.ToString().ToLowerInvariant()}";
             return await _apiService.GetApiResponseAsync<PaginatedList<CustomerResponse>>($"/api/Customer/GetCustomersPaged?{queryString}");
         }
 

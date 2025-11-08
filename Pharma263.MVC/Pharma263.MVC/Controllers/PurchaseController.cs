@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Pharma263.Integration.Api.Models.Request;
+using Pharma263.Integration.Api.Models.Common;
 using Pharma263.MVC.DTOs.Purchases;
 using Pharma263.MVC.Services.IService;
 using System.Threading.Tasks;
@@ -15,11 +16,17 @@ namespace Pharma263.MVC.Controllers
             _purchaseService = purchaseService;
         }
 
-        public async Task<ActionResult> Index()
+        public ActionResult Index()
         {
-            var response = await _purchaseService.GetAllPurchases();
+            // Return empty view - data will be loaded via server-side DataTables
+            return View();
+        }
 
-            return View(response.Data);
+        [HttpPost]
+        public async Task<JsonResult> GetPurchasesDataTable([FromBody] DataTableRequest request)
+        {
+            var response = await _purchaseService.GetPurchasesForDataTable(request);
+            return Json(response);
         }
 
         [HttpGet]
