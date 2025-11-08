@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Pharma263.Integration.Api.Models.Common;
 using Pharma263.MVC.DTOs.Sales;
 using Pharma263.MVC.Services.IService;
 using Pharma263.MVC.Utility;
@@ -16,11 +17,17 @@ namespace Pharma263.MVC.Controllers
             _saleService = saleService;
         }
 
-        public async Task<ActionResult> Index()
+        public ActionResult Index()
         {
-            var response = await _saleService.GetSales();
+            // Return empty view - data will be loaded via server-side DataTables
+            return View();
+        }
 
-            return View(response.Data);
+        [HttpPost]
+        public async Task<JsonResult> GetSalesDataTable([FromBody] DataTableRequest request)
+        {
+            var response = await _saleService.GetSalesForDataTable(request);
+            return Json(response);
         }
 
         [HttpGet]

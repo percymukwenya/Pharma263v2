@@ -2,6 +2,7 @@ using Pharma263.Integration.Api;
 using Pharma263.Integration.Api.Common;
 using Pharma263.Integration.Api.Models;
 using Pharma263.Integration.Api.Models.Request;
+using Pharma263.Integration.Api.Models.Common;
 using Pharma263.MVC.DTOs.Sales;
 using Pharma263.MVC.Services.IService;
 using Pharma263.MVC.Utility;
@@ -25,6 +26,81 @@ namespace Pharma263.MVC.Services
             var response = await _apiService.GetApiResponseAsync<List<SaleDto>>("/api/Sale/GetSales");
 
             return response;
+        }
+
+        public async Task<ApiResponse<PaginatedList<SaleDto>>> GetSalesPaged(PagedRequest request)
+        {
+            var queryString = $"Page={request.Page}&PageSize={request.PageSize}&SearchTerm={request.SearchTerm}&SortBy={request.SortBy}&SortDescending={request.SortDescending}";
+            return await _apiService.GetApiResponseAsync<PaginatedList<SaleDto>>($"/api/Sale/GetSalesPaged?{queryString}");
+        }
+
+        public async Task<DataTableResponse<SaleDto>> GetSalesForDataTable(DataTableRequest request)
+        {
+            try
+            {
+                var pagedRequest = new PagedRequest
+                {
+                    Page = (request.Start / request.Length) + 1,
+                    PageSize = request.Length,
+                    SearchTerm = request.Search?.Value,
+                    SortDescending = request.Order?.FirstOrDefault()?.Dir == "desc",
+                    SortBy = GetSortColumn(request)
+                };
+
+                var apiResponse = await GetSalesPaged(pagedRequest);
+
+                if (apiResponse.Success && apiResponse.Data != null)
+                {
+                    return new DataTableResponse<SaleDto>
+                    {
+                        Draw = request.Draw,
+                        RecordsTotal = apiResponse.Data.TotalCount,
+                        RecordsFiltered = apiResponse.Data.TotalCount,
+                        Data = apiResponse.Data.Items
+                    };
+                }
+                else
+                {
+                    return new DataTableResponse<SaleDto>
+                    {
+                        Draw = request.Draw,
+                        RecordsTotal = 0,
+                        RecordsFiltered = 0,
+                        Error = apiResponse.Message
+                    };
+                }
+            }
+            catch (System.Exception ex)
+            {
+                return new DataTableResponse<SaleDto>
+                {
+                    Draw = request.Draw,
+                    RecordsTotal = 0,
+                    RecordsFiltered = 0,
+                    Error = ex.Message
+                };
+            }
+        }
+
+        private string GetSortColumn(DataTableRequest request)
+        {
+            if (request.Order == null || !request.Order.Any())
+                return null;
+
+            var orderColumn = request.Order.First();
+
+            // Map DataTable column index to API property names
+            return orderColumn.Column switch
+            {
+                0 => "id",              // ID column
+                1 => "customername",    // Customer column
+                2 => "salesdate",       // Sale Date column
+                3 => "total",           // Total column
+                4 => "discount",        // Discount column
+                5 => "grandtotal",      // Grand Total column
+                6 => "salestatus",      // Sale Status column
+                _ => null
+            };
         }
 
         public async Task<ApiResponse<SaleDetailsDto>> GetSale(int id)
