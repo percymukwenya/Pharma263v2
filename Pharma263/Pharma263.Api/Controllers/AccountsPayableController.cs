@@ -1,15 +1,12 @@
-﻿using iTextSharp.text.log;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Pharma263.Api.Extensions;
-using Pharma263.Api.Models;
 using Pharma263.Api.Models.AccountsPayable.Request;
 using Pharma263.Api.Models.AccountsPayable.Response;
 using Pharma263.Api.Services;
 using Pharma263.Application.Models;
 using Pharma263.Domain.Common;
 using Pharma263.Domain.Entities;
-using Pharma263.Persistence.Shared;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;

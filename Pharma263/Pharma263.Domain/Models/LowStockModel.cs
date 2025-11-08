@@ -2,7 +2,7 @@
 {
     public class LowStockModel
     {
-        public string Name { get; set; }
+        public string MedicineName { get; set; }
         public string BatchNo { get; set; }
         public int TotalQuantity { get; set; }
         public decimal SellingPrice { get; set; }
