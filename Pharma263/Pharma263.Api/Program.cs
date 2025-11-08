@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Pharma263.Api.Contracts;
 using Pharma263.Api.Extensions;
 using Pharma263.Api.Services;
 using Pharma263.Api.Shared.Contracts;
@@ -21,6 +22,7 @@ builder.Host.UseSerilog((context, loggerConfig) => loggerConfig
 
 builder.Services.AddScoped<IPurchaseCalculationService, PurchaseCalculationService>();
 builder.Services.AddScoped<ICalculationService, CalculationService>();
+builder.Services.AddScoped<IValidationService, ValidationService>();
 
 builder.Services.AddApplicationServices();
 builder.Services.AddIdentityServices(builder.Configuration);

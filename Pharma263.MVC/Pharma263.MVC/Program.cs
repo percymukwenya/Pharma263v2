@@ -12,6 +12,7 @@ using System.Net.Http.Headers;
 using Pharma263.MVC.Utility;
 using Microsoft.AspNetCore.ResponseCompression;
 using System.IO.Compression;
+using System.Linq;
 
 var builder = WebApplication.CreateBuilder(args);
 
