@@ -14,22 +14,42 @@ namespace Pharma263.MVC.Services
     public class MedicineService : IMedicineService
     {
         private readonly IApiService _apiService;
+        private readonly ICacheService _cacheService;
 
-        public MedicineService(IApiService apiService)
+        // Cache key constants for medicines (Phase 2.2: Caching)
+        private const string CACHE_KEY_ALL_MEDICINES = "medicines:all";
+        private const string CACHE_KEY_MEDICINE_PREFIX = "medicines:id:";
+
+        public MedicineService(IApiService apiService, ICacheService cacheService)
         {
             _apiService = apiService;
+            _cacheService = cacheService;
         }
 
         public async Task<ApiResponse<MedicineDetailsResponse>> GetMedicine(int id)
         {
-            var response = await _apiService.GetApiResponseAsync<MedicineDetailsResponse>($"/api/Medicine/GetMedicine?id={id}");
+            // Phase 2.2: Cache individual medicine (high read, low write)
+            var cacheKey = $"{CACHE_KEY_MEDICINE_PREFIX}{id}";
+
+            var response = await _cacheService.GetOrCreateAsync(
+                cacheKey,
+                async () => await _apiService.GetApiResponseAsync<MedicineDetailsResponse>($"/api/Medicine/GetMedicine?id={id}"),
+                absoluteExpirationMinutes: 30,
+                slidingExpirationMinutes: 10
+            );
 
             return response;
         }
 
         public async Task<ApiResponse<List<MedicineResponse>>> GetMedicines()
         {
-            var response = await _apiService.GetApiResponseAsync<List<MedicineResponse>>("/api/Medicine/GetMedicines");
+            // Phase 2.2: Cache all medicines (high read, low write - reference data)
+            var response = await _cacheService.GetOrCreateAsync(
+                CACHE_KEY_ALL_MEDICINES,
+                async () => await _apiService.GetApiResponseAsync<List<MedicineResponse>>("/api/Medicine/GetMedicines"),
+                absoluteExpirationMinutes: 30,
+                slidingExpirationMinutes: 10
+            );
 
             return response;
         }
@@ -38,6 +58,12 @@ namespace Pharma263.MVC.Services
         {
             var response = await _apiService.PostApiResponseAsync<bool>("/api/Medicine/CreateMedicine", request);
 
+            // Phase 2.2: Invalidate medicine cache on create
+            if (response.Success)
+            {
+                _cacheService.RemoveByPattern("medicines:*");
+            }
+
             return response;
         }
 
@@ -45,12 +71,24 @@ namespace Pharma263.MVC.Services
         {
             var response = await _apiService.PutApiResponseAsync<bool>("/api/Medicine/UpdateMedicine", request);
 
+            // Phase 2.2: Invalidate medicine cache on update
+            if (response.Success)
+            {
+                _cacheService.RemoveByPattern("medicines:*");
+            }
+
             return response;
         }
 
         public async Task<ApiResponse<bool>> DeleteMedicine(int id, string token)
         {
             var response = await _apiService.DeleteApiResponseAsync($"/api/Medicine?id={id}");
+
+            // Phase 2.2: Invalidate medicine cache on delete
+            if (response.Success)
+            {
+                _cacheService.RemoveByPattern("medicines:*");
+            }
 
             return response;
         }

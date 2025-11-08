@@ -13,22 +13,42 @@ namespace Pharma263.MVC.Services
     public class SupplierService : ISupplierService
     {
         private readonly IApiService _apiService;
+        private readonly ICacheService _cacheService;
 
-        public SupplierService(IApiService apiService)
+        // Cache key constants for suppliers (Phase 2.2: Caching)
+        private const string CACHE_KEY_ALL_SUPPLIERS = "suppliers:all";
+        private const string CACHE_KEY_SUPPLIER_PREFIX = "suppliers:id:";
+
+        public SupplierService(IApiService apiService, ICacheService cacheService)
         {
             _apiService = apiService;
+            _cacheService = cacheService;
         }
 
         public async Task<ApiResponse<List<SupplierResponse>>> GetAllAsync()
         {
-            var response = await _apiService.GetApiResponseAsync<List<SupplierResponse>>("/api/Supplier/GetSuppliers");
+            // Phase 2.2: Cache all suppliers (high read, low write)
+            var response = await _cacheService.GetOrCreateAsync(
+                CACHE_KEY_ALL_SUPPLIERS,
+                async () => await _apiService.GetApiResponseAsync<List<SupplierResponse>>("/api/Supplier/GetSuppliers"),
+                absoluteExpirationMinutes: 30,
+                slidingExpirationMinutes: 10
+            );
 
             return response;
         }
 
         public async Task<ApiResponse<SupplierDetailsResponse>> GetAsync(int id)
         {
-            var response = await _apiService.GetApiResponseAsync<SupplierDetailsResponse>($"/api/Supplier/GetSupplier?id={id}");
+            // Phase 2.2: Cache individual supplier (high read, low write)
+            var cacheKey = $"{CACHE_KEY_SUPPLIER_PREFIX}{id}";
+
+            var response = await _cacheService.GetOrCreateAsync(
+                cacheKey,
+                async () => await _apiService.GetApiResponseAsync<SupplierDetailsResponse>($"/api/Supplier/GetSupplier?id={id}"),
+                absoluteExpirationMinutes: 30,
+                slidingExpirationMinutes: 10
+            );
 
             return response;
         }
@@ -37,6 +57,12 @@ namespace Pharma263.MVC.Services
         {
             var response = await _apiService.PostApiResponseAsync<bool>("/api/Supplier/CreateSupplier", request);
 
+            // Phase 2.2: Invalidate supplier cache on create
+            if (response.Success)
+            {
+                _cacheService.RemoveByPattern("suppliers:*");
+            }
+
             return response;
         }
 
@@ -44,12 +70,24 @@ namespace Pharma263.MVC.Services
         {
             var response = await _apiService.PutApiResponseAsync<bool>("/api/Supplier/UpdateSupplier", request);
 
+            // Phase 2.2: Invalidate supplier cache on update
+            if (response.Success)
+            {
+                _cacheService.RemoveByPattern("suppliers:*");
+            }
+
             return response;
         }
 
         public async Task<ApiResponse<bool>> DeleteSupplier(int id)
         {
             var response = await _apiService.DeleteApiResponseAsync($"/api/Supplier?id={id}");
+
+            // Phase 2.2: Invalidate supplier cache on delete
+            if (response.Success)
+            {
+                _cacheService.RemoveByPattern("suppliers:*");
+            }
 
             return response;
         }
