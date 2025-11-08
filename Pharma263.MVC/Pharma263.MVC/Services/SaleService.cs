@@ -30,7 +30,7 @@ namespace Pharma263.MVC.Services
 
         public async Task<ApiResponse<PaginatedList<SaleDto>>> GetSalesPaged(PagedRequest request)
         {
-            var queryString = $"Page={request.Page}&PageSize={request.PageSize}&SearchTerm={request.SearchTerm}&SortBy={request.SortBy}&SortDescending={request.SortDescending}";
+            var queryString = $"Page={request.Page}&PageSize={request.PageSize}&SearchTerm={System.Uri.EscapeDataString(request.SearchTerm ?? "")}&SortBy={System.Uri.EscapeDataString(request.SortBy ?? "")}&SortDescending={request.SortDescending.ToString().ToLowerInvariant()}";
             return await _apiService.GetApiResponseAsync<PaginatedList<SaleDto>>($"/api/Sale/GetSalesPaged?{queryString}");
         }
 

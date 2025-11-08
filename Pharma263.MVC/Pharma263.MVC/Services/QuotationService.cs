@@ -34,7 +34,7 @@ namespace Pharma263.MVC.Services
 
         public async Task<ApiResponse<PaginatedList<QuotationListResponse>>> GetQuotationsPaged(PagedRequest request)
         {
-            var queryString = $"Page={request.Page}&PageSize={request.PageSize}&SearchTerm={request.SearchTerm}&SortBy={request.SortBy}&SortDescending={request.SortDescending}";
+            var queryString = $"Page={request.Page}&PageSize={request.PageSize}&SearchTerm={Uri.EscapeDataString(request.SearchTerm ?? "")}&SortBy={Uri.EscapeDataString(request.SortBy ?? "")}&SortDescending={request.SortDescending.ToString().ToLowerInvariant()}";
             return await _apiService.GetApiResponseAsync<PaginatedList<QuotationListResponse>>($"/api/Quotation/GetQuotationsPaged?{queryString}");
         }
 
