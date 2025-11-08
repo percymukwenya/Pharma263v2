@@ -58,6 +58,13 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         option.ExpireTimeSpan = TimeSpan.FromMinutes(90);
     });
 
+// ===== PHASE 2.2: CACHING INFRASTRUCTURE =====
+// Add in-memory caching for reference data (50-70% DB query reduction)
+// IMPORTANT: Must be registered BEFORE services that depend on ICacheService
+builder.Services.AddMemoryCache();
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSingleton<ICacheService, CacheService>();
+
 builder.Services.AddScoped<ITokenService, TokenService>();
 
 builder.Services.AddHttpClient<IPurchaseService, PurchaseService>();
@@ -113,12 +120,6 @@ builder.Services.AddScoped<IStatementService, StatementService>();
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
 builder.Services.AddPharmaApi(builder.Configuration);
-
-// ===== PHASE 2.2: CACHING INFRASTRUCTURE =====
-// Add in-memory caching for reference data (50-70% DB query reduction)
-builder.Services.AddMemoryCache();
-builder.Services.AddDistributedMemoryCache();
-builder.Services.AddSingleton<ICacheService, CacheService>();
 
 builder.Services.AddSession(options =>
 {
