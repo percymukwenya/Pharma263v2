@@ -187,10 +187,19 @@ namespace Pharma263.Api.Services
 
                 if (medicineAndBatchPairs.Any())
                 {
-                    var stocks = await _unitOfWork.Repository<Stock>()
-                        .FindAsync(s => medicineAndBatchPairs.Any(p => p.MedicineId == s.MedicineId && p.BatchNo == s.BatchNo));
+                    // Extract medicine IDs to use in EF Core translatable query
+                    var medicineIds = medicineAndBatchPairs.Select(p => p.MedicineId).Distinct().ToList();
 
-                    foreach (var stock in stocks)
+                    // Load stocks matching medicine IDs, then filter by batch number in memory
+                    var stocks = await _unitOfWork.Repository<Stock>()
+                        .FindAsync(s => medicineIds.Contains(s.MedicineId));
+
+                    // Filter by batch number in memory since we can't translate the complex pair matching
+                    var filteredStocks = stocks.Where(s =>
+                        medicineAndBatchPairs.Any(p => p.MedicineId == s.MedicineId && p.BatchNo == s.BatchNo)
+                    ).ToList();
+
+                    foreach (var stock in filteredStocks)
                     {
                         stockItems[(stock.MedicineId, stock.BatchNo)] = stock;
                     }
